@@ -22,9 +22,9 @@ jobs:
       # Write .env.prod
       - name: Write .env.prod
         run: |
-          echo "NODE_ENV=${{ vars.NODE_ENV }}" > .env.prod
-          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env.prod
-          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env.prod
+          echo "NODE_ENV=${{ vars.PROD_NODE_ENV }}" > .env.prod
+          echo "MONGO_URI=${{ secrets.PROD_MONGO_URI }}" >> .env.prod
+          echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" >> .env.prod
 
       - name: Build Docker image
         run: |
