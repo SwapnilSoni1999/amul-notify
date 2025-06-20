@@ -2,21 +2,32 @@ import amulService from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { formatProductDetails } from '@/utils/format.util'
+import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 
-export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
+export const trackedCommand: MiddlewareFn<CommandContext> = async (ctx) => {
+  const trackedProducts = ctx.trackedProducts
+  if (trackedProducts.length === 0) {
+    return ctx.reply('❌ You are not tracking any products.')
+  }
+
   const products = await amulService.getProteinProducts()
-  //   console.log('Products:', products)
 
   const message: string = [
-    `<b>Amul Protein Products</b>`,
-
+    `<b>Tracked Products</b>`,
     ...(await Promise.all(
-      products.map(async (product, index) => {
-        const isAvlblToPurchase = isAvailableToPurchase(product)
+      trackedProducts.map(async (trackedProduct, index) => {
+        const product = products.find((p) => p.sku === trackedProduct.sku)
 
-        // const trackBtn = link('[Track]', getProductUrl(product))
+        if (!product) {
+          logToChannel(
+            `❌ Product with SKU ${trackedProduct.sku} not found in tracked command.`
+          )
+          return `❌ Product with SKU ${trackedProduct.sku} not found.`
+        }
+
+        const isAvlblToPurchase = isAvailableToPurchase(product)
 
         const trackBtn = `<b><a href="${await startCommandLink(
           `track_${product.sku}`
@@ -32,9 +43,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
         return [
           formatProductDetails(product, isAvlblToPurchase, index),
           isTracked ? untrackBtn : isAvlblToPurchase ? null : trackBtn
-        ]
-          .filter(Boolean)
-          .join('\n')
+        ].join('\n')
       })
     ))
   ].join('\n\n')
@@ -45,5 +54,4 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
       is_disabled: true
     }
   })
-  console.log('ctx.trackedProducts:', ctx.trackedProducts)
 }
