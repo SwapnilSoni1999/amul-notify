@@ -30,7 +30,6 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
         )}">[Untrack]</a></b>`
 
         const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
-        console.log('isTracked:', isTracked)
 
         return [
           formatProductDetails(product, isAvlblToPurchase, index),
