@@ -37,4 +37,4 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run -d --network=host --name amul-notify-bot -p ${{ vars.PORT }}:${{ vars.PORT }} amul-notify-bot:latest
+          docker run -d --network=host --name amul-notify-bot amul-notify-bot:latest
