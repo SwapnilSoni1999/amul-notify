@@ -49,7 +49,7 @@ Or search for `@AmulOSSBot` in Telegram.
 git clone https://github.com/SwapnilSoni1999/amul-stock-bot.git
 cd amul-stock-bot
 pnpm install
-cp .env.example .env # Fill in your Telegram Bot Token
+cp .env.example .env.prod # Fill in your Telegram Bot Token, or .env.dev if running in local
 pnpm start
 ```
 
