@@ -9,7 +9,7 @@ import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
 import { schedule } from 'node-cron'
 
-schedule(
+const stockCheckerJob = schedule(
   '* * * * *',
   async () => {
     try {
@@ -105,3 +105,5 @@ schedule(
     name: 'check-stock-job'
   }
 )
+
+export { stockCheckerJob }

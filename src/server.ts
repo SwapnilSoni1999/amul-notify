@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import env from '@/env'
 import bot from '@/bot'
 import redis from '@/redis'
+import { stockCheckerJob } from './jobs/checker.job'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -18,6 +19,10 @@ mongoose
     bot
       .launch(() => {
         console.log('Bot is running...')
+
+        // Start job
+        stockCheckerJob.start()
+        console.log('Stock checker job started')
       })
       .catch((err) => {
         console.error('Failed to launch bot:', err)
