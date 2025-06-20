@@ -34,6 +34,7 @@
     "dotenv-cli": "^8.0.0",
     "ioredis": "^5.6.1",
     "mongoose": "^8.16.0",
+    "node-cron": "^4.1.0",
     "telegraf": "^4.16.3",
     "uuid": "^11.1.0",
     "zod": "^3.25.67"

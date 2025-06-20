@@ -1,0 +1,40 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Amul Notify Bot
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+env:
+  BASH_ENV: /home/sonisins/.bashrc
+
+jobs:
+  build:
+    runs-on: amul-notify-runner
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Write .env.prod
+      - name: Write .env.prod
+        run: |
+          echo "NODE_ENV=${{ vars.NODE_ENV }}" > .env.prod
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env.prod
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env.prod
+
+      - name: Build Docker image
+        run: |
+          docker build --network=host -t amul-notify-bot .
+
+      - name: Stop and Remove existing container
+        run: |
+          docker stop amul-notify-bot || true
+          docker rm amul-notify-bot || true
+
+      - name: Run Docker container
+        run: |
+          docker run -d --network=host --name amul-notify-bot -p ${{ vars.PORT }}:${{ vars.PORT }} amul-notify-bot:latest

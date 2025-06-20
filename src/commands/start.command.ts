@@ -17,17 +17,14 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     return next()
   }
 
-  await ctx.reply(`🛒 <b>Welcome to the Amul Stock Bot!</b>`, {
-    parse_mode: 'HTML'
-  })
-
   await ctx.reply(
-    `You can check availability of <b>Amul protein products</b> across stores.\n` +
-      `✅ Type <b>/check</b> to get started\n` +
-      `ℹ️ Type <b>/help</b> for more options`,
-    {
-      parse_mode: 'HTML'
-    }
+    `👋 <b>Welcome to Amul Stock Notification Bot!</b>\n\n` +
+      `I help you track availability of Amul's protein products, including shakes, lassi, paneer and more.\n\n` +
+      `Here’s what I can do:\n` +
+      `• <b>/products</b> – List all protein products\n` +
+      `• <b>/tracked</b> – Show products you're tracking\n\n` +
+      `Get started by typing <b>/products</b> or simply explore available stock.`,
+    { parse_mode: 'HTML' }
   )
 
   next()
