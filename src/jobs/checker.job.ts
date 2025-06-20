@@ -21,6 +21,7 @@ const stockCheckerJob = schedule(
         await cacheService.jobData.set(freshProducts)
         return
       }
+      console.log(`cachedProducts`, cachedProducts)
 
       // map through fresh products and check if any have changed
       const changedProducts = freshProducts.filter((freshProduct) => {

@@ -1,7 +1,8 @@
 import { AmulProduct, AmulProductsResponse } from '@/types/amul.types'
 import axios from 'axios'
 import cacheService from './cache.service'
-import { v4 as uuidv4 } from 'uuid'
+// import { v4 as uuidv4 } from 'uuid'
+// import crypto from 'crypto'
 
 const randomUserAgents = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
@@ -9,6 +10,32 @@ const randomUserAgents = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
   'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'
 ]
+
+// ——————————————————
+// 1️⃣ Tid generator
+// ——————————————————
+/**
+ * @param storeId    Your ms.store.storeId (e.g. "66505ff06510ee3d5903fd42")
+ * @param serverTs   The serverTimestamp value (ideally from a “time” endpoint)
+ * @param prevTid    The last session TID (you can persist this per session)
+ */
+// async function makeTid(
+//   storeId: string,
+//   serverTs: number,
+//   prevTid: string
+// ): Promise<string> {
+//   // random 0–999
+//   const rand = Math.floor(Math.random() * 1000)
+
+//   // compose d = storeId:serverTs:rand:prevTid
+//   const d = `${storeId}:${serverTs}:${rand}:${prevTid}`
+
+//   // hash it SHA-256 → hex
+//   const hash = crypto.createHash('sha256').update(d).digest('hex')
+
+//   // final tid = serverTs:rand:hash
+//   return `${serverTs}:${rand}:${hash}`
+// }
 
 const getProteinProducts = async (opts?: {
   bypassCache?: boolean
@@ -37,10 +64,7 @@ const getProteinProducts = async (opts?: {
     'sec-fetch-mode': 'cors',
     'sec-fetch-site': 'same-origin',
     'sec-gpc': '1',
-    tid: `${Date.now()}:${Math.floor(Math.random() * 999)}:${uuidv4().replace(
-      /-/g,
-      ''
-    )}`,
+    tid: `1750419337320:873:72ef26559a33895ccec4eed4abb973879c4d103a2fc958af51fa4ca872b89c80`, // TODO: use Tid generator in future
     'user-agent':
       randomUserAgents[Math.floor(Math.random() * randomUserAgents.length)],
     cookie: '' // If you rotate sessions, can be dynamic
