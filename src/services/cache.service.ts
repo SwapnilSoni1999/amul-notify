@@ -19,17 +19,19 @@ const products = {
 
 const jobData = {
   set: async (value: AmulProduct[]) => {
-    await redis.set(
-      'amul:products:job',
+    return await redis.set(
+      'job:amul:products',
       JSON.stringify(value),
       'EX',
-      120
-      // Cache for 120 seconds
+      15 * 60 // Cache for 15 minutes
     )
   },
   get: async (): Promise<AmulProduct[] | null> => {
-    const cachedData = await redis.get('amul:products')
+    const cachedData = await redis.get('job:amul:products')
     return cachedData ? JSON.parse(cachedData) : null
+  },
+  delete: async () => {
+    await redis.del('job:amul:products')
   }
 }
 

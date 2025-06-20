@@ -3,6 +3,7 @@ import env from '@/env'
 import bot from '@/bot'
 import redis from '@/redis'
 import { stockCheckerJob } from './jobs/checker.job'
+import cacheService from './services/cache.service'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -21,7 +22,9 @@ mongoose
         console.log('Bot is running...')
 
         // Start job
+        cacheService.jobData.delete() // Clear previous job data
         stockCheckerJob.start()
+        stockCheckerJob.execute()
         console.log('Stock checker job started')
       })
       .catch((err) => {

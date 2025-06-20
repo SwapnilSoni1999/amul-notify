@@ -12,7 +12,7 @@ Amul Stock Bot is a Telegram bot that lets you monitor the availability of Amul'
 - ✅ Track specific products for stock changes
 - 📦 Get notified when products are back in stock
 - 📉 View current inventory availability
-- ⚡ Fast, real-time product updates (checked every minute)
+- ⚡ Fast, real-time product updates (checked every 5 minutes)
 
 ---
 

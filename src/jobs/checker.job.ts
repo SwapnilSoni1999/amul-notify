@@ -10,18 +10,22 @@ import { logToChannel } from '@/utils/logger.util'
 import { schedule } from 'node-cron'
 
 const stockCheckerJob = schedule(
-  '* * * * *',
+  '*/5 * * * *', // Every 5 minutes
   async () => {
     try {
       const freshProducts = await amulService.getProteinProducts({
         bypassCache: true
       })
+      console.log(`Fetched fresh products:`, freshProducts.length)
       const cachedProducts = await cacheService.jobData.get()
-      if (!cachedProducts) {
-        await cacheService.jobData.set(freshProducts)
+      console.log(`Fetched cached products:`, cachedProducts?.length)
+      if (!cachedProducts?.length) {
+        console.log(`Setting fresh products:`, freshProducts.length)
+        const resp = await cacheService.jobData.set(freshProducts)
+        console.log(`Cache set response:`, resp)
         return
       }
-      console.log(`cachedProducts`, cachedProducts)
+      console.log(`cachedProducts`, cachedProducts.length)
 
       // map through fresh products and check if any have changed
       const changedProducts = freshProducts.filter((freshProduct) => {

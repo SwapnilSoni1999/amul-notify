@@ -77,7 +77,9 @@ const getProteinProducts = async (opts?: {
     }
   )
 
-  cacheService.products.set(response.data)
+  if (!bypassCache) {
+    await cacheService.products.set(response.data)
+  }
 
   return response.data.data
 }
