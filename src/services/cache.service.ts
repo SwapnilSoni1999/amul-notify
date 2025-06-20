@@ -1,9 +1,9 @@
 import redis from '@/redis'
-import { AmulProductsResponse } from '@/types/amul.types'
+import { AmulProduct, AmulProductsResponse } from '@/types/amul.types'
 
 const products = {
-  set: (value: AmulProductsResponse) => {
-    redis.set(
+  set: async (value: AmulProductsResponse) => {
+    await redis.set(
       'amul:products',
       JSON.stringify(value),
       'EX',
@@ -17,6 +17,23 @@ const products = {
   }
 }
 
+const jobData = {
+  set: async (value: AmulProduct[]) => {
+    await redis.set(
+      'amul:products:job',
+      JSON.stringify(value),
+      'EX',
+      120
+      // Cache for 120 seconds
+    )
+  },
+  get: async (): Promise<AmulProduct[] | null> => {
+    const cachedData = await redis.get('amul:products')
+    return cachedData ? JSON.parse(cachedData) : null
+  }
+}
+
 export default {
-  products
+  products,
+  jobData
 }

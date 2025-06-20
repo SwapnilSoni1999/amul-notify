@@ -46,7 +46,7 @@ Or search for `@AmulOSSBot` in Telegram.
 ## 📦 Installation (Self-host)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/amul-stock-bot.git
+git clone https://github.com/SwapnilSoni1999/amul-stock-bot.git
 cd amul-stock-bot
 pnpm install
 cp .env.example .env # Fill in your Telegram Bot Token

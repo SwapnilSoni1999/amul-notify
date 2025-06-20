@@ -10,10 +10,14 @@ const randomUserAgents = [
   'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'
 ]
 
-const getProteinProducts = async (): Promise<AmulProduct[]> => {
+const getProteinProducts = async (opts?: {
+  bypassCache?: boolean
+}): Promise<AmulProduct[]> => {
+  const { bypassCache = false } = opts || {}
+
   const cachedProducts = await cacheService.products.get()
 
-  if (cachedProducts) {
+  if (cachedProducts && !bypassCache) {
     return cachedProducts.data
   }
 
