@@ -6,10 +6,14 @@ import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 
-export const trackedCommand: MiddlewareFn<CommandContext> = async (ctx) => {
+export const trackedCommand: MiddlewareFn<CommandContext> = async (
+  ctx,
+  next
+) => {
   const trackedProducts = ctx.trackedProducts
   if (trackedProducts.length === 0) {
-    return ctx.reply('❌ You are not tracking any products.')
+    ctx.reply('❌ You are not tracking any products.')
+    return next()
   }
 
   const products = await amulService.getProteinProducts()
@@ -42,7 +46,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (ctx) => {
 
         return [
           formatProductDetails(product, isAvlblToPurchase, index),
-          isTracked ? untrackBtn : isAvlblToPurchase ? null : trackBtn
+          isTracked ? untrackBtn : trackBtn
         ].join('\n')
       })
     ))
@@ -54,4 +58,6 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (ctx) => {
       is_disabled: true
     }
   })
+
+  next()
 }

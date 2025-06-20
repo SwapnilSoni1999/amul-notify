@@ -8,6 +8,7 @@ import { withCatchAsync } from './utils/withCatchAsync.util'
 import { productsCommand } from './commands/products.command'
 import { onlyPvtChat } from './middlewares/onlyPvtChat.middleware'
 import { trackedCommand } from './commands/tracked.command'
+import { loggerMiddleware } from './middlewares/logger.middleware'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -19,6 +20,8 @@ bot.start(withCatchAsync(startCommand))
 
 bot.command('products', withCatchAsync(productsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
+
+bot.use(loggerMiddleware)
 
 bot.catch((err, ctx) => {
   console.error('Error in bot:', err)

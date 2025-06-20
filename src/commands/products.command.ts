@@ -5,7 +5,10 @@ import { formatProductDetails } from '@/utils/format.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 
-export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
+export const productsCommand: MiddlewareFn<CommandContext> = async (
+  ctx,
+  next
+) => {
   const products = await amulService.getProteinProducts()
   //   console.log('Products:', products)
 
@@ -31,7 +34,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
 
         return [
           formatProductDetails(product, isAvlblToPurchase, index),
-          isTracked ? untrackBtn : isAvlblToPurchase ? null : trackBtn
+          isTracked ? untrackBtn : trackBtn
         ]
           .filter(Boolean)
           .join('\n')
@@ -45,5 +48,6 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (ctx) => {
       is_disabled: true
     }
   })
-  console.log('ctx.trackedProducts:', ctx.trackedProducts)
+
+  next()
 }

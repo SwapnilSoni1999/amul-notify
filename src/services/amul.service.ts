@@ -1,12 +1,45 @@
 import { AmulProduct, AmulProductsResponse } from '@/types/amul.types'
 import axios from 'axios'
 import cacheService from './cache.service'
+import { v4 as uuidv4 } from 'uuid'
+
+const randomUserAgents = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+  'Mozilla/5.0 (X11; Linux x86_64)',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)'
+]
 
 const getProteinProducts = async (): Promise<AmulProduct[]> => {
   const cachedProducts = await cacheService.products.get()
 
   if (cachedProducts) {
     return cachedProducts.data
+  }
+
+  const headers = {
+    accept: 'application/json, text/plain, */*',
+    'accept-language': 'en-US,en;q=0.9',
+    base_url: 'https://shop.amul.com/en/browse/protein',
+    'cache-control': 'no-cache',
+    frontend: '1',
+    pragma: 'no-cache',
+    priority: 'u=1, i',
+    referer: 'https://shop.amul.com/',
+    'sec-ch-ua': '"Chromium";v="114", "Not-A.Brand";v="99"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Linux"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'sec-gpc': '1',
+    tid: `${Date.now()}:${Math.floor(Math.random() * 999)}:${uuidv4().replace(
+      /-/g,
+      ''
+    )}`,
+    'user-agent':
+      randomUserAgents[Math.floor(Math.random() * randomUserAgents.length)],
+    cookie: '' // If you rotate sessions, can be dynamic
   }
 
   const response = await axios.get<AmulProductsResponse>(
@@ -50,29 +83,7 @@ const getProteinProducts = async (): Promise<AmulProduct[]> => {
         cdc: '1m',
         substore: '66505ff06510ee3d5903fd42'
       },
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        'accept-language': 'en-US,en;q=0.9,hi;q=0.8',
-        base_url: 'https://shop.amul.com/en/browse/protein',
-        'cache-control': 'no-cache',
-        frontend: '1',
-        pragma: 'no-cache',
-        priority: 'u=1, i',
-        referer: 'https://shop.amul.com/',
-        'sec-ch-ua':
-          '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Linux"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'sec-gpc': '1',
-        tid: '1750419337320:873:72ef26559a33895ccec4eed4abb973879c4d103a2fc958af51fa4ca872b89c80',
-        'user-agent':
-          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-        cookie:
-          'jsessionid=s%3AsyjOZWAFo6cF5bkZ%2BRxd8d2C.33mSOHSV0z7loD6f0HmT6HbHolU2CE4Xz2MFfazaq%2Fw; __cf_bm=5wv3zyrFex.JXrWOjwMbEtRfHBNRpCpFmui.3NFhPlI-1750419328-1.0.1.1-LEM.xx25GynvzN2ign7_XJpwiJrGcjmTEy4EbSSy9BvdnHb44oB493XDfIInf3CddgTfcgIEmRjAIhy81ZLbL2nCcKHLhCR8LulvGyCvdco'
-      },
+      headers,
       withCredentials: true
     }
   )
