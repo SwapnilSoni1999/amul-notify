@@ -1,7 +1,7 @@
 import { MyContext } from '@/types/context.types'
 import { MiddlewareFn } from 'telegraf'
 
-const RATE_LIMIT = 5 // max allowed actions
+const RATE_LIMIT = 10 // max allowed actions
 const WINDOW_MS = 60 * 1000 // 1 minute in milliseconds
 
 // Map<userId, timestamp[]>
@@ -25,7 +25,7 @@ export const rateLimit: MiddlewareFn<MyContext> = async (ctx, next) => {
 
   if (recentLogs.length > RATE_LIMIT) {
     return ctx.reply(
-      `🚫 Rate limit exceeded. \nPlease try again after couple of minutes.`
+      `🚫 Rate limit exceeded. Looks like you're going too fast. \nPlease try again after couple of minutes.`
     )
   }
 
