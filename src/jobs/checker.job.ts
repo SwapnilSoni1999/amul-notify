@@ -93,7 +93,7 @@ const stockCheckerJob = schedule(
           formatProductDetails(product, isAvailablForPurchase, 0),
           '',
           // Show untracked info
-          `The product is now untracked. You can track it again using the button below.`
+          `<i>The product is now untracked. You can track it again using the button below.</i>`
         ].join('\n')
 
         if (!user.tgId) {
