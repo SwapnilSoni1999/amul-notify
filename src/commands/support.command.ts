@@ -1,6 +1,6 @@
 import { CommandContext } from '@/types/context.types'
 import { MiddlewareFn } from 'telegraf'
-import { inlineKeyboard } from 'telegraf/typings/markup'
+import { inlineKeyboard } from 'telegraf/markup'
 
 export const supportCommand: MiddlewareFn<CommandContext> = async (
   ctx,

@@ -9,7 +9,7 @@ import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { schedule } from 'node-cron'
-import { inlineKeyboard } from 'telegraf/typings/markup'
+import { inlineKeyboard } from 'telegraf/markup'
 
 const stockCheckerJob = schedule(
   '*/5 * * * *', // Every 5 minutes
