@@ -16,12 +16,6 @@ export const supportCommand: MiddlewareFn<CommandContext> = async (
         text: `Contact Developer`,
         url: `https://t.me/SoniSins`
       }
-    ],
-    [
-      {
-        text: `💳 Donate via UPI`,
-        url: `https://razorpay.me/@10xdev`
-      }
     ]
   ])
 
