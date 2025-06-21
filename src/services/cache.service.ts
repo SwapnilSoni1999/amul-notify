@@ -7,7 +7,7 @@ const products = {
       'amul:products',
       JSON.stringify(value),
       'EX',
-      60
+      5 * 60 // Cache for 5 minutes
       // Cache for 60 seconds
     )
   },
