@@ -89,12 +89,28 @@ const stockCheckerJob = schedule(
           continue
         }
 
-        bot.telegram.sendMessage(user.tgId!, message, {
-          parse_mode: 'HTML',
-          link_preview_options: {
-            is_disabled: true
-          }
-        })
+        bot.telegram
+          .sendMessage(user.tgId!, message, {
+            parse_mode: 'HTML',
+            link_preview_options: {
+              is_disabled: true
+            }
+          })
+          .catch((err) => {
+            console.error(
+              `Failed to send message to user ${user._id}: ${err.message}`
+            )
+            logToChannel(
+              `❌ Failed to send message to user ${user._id}: ${err.message}`
+            )
+          })
+          .finally(async () => {
+            // remove the tracked product from database
+            await ProductModel.findOneAndDelete({
+              sku: product.sku,
+              trackedBy: user._id
+            })
+          })
       }
     } catch (err) {
       console.error('Error in check-stock-job:', err)
