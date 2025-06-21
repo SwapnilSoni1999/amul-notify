@@ -34,6 +34,14 @@ const UserSchema = new Schema(
     isAdmin: {
       type: Boolean,
       default: false
+    },
+    pincode: {
+      type: String,
+      required: false
+    },
+    substore: {
+      type: String,
+      required: false
     }
   },
   {

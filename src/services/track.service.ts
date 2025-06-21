@@ -1,6 +1,5 @@
 import ProductModel from '@/models/product.model'
 import { MyContext } from '@/types/context.types'
-import amulService from './amul.service'
 
 export const untrackProduct = async (ctx: MyContext, sku: string) => {
   const existingProduct = await ProductModel.findOneAndDelete({
@@ -8,7 +7,7 @@ export const untrackProduct = async (ctx: MyContext, sku: string) => {
     trackedBy: ctx.user._id
   })
 
-  const products = await amulService.getProteinProducts()
+  const products = await ctx.amul.getProteinProducts()
   const product = products.find((p) => p.sku === sku)
 
   if (!existingProduct) {
@@ -32,7 +31,7 @@ export const trackProduct = async (ctx: MyContext, sku: string) => {
     trackedBy: ctx.user._id
   })
 
-  const products = await amulService.getProteinProducts()
+  const products = await ctx.amul.getProteinProducts()
   const product = products.find((p) => p.sku === sku)!
 
   if (existingProduct) {

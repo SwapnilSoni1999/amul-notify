@@ -10,6 +10,11 @@ import { onlyPvtChat } from '@/middlewares/onlyPvtChat.middleware'
 import { trackedCommand } from '@/commands/tracked.command'
 import { loggerMiddleware } from '@/middlewares/logger.middleware'
 import { supportCommand } from '@/commands/support.command'
+import { setPincodeCommand } from './commands/setPincode.command'
+import { pincodeGuard } from './middlewares/pincodeGuard.middleware'
+import { pincodeCommand } from './commands/pincode.command'
+import { isAdmin } from './middlewares/isAdmin.middleware'
+import { broadcastCommand } from './commands/broadcast.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -19,9 +24,20 @@ bot.use(withCatchAsync(setCommands))
 
 bot.start(withCatchAsync(startCommand))
 
+bot.command('setpincode', withCatchAsync(setPincodeCommand))
+
+bot.use(withCatchAsync(pincodeGuard))
+
 bot.command('products', withCatchAsync(productsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
+bot.command('pincode', withCatchAsync(pincodeCommand))
+
+bot.command(
+  'broadcast',
+  withCatchAsync(isAdmin),
+  withCatchAsync(broadcastCommand)
+)
 
 bot.use(loggerMiddleware)
 

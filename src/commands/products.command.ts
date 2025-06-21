@@ -1,4 +1,3 @@
-import amulService from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { formatProductDetails } from '@/utils/format.util'
@@ -9,7 +8,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   ctx,
   next
 ) => {
-  const products = await amulService.getProteinProducts()
+  const products = await ctx.amul.getProteinProducts()
   //   console.log('Products:', products)
 
   const message: string = [

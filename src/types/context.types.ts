@@ -1,3 +1,4 @@
+import { AmulApi } from '@/libs/amulApi.lib'
 import { HydratedProduct } from '@/models/product.model'
 import { HydratedUser } from '@/models/user.model'
 import { Context, NarrowedContext, Scenes } from 'telegraf'
@@ -12,6 +13,7 @@ import { CommandContextExtn } from 'telegraf/typings/telegram-types'
 export interface MyContext<U extends Deunionize<Update> = Update>
   extends Context<U> {
   user: HydratedUser
+  amul: AmulApi
   trackedProducts: HydratedProduct[]
   scene: Scenes.SceneContextScene<MyContext, Scenes.WizardSessionData>
   // declare wizard type
