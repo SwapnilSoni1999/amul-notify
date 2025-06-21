@@ -7,7 +7,9 @@ import { isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
+import { startCommandLink } from '@/utils/telegram.util'
 import { schedule } from 'node-cron'
+import { inlineKeyboard } from 'telegraf/typings/markup'
 
 const stockCheckerJob = schedule(
   '*/5 * * * *', // Every 5 minutes
@@ -77,9 +79,21 @@ const stockCheckerJob = schedule(
           continue
         }
 
+        const keyboard = inlineKeyboard([
+          [
+            {
+              text: 'Track Again',
+              url: await startCommandLink(`track_${product.sku}`)
+            }
+          ]
+        ])
+
         const message = [
           `${emojis.fire} <b>Product Update: ${product.name}</b>`,
-          formatProductDetails(product, isAvailablForPurchase, 0)
+          formatProductDetails(product, isAvailablForPurchase, 0),
+          '',
+          // Show untracked info
+          `The product is now untracked. You can track it again using the button below.`
         ].join('\n')
 
         if (!user.tgId) {
@@ -92,6 +106,7 @@ const stockCheckerJob = schedule(
         bot.telegram
           .sendMessage(user.tgId!, message, {
             parse_mode: 'HTML',
+            reply_markup: keyboard.reply_markup,
             link_preview_options: {
               is_disabled: true
             }

@@ -1,14 +1,15 @@
 import { Telegraf } from 'telegraf'
 import { MyContext } from '@/types/context.types'
 import env from '@/env'
-import { startCommand } from './commands/start.command'
-import { sessionMiddleware } from './middlewares/session.middleware'
-import { setCommands } from './middlewares/setCommands.middleware'
-import { withCatchAsync } from './utils/withCatchAsync.util'
-import { productsCommand } from './commands/products.command'
-import { onlyPvtChat } from './middlewares/onlyPvtChat.middleware'
-import { trackedCommand } from './commands/tracked.command'
-import { loggerMiddleware } from './middlewares/logger.middleware'
+import { startCommand } from '@/commands/start.command'
+import { sessionMiddleware } from '@/middlewares/session.middleware'
+import { setCommands } from '@/middlewares/setCommands.middleware'
+import { withCatchAsync } from '@/utils/withCatchAsync.util'
+import { productsCommand } from '@/commands/products.command'
+import { onlyPvtChat } from '@/middlewares/onlyPvtChat.middleware'
+import { trackedCommand } from '@/commands/tracked.command'
+import { loggerMiddleware } from '@/middlewares/logger.middleware'
+import { supportCommand } from '@/commands/support.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -20,6 +21,7 @@ bot.start(withCatchAsync(startCommand))
 
 bot.command('products', withCatchAsync(productsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
+bot.command('support', withCatchAsync(supportCommand))
 
 bot.use(loggerMiddleware)
 
