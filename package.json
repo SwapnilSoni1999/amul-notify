@@ -9,7 +9,7 @@
     "build": "npm run lint && tsc && tsc-alias",
     "start": "npm run env:prod -- node dist/server.js",
     "dev": "npm run env:dev -- tsx watch src/server.ts",
-    "lint": "eslint . --ext .ts,.js --fix",
+    "lint": "eslint . --ext .ts",
     "prettier": "prettier --write .",
     "seed:dev": "dotenv -e .env.dev -- tsx src/seeders/index.ts",
     "seed:prod": "dotenv -e .env.prod -- node dist/seeders/index.js"

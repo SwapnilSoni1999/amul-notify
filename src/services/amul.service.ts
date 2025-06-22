@@ -23,7 +23,7 @@ export const initiateAmulSessions = async () => {
 export const getAmulApiFromSubstore = async (substore: string) => {
   let existingApi: AmulApi | undefined
   for (const [key, api] of substoreSessions.entries()) {
-    if (key.substore === substore) {
+    if (key === substore) {
       existingApi = api
       break
     }
