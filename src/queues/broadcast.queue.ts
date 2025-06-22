@@ -65,10 +65,7 @@ export const sendMessageQueue = async (payload: {
     {
       attempts: 1, // Retry up to 1 time if it fails
       jobId: String(payload.chatId), // Use chatId as job ID to avoid duplicates
-      backoff: {
-        type: 'exponential',
-        delay: 1000 // Initial delay of 1 second
-      }
+      removeOnComplete: true // Remove job from queue after completion
     }
   )
 
