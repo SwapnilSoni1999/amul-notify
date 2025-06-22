@@ -9,9 +9,18 @@ export default tseslint.config(
   tseslint.configs.recommended,
   prettier,
   {
+    files: ['src/**/*.{js,ts,jsx,tsx}'],
+
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-useless-escape': 'off'
-    }
+    },
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/build/**',
+      '**/out/**'
+    ]
   }
 )

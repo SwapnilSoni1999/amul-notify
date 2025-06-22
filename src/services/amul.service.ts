@@ -1,7 +1,5 @@
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
-import UserModel, { IUser } from '@/models/user.model'
 import { sleep } from '@/utils'
-import { FilterQuery } from 'mongoose'
 import { getDistinctPincodes } from './user.service'
 
 export const initiateAmulSessions = async () => {
