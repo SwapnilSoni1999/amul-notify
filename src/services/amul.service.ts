@@ -21,11 +21,18 @@ export const initiateAmulSessions = async () => {
       .lean()
 
     for (const user of users) {
-      await getOrCreateAmulApi(user.pincode)
-      console.log(
-        `Initiated session for user with pincode: ${user.pincode}, substore: ${user.substore}`
-      )
-      await sleep(30 * 1000) // Sleep for 30 seconds between each session initiation
+      try {
+        await getOrCreateAmulApi(user.pincode)
+        console.log(
+          `Initiated session for user with pincode: ${user.pincode}, substore: ${user.substore}`
+        )
+        await sleep(30 * 1000) // Sleep for 30 seconds between each session initiation
+      } catch (err) {
+        console.error(
+          `Failed to initiate session for user with pincode: ${user.pincode}, substore: ${user.substore}`,
+          err
+        )
+      }
     }
   }
 }
