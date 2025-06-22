@@ -9,7 +9,7 @@ export const amulSessionsCommand: MiddlewareFn<CommandContext> = async (
   const message: string[] = []
 
   for (const key of substoreSessions.keys()) {
-    message.push(`${substoreSessions.get(key)}`)
+    message.push(`${key}`)
   }
 
   ctx.reply(
