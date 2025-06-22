@@ -4,6 +4,7 @@ import bot from '@/bot'
 import redis from '@/redis'
 import { stockCheckerJob } from './jobs/checker.job'
 import { initiateAmulSessions } from './services/amul.service'
+import { loadProxies } from './services/proxy.service'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -18,6 +19,9 @@ mongoose
     console.log('Connected to MongoDB successfully')
 
     initiateAmulSessions()
+    if (env.PROXY_ENABLED) {
+      loadProxies()
+    }
 
     bot
       .launch(() => {

@@ -1,5 +1,5 @@
-import env from '@/env'
 import cacheService from '@/services/cache.service'
+import { getProxy } from '@/services/proxy.service'
 import {
   AmulPincodeResponse,
   AmulProduct,
@@ -7,9 +7,9 @@ import {
   AmulSessionInfo,
   PincodeRecord
 } from '@/types/amul.types'
-import axios, { AxiosProxyConfig } from 'axios'
+import axios from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
-import { CookieJar } from 'tough-cookie'
+import { CookieJar, parse as parseCookie } from 'tough-cookie'
 
 const substoreList = [
   {
@@ -369,21 +369,12 @@ export class AmulApi {
   private pincodeRecord!: PincodeRecord
   private amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
+  private jar: CookieJar
 
   constructor() {
     const jar = new CookieJar()
 
-    const proxyConfig: AxiosProxyConfig | false = env.PROXY_ENABLED
-      ? {
-          host: env.PROXY_HOST,
-          port: env.PROXY_PORT,
-          protocol: env.PROXY_PROTOCOL,
-          auth: {
-            username: env.PROXY_USERNAME,
-            password: env.PROXY_PASSWORD
-          }
-        }
-      : false
+    this.jar = jar
 
     axios.defaults.jar = jar // Set the cookie jar globally for axios
 
@@ -391,8 +382,7 @@ export class AmulApi {
       axios.create({
         jar, // tough‐cookie jar
         withCredentials: true,
-        headers: defaultHeaders,
-        proxy: proxyConfig
+        headers: defaultHeaders
       })
     )
 
@@ -400,9 +390,43 @@ export class AmulApi {
   }
 
   public async initCookies() {
-    await this.amulApi.get('https://shop.amul.com/en/browse/protein')
+    const cookieResponse = await this.amulApi.get(
+      'https://shop.amul.com/en/browse/protein',
+      {
+        proxy: getProxy()
+      }
+    )
+
+    console.log('Cookie Response:', cookieResponse.headers['set-cookie'])
+
+    if (!cookieResponse.headers['set-cookie']) {
+      throw new Error('No cookies received from Amul API')
+    }
+
+    const parsedCookies = cookieResponse.headers['set-cookie'].map(
+      (cookieStr) => parseCookie(cookieStr, { loose: true })
+    )
+
+    for (const cookie of parsedCookies) {
+      if (!cookie || !cookie.key) {
+        console.warn('Invalid cookie:', cookie)
+        continue
+      }
+
+      await this.jar.setCookie(cookie, 'https://shop.amul.com')
+    }
+
+    console.log('Parsed Cookies:', parsedCookies)
+
     const infoResponse = await this.amulApi.get<string>(
-      `https://shop.amul.com/user/info.js?_v=${Date.now()}`
+      `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
+      {
+        proxy: getProxy(),
+        headers: {
+          ...defaultHeaders,
+          cookie: await this.jar.getCookieString('https://shop.amul.com')
+        }
+      }
     )
     console.log('User Info Response:', infoResponse.data)
     const sessionObj = JSON.parse(
@@ -420,6 +444,13 @@ export class AmulApi {
         data: {
           store: record.substore
         }
+      },
+      {
+        headers: {
+          ...defaultHeaders,
+          cookie: await this.jar.getCookieString('https://shop.amul.com')
+        },
+        proxy: getProxy()
       }
     )
     console.log('Set Pincode Response:', response.data)
@@ -446,7 +477,14 @@ export class AmulApi {
 
   public async searchPincode(pincode: string) {
     const response = await this.amulApi.get<AmulPincodeResponse>(
-      `http://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`
+      `http://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
+      {
+        proxy: getProxy(),
+        headers: {
+          ...defaultHeaders,
+          cookie: await this.jar.getCookieString('https://shop.amul.com')
+        }
+      }
     )
 
     return response.data.records
@@ -496,19 +534,29 @@ export class AmulApi {
 
     console.log(`SubstoreId:`, this.getSubstoreId())
 
+    console.log(
+      `Cookies:`,
+      await this.jar.getCookieString('https://shop.amul.com')
+    )
+
+    console.log(`Headers:`, {
+      ...defaultHeaders,
+      cookie: await this.jar.getCookieString('https://shop.amul.com')
+      // tid: await this.calculateTidHeader()
+    })
     const response = await axios.get<AmulProductsResponse>(
-      `http://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&cdc=1m&substore=${this.getSubstoreId()}`,
+      `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=24&total=1&start=0&cdc=1m&substore=${this.getSubstoreId()}`,
       {
-        jar: axios.defaults.jar,
-        withCredentials: true,
+        proxy: getProxy(),
         headers: {
           ...defaultHeaders,
-          tid: await this.calculateTidHeader()
+          cookie: await this.jar.getCookieString('https://shop.amul.com')
+          // tid: await this.calculateTidHeader()
         }
       }
     )
 
-    // console.log('Response:', response.request)
+    console.log('Response:', response.request)
 
     await cacheService.products.set(
       {

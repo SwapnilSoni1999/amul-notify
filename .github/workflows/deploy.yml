@@ -35,6 +35,8 @@ jobs:
           echo "PROXY_PASSWORD=${{ secrets.PROD_PROXY_PASSWORD }}" >> .env.prod
           echo "PROXY_PROTOCOL=${{ vars.PROD_PROXY_PROTOCOL }}" >> .env.prod
 
+          echo ${{ vars.PROXY_LIST }} > proxylist.txt
+
       - name: Build Docker image
         run: |
           docker build --network=host -t amul-notify-bot .
