@@ -26,6 +26,15 @@ jobs:
           echo "MONGO_URI=${{ secrets.PROD_MONGO_URI }}" >> .env.prod
           echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" >> .env.prod
 
+          echo "TRACKER_ENABLED=${{ vars.PROD_TRACKER_ENABLED }}" >> .env.prod
+
+          echo "PROXY_ENABLED=${{ vars.PROD_PROXY_ENABLED }}" >> .env.prod
+          echo "PROXY_HOST=${{ secrets.PROD_PROXY_HOST }}" >> .env.prod
+          echo "PROXY_PORT=${{ secrets.PROD_PROXY_PORT }}" >> .env.prod
+          echo "PROXY_USERNAME=${{ secrets.PROD_PROXY_USERNAME }}" >> .env.prod
+          echo "PROXY_PASSWORD=${{ secrets.PROD_PROXY_PASSWORD }}" >> .env.prod
+          echo "PROXY_PROTOCOL=${{ vars.PROD_PROXY_PROTOCOL }}" >> .env.prod
+
       - name: Build Docker image
         run: |
           docker build --network=host -t amul-notify-bot .
