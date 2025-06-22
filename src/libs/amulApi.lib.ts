@@ -445,7 +445,7 @@ export class AmulApi {
   }
 
   public async searchPincode(pincode: string) {
-    const response = await axios.get<AmulPincodeResponse>(
+    const response = await this.amulApi.get<AmulPincodeResponse>(
       `http://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`
     )
 
