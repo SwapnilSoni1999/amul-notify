@@ -524,7 +524,7 @@ export class AmulApi {
 const createAmulApi = async (pincode: string) => {
   console.log(`Creating new AmulApi instance for pincode: ${pincode}`)
   const amulApi = new AmulApi()
-  console.log('Initialized AmulApi instance:', amulApi)
+  console.log('Initialized AmulApi instance')
   await amulApi.initCookies()
   console.log('Cookies initialized for AmulApi instance')
 
