@@ -11,9 +11,6 @@ RUN npm install
 # Copy .env.prod file if it exists
 COPY .env.prod .env.prod
 
-# Copy proxylist.txt if it exists
-COPY proxylist.txt proxylist.txt
-
 # Copy source files
 COPY . .
 
