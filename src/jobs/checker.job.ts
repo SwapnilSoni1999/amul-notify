@@ -182,7 +182,7 @@ const stockCheckerJob = schedule(
                 })
               })
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error(
             `Error processing substore ${key.substore}: ${err.message}`
           )
