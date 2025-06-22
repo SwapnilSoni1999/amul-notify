@@ -1,6 +1,7 @@
 import { MiddlewareFn, TelegramError } from 'telegraf'
 import { logToChannel } from './logger.util'
 import { MyContext } from '@/types/context.types'
+import UserModel from '@/models/user.model'
 
 export function withCatchAsync<T extends MyContext>(
   fn: MiddlewareFn<T>
@@ -17,8 +18,9 @@ export function withCatchAsync<T extends MyContext>(
       ) {
         console.warn(`User ${ctx.from?.id} has blocked the bot.`)
         logToChannel(
-          `⚠️ User ${ctx.from?.id} has blocked the bot. marking as blocked in Database.`
+          `⚠️ User ${ctx.from?.id} has blocked the bot. Removing from database.`
         )
+        await UserModel.deleteOne({ tgId: ctx.from?.id })
 
         return // Don't propagate further
       }

@@ -37,6 +37,9 @@ broadcastQueue.process(5, async (job) => {
           is_disabled: true
         }
       })
+      .then(() => {
+        console.log(`Message sent to ${chatId}: ${text}`)
+      })
       .catch((err) => {
         if (err instanceof TelegramError) {
           console.log({

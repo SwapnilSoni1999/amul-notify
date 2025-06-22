@@ -25,7 +25,7 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
       'This may take a while, please be patient...'
   )
 
-  const lastUpdatedAt = Date.now()
+  let lastUpdatedAt = Date.now()
   const waitIntervalMs = 2 * 1000 // 2 seconds
 
   broadcastMessage(messageText, async (completd, total, failed) => {
@@ -41,6 +41,8 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
       if (Date.now() - lastUpdatedAt < waitIntervalMs) {
         return // Skip update if not enough time has passed
       }
+
+      lastUpdatedAt = Date.now()
 
       await ctx.telegram.editMessageText(
         ctx.chat.id,
