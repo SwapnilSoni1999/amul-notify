@@ -9,7 +9,7 @@ Amul Stock Bot is a Telegram bot that lets you monitor the availability of Amul'
 ## 🚀 Features
 
 - 🔍 Browse all Amul protein products
-- ✅ Track specific products for stock changes
+- ✅ Track specific products for stock changes, That too within your pincode!
 - 📦 Get notified when products are back in stock
 - 📉 View current inventory availability
 - ⚡ Fast, real-time product updates (checked every 5 minutes)
