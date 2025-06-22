@@ -338,11 +338,11 @@ const substoreList = [
   }
 ]
 
-interface AmulSessionKey {
-  pincode: string
-  substore: string
-}
-export const substoreSessions: Map<AmulSessionKey, AmulApi> = new Map()
+// interface AmulSessionKey {
+//   pincode: string
+//   substore: string
+// }
+export const substoreSessions: Map<string, AmulApi> = new Map()
 
 const defaultHeaders = {
   accept: 'application/json, text/plain, */*',
@@ -457,20 +457,15 @@ export class AmulApi {
     console.log('Set Pincode Response:', response.data)
     this.pincodeRecord = record
 
-    let existingSubstore: AmulApi | undefined = undefined
-
-    for (const [key, session] of substoreSessions.entries()) {
-      if (key.pincode === record.pincode.toString()) {
-        existingSubstore = session
-        break
-      }
-    }
+    const existingSubstore: AmulApi | undefined = substoreSessions.get(
+      record.substore.toString()
+    )
 
     if (!existingSubstore) {
-      substoreSessions.set(
-        { pincode: record.pincode.toString(), substore: record.substore },
-        this
-      )
+      substoreSessions.set(record.substore.toString(), this)
+      console.log(`Added new substore session for ${record.substore}`)
+    } else {
+      console.log(`Using existing substore session for ${record.substore}`)
     }
 
     return response.data
@@ -594,24 +589,22 @@ const createAmulApi = async (pincode: string) => {
   return amulApi
 }
 
-export const getOrCreateAmulApi = async (pincode?: string | null) => {
-  if (!pincode) {
+export const getOrCreateAmulApi = async (substore?: string | null) => {
+  if (!substore) {
     return {} as AmulApi
   }
   let existingSession: AmulApi | undefined
   for (const [key, session] of substoreSessions.entries()) {
-    if (key.pincode === pincode) {
+    if (key === substore) {
       existingSession = session
-      console.log(
-        `Found existing session for pincode ${pincode} with substore ${key.substore}`
-      )
+      console.log(`Found existing session for substore ${key}, using it.`)
       break
     }
   }
 
   console.log(
-    `getOrCreateAmulApi called with pincode: ${pincode}, existing session: ${!!existingSession}`
+    `getOrCreateAmulApi called with substore: ${substore}, existing session: ${!!existingSession}`
   )
 
-  return existingSession || (await createAmulApi(pincode))
+  return existingSession || (await createAmulApi(substore))
 }
