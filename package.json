@@ -38,7 +38,6 @@
     "mongoose": "^8.16.0",
     "node-cron": "^4.1.0",
     "telegraf": "^4.16.3",
-    "telegraf-broadcast": "^2.4.5",
     "tough-cookie": "^5.1.2",
     "tsc-alias": "^1.8.16",
     "zod": "^3.25.67"
