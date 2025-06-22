@@ -8,9 +8,10 @@ const broadcastQueue = new Bull<{
   text: string
 }>('broadcast', {
   // 30 messages per second
+
   limiter: {
-    max: 15, // for safety, but effectively 30 per second
-    duration: 2000 // 2 seconds
+    max: 30,
+    duration: 2000 // keeping it at 30 messages per 2 seconds
   },
   redis: {
     host: env.REDIS_HOST,
@@ -19,7 +20,7 @@ const broadcastQueue = new Bull<{
   }
 })
 
-broadcastQueue.process(async (job, done) => {
+broadcastQueue.process(5, async (job) => {
   const { chatId, text } = job.data
   console.log(`Job data:`, job.data)
 
@@ -44,10 +45,10 @@ broadcastQueue.process(async (job, done) => {
         }
       })
 
-    done()
+    return
   } catch (error: any) {
     console.error(`Failed to send message to ${chatId}:`, error)
-    done(new Error(`Failed to send message to ${chatId}`))
+    throw new Error(`Failed to send message to ${chatId}`)
   }
 })
 
@@ -63,7 +64,8 @@ export const sendMessageQueue = async (payload: {
       text: payload.text
     },
     {
-      attempts: 1, // Retry up to 1 time if it fails
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
       jobId: String(payload.chatId), // Use chatId as job ID to avoid duplicates
       removeOnComplete: true // Remove job from queue after completion
     }
