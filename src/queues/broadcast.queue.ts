@@ -9,8 +9,8 @@ const broadcastQueue = new Bull<{
 }>('broadcast', {
   // 30 messages per second
   limiter: {
-    max: 29, // for safety, we set max to 29
-    duration: 1000 // 1 second
+    max: 15, // for safety, but effectively 30 per second
+    duration: 2000 // 2 seconds
   },
   redis: {
     host: env.REDIS_HOST,
