@@ -25,6 +25,9 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
       'This may take a while, please be patient...'
   )
 
+  const lastUpdatedAt = Date.now()
+  const waitIntervalMs = 2 * 1000 // 2 seconds
+
   broadcastMessage(messageText, async (completd, total, failed) => {
     try {
       const percentage = Math.round((completd / total) * 100)
@@ -34,6 +37,10 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
       console.log(
         `Broadcast progress: ${completd}/${total} (${percentage}%) - Failed: ${failed}`
       )
+
+      if (Date.now() - lastUpdatedAt < waitIntervalMs) {
+        return // Skip update if not enough time has passed
+      }
 
       await ctx.telegram.editMessageText(
         ctx.chat.id,

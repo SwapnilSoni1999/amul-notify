@@ -510,14 +510,12 @@ export class AmulApi {
 
     // console.log('Response:', response.request)
 
-    if (!bypassCache) {
-      await cacheService.products.set(
-        {
-          substore: this.pincodeRecord.substore
-        },
-        response.data
-      )
-    }
+    await cacheService.products.set(
+      {
+        substore: this.pincodeRecord.substore
+      },
+      response.data
+    )
 
     return response.data.data
   }
