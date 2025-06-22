@@ -443,7 +443,7 @@ export class AmulApi {
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
   }): Promise<AmulProduct[]> {
-    const { bypassCache = true } = opts || {}
+    const { bypassCache = false } = opts || {}
 
     const cachedProducts = await cacheService.products.get({
       substore: this.pincodeRecord.substore
