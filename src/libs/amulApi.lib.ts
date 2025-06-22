@@ -4,9 +4,12 @@ import {
   AmulPincodeResponse,
   AmulProduct,
   AmulProductsResponse,
+  AmulSessionInfo,
   PincodeRecord
 } from '@/types/amul.types'
-import axios, { AxiosInstance, AxiosProxyConfig } from 'axios'
+import axios, { AxiosProxyConfig } from 'axios'
+import { wrapper } from 'axios-cookiejar-support'
+import { CookieJar } from 'tough-cookie'
 
 const substoreList = [
   {
@@ -358,17 +361,18 @@ const defaultHeaders = {
   'sec-fetch-mode': 'cors',
   'sec-fetch-site': 'same-origin',
   'sec-gpc': '1',
-  cookie:
-    'jsessionid=s%3A13K4BQPRS%2F5R%2Bt21P%2FwJLFQU.ot6meLrGBgr5GMEQZPladERWHBDS7M%2FhWE722I9Cg20; __cf_bm=AkggWp6VLswzAJwHOBOjfbJmgdR9rnaXHMQ.9OJMcs8-1750549472-1.0.1.1-c1sJ..xBBa2XFxhGh14fnJpIkndRRzqdd7FU7Z3x0__Hxg4GGI6I0iVSc4TlnUn5bA.c4.W_xGESxDJpsEcCOVKSxTfM7cYrucTUTru6yLY',
   'user-agent':
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
 }
 
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
-  private amulApi: AxiosInstance
+  private amulApi: ReturnType<typeof wrapper>
+  private tid: string | undefined
 
   constructor() {
+    const jar = new CookieJar()
+
     const proxyConfig: AxiosProxyConfig | false = env.PROXY_ENABLED
       ? {
           host: env.PROXY_HOST,
@@ -381,12 +385,32 @@ export class AmulApi {
         }
       : false
 
-    const amulApi = axios.create({
-      headers: defaultHeaders,
-      proxy: proxyConfig
-    })
+    axios.defaults.jar = jar // Set the cookie jar globally for axios
+
+    const amulApi = wrapper(
+      axios.create({
+        jar, // tough‐cookie jar
+        withCredentials: true,
+        headers: defaultHeaders,
+        proxy: proxyConfig
+      })
+    )
 
     this.amulApi = amulApi
+  }
+
+  public async initCookies() {
+    await this.amulApi.get('https://shop.amul.com/en/browse/protein')
+    const infoResponse = await this.amulApi.get<string>(
+      `https://shop.amul.com/user/info.js?_v=${Date.now()}`
+    )
+    console.log('User Info Response:', infoResponse.data)
+    const sessionObj = JSON.parse(
+      infoResponse.data.replace('session = ', '')
+    ) as AmulSessionInfo
+    // console.log('Session Object:', sessionObj.tid)
+    this.tid = sessionObj.tid
+    console.log('TID:', this.tid)
   }
 
   public async setPincode(record: PincodeRecord) {
@@ -440,10 +464,25 @@ export class AmulApi {
     return this.pincodeRecord.pincode
   }
 
+  private async calculateTidHeader(): Promise<string> {
+    const storeID = '62fa94df8c13af2e242eba16' // Amul Store ID
+    const timestamp = Date.now().toString()
+    const encoder = new TextEncoder()
+    const rand = parseInt((1000 * Math.random()).toString(), 10)
+    const sessionID = this.tid!
+    const c = encoder.encode(`${storeID}:${timestamp}:${rand}:${sessionID}`)
+    const data = await crypto.subtle.digest('SHA-256', c)
+    const hash = Array.from(new Uint8Array(data))
+      .map((e) => e.toString(16).padStart(2, '0'))
+      .join('')
+    console.log(`Calculated TID: ${timestamp}:${rand}:${hash}`)
+    return `${timestamp}:${rand}:${hash}`
+  }
+
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
   }): Promise<AmulProduct[]> {
-    const { bypassCache = false } = opts || {}
+    const { bypassCache = true } = opts || {}
 
     const cachedProducts = await cacheService.products.get({
       substore: this.pincodeRecord.substore
@@ -458,8 +497,16 @@ export class AmulApi {
     console.log(`SubstoreId:`, this.getSubstoreId())
 
     const response = await this.amulApi.get<AmulProductsResponse>(
-      `http://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&cdc=1m&substore=${this.getSubstoreId()}`
+      `http://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&cdc=1m&substore=${this.getSubstoreId()}`,
+      {
+        headers: {
+          ...defaultHeaders,
+          tid: await this.calculateTidHeader()
+        }
+      }
     )
+
+    // console.log('Response:', response.request)
 
     if (!bypassCache) {
       await cacheService.products.set(
@@ -477,6 +524,9 @@ export class AmulApi {
 const createAmulApi = async (pincode: string) => {
   console.log(`Creating new AmulApi instance for pincode: ${pincode}`)
   const amulApi = new AmulApi()
+  console.log('Initialized AmulApi instance:', amulApi)
+  await amulApi.initCookies()
+  console.log('Cookies initialized for AmulApi instance')
 
   const records = await amulApi.searchPincode(pincode)
   console.log(`Found records for pincode ${pincode}:`, records)
