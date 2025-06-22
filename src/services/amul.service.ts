@@ -1,5 +1,6 @@
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import UserModel, { IUser } from '@/models/user.model'
+import { sleep } from '@/utils'
 import { FilterQuery } from 'mongoose'
 
 export const initiateAmulSessions = async () => {
@@ -24,6 +25,7 @@ export const initiateAmulSessions = async () => {
       console.log(
         `Initiated session for user with pincode: ${user.pincode}, substore: ${user.substore}`
       )
+      await sleep(30 * 1000) // Sleep for 30 seconds between each session initiation
     }
   }
 }
