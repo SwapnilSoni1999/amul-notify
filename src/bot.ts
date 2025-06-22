@@ -15,6 +15,7 @@ import { pincodeGuard } from './middlewares/pincodeGuard.middleware'
 import { pincodeCommand } from './commands/pincode.command'
 import { isAdmin } from './middlewares/isAdmin.middleware'
 import { broadcastCommand } from './commands/broadcast.command'
+import { amulSessionsCommand } from './commands/amulSessions.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -37,6 +38,11 @@ bot.command(
   'broadcast',
   withCatchAsync(isAdmin),
   withCatchAsync(broadcastCommand)
+)
+bot.command(
+  'sessions',
+  withCatchAsync(isAdmin),
+  withCatchAsync(amulSessionsCommand)
 )
 
 bot.use(loggerMiddleware)

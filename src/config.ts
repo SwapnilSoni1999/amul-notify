@@ -12,5 +12,6 @@ export const userCommands: readonly BotCommand[] = [
 ]
 
 export const adminCommands: readonly BotCommand[] = [
-  { command: 'broadcast', description: 'Broadcast a message to all users' }
+  { command: 'broadcast', description: 'Broadcast a message to all users' },
+  { command: 'sessions', description: 'List all Amul sessions' }
 ]

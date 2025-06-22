@@ -1,16 +1,21 @@
 import bot from '@/bot'
 import env from '@/env'
 import { substoreSessions } from '@/libs/amulApi.lib'
-import ProductModel from '@/models/product.model'
-import { HydratedUser } from '@/models/user.model'
+import ProductModel, { HydratedProduct } from '@/models/product.model'
+import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
+import { Types } from 'mongoose'
 import { schedule } from 'node-cron'
 import { inlineKeyboard } from 'telegraf/markup'
+
+interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
+  trackedBy: IUser & { _id: Types.ObjectId }
+}
 
 const stockCheckerJob = schedule(
   '*/5 * * * *', // Every 5 minutes
@@ -21,7 +26,15 @@ const stockCheckerJob = schedule(
         return
       }
 
+      const traversedSubstores = new Set<string>()
+
       for await (const [key, amulApi] of substoreSessions.entries()) {
+        if (traversedSubstores.has(key.substore)) {
+          console.log(`Skipping already traversed substore: ${key.substore}`)
+          continue
+        }
+        traversedSubstores.add(key.substore)
+
         const freshProducts = await amulApi.getProteinProducts({
           bypassCache: true
         })
@@ -75,9 +88,34 @@ const stockCheckerJob = schedule(
         )
 
         // Notify users about the stock changes
-        const usersToNotify = await ProductModel.find({
-          sku: { $in: changedProducts.map((p) => p.sku) }
-        }).populate<{ trackedBy: HydratedUser }>('trackedBy')
+        const usersToNotify = await ProductModel.aggregate<ProductWithUser>([
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'trackedBy',
+              foreignField: '_id',
+              as: 'user'
+            }
+          },
+          {
+            $unwind: '$user'
+          },
+          {
+            $match: {
+              'user.substore': key.substore
+            }
+          },
+          {
+            $addFields: {
+              trackedBy: '$user'
+            }
+          },
+          {
+            $project: {
+              user: 0 // Remove the temporary joined field
+            }
+          }
+        ])
 
         for (const dbProduct of usersToNotify) {
           const product = changedProducts.find((p) => p.sku === dbProduct.sku)

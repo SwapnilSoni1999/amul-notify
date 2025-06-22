@@ -3,6 +3,7 @@ import env from '@/env'
 import bot from '@/bot'
 import redis from '@/redis'
 import { stockCheckerJob } from './jobs/checker.job'
+import { initiateAmulSessions } from './services/amul.service'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -15,6 +16,8 @@ mongoose
   .connect(env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB successfully')
+
+    initiateAmulSessions()
 
     bot
       .launch(() => {
