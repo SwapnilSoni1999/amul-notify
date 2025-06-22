@@ -370,6 +370,7 @@ export class AmulApi {
   private amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
+  private instanceInitializedAt: number = Date.now()
 
   constructor() {
     const jar = new CookieJar()

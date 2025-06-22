@@ -1,9 +1,11 @@
 import bot from '@/bot'
 import env from '@/env'
-import { substoreSessions } from '@/libs/amulApi.lib'
+import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
-import { IUser } from '@/models/user.model'
+import UserModel, { IUser } from '@/models/user.model'
+import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
+import { getDistinctSubstores } from '@/services/user.service'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
@@ -26,28 +28,41 @@ const stockCheckerJob = schedule(
         return
       }
 
-      const traversedSubstores = new Set<string>()
+      const distinctSubstores = await getDistinctSubstores()
 
-      for await (const [key, amulApi] of substoreSessions.entries()) {
+      for await (const substore of distinctSubstores) {
         try {
-          if (traversedSubstores.has(key.substore)) {
-            console.log(`Skipping already traversed substore: ${key.substore}`)
-            continue
+          let amulApi = await getAmulApiFromSubstore(substore)
+
+          if (!amulApi) {
+            // find any user with this substore and initialize
+            const user = await UserModel.findOne({
+              substore: substore,
+              pincode: { $exists: true }
+            })
+
+            if (!user) {
+              console.warn(
+                `No user found for substore ${substore}. Skipping stock check.`
+              )
+              continue
+            }
+
+            amulApi = await getOrCreateAmulApi(user.pincode)
           }
-          traversedSubstores.add(key.substore)
 
           const freshProducts = await amulApi.getProteinProducts({
             bypassCache: true
           })
           console.log(`Fetched fresh products:`, freshProducts.length)
           const cachedProducts = await cacheService.jobData.get({
-            substore: key.substore
+            substore
           })
           console.log(`Fetched cached products:`, cachedProducts?.length)
           if (!cachedProducts?.length) {
             console.log(`Setting fresh products:`, freshProducts.length)
             const resp = await cacheService.jobData.set(
-              { substore: key.substore },
+              { substore },
               freshProducts
             )
             console.log(`Cache set response:`, resp)
@@ -70,10 +85,7 @@ const stockCheckerJob = schedule(
             )
           })
 
-          await cacheService.jobData.set(
-            { substore: key.substore },
-            freshProducts
-          ) // Update cache with fresh products
+          await cacheService.jobData.set({ substore }, freshProducts) // Update cache with fresh products
 
           if (!changedProducts.length) {
             console.log('No stock changes detected.')
@@ -84,7 +96,7 @@ const stockCheckerJob = schedule(
           // Log the changed products
 
           logToChannel(
-            `🔄 Stock update (${key.pincode}-${key.substore}): ${changedProducts
+            `🔄 Stock update (${substore}): ${changedProducts
               .map((p) => `${p.name} (${p.sku})`)
               .join(', ')}`
           )
@@ -104,7 +116,7 @@ const stockCheckerJob = schedule(
             },
             {
               $match: {
-                'user.substore': key.substore
+                'user.substore': substore
               }
             },
             {
@@ -183,11 +195,9 @@ const stockCheckerJob = schedule(
               })
           }
         } catch (err: any) {
-          console.error(
-            `Error processing substore ${key.substore}: ${err.message}`
-          )
+          console.error(`Error processing substore ${substore}: ${err.message}`)
           logToChannel(
-            `❌ Error processing substore ${key.substore}: ${
+            `❌ Error processing substore ${substore}: ${
               err instanceof Error ? err.message : String(err)
             }`
           )
