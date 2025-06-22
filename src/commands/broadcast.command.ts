@@ -1,6 +1,7 @@
 import { broadcastMessage } from '@/services/broadcast.service'
 import { CommandContext } from '@/types/context.types'
 import { getProgressBar } from '@/utils/bot.utils'
+import { logToChannel } from '@/utils/logger.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const broadcastCommand: MiddlewareFn<CommandContext> = async (
@@ -24,22 +25,31 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
       'This may take a while, please be patient...'
   )
 
-  broadcastMessage(messageText, (completd, total, failed) => {
-    const percentage = Math.round((completd / total) * 100)
-    const progressText = getProgressBar(percentage)
+  broadcastMessage(messageText, async (completd, total, failed) => {
+    try {
+      const percentage = Math.round((completd / total) * 100)
+      const progressText = getProgressBar(percentage)
 
-    console.log(progressText)
-    console.log(
-      `Broadcast progress: ${completd}/${total} (${percentage}%) - Failed: ${failed}`
-    )
+      console.log(progressText)
+      console.log(
+        `Broadcast progress: ${completd}/${total} (${percentage}%) - Failed: ${failed}`
+      )
 
-    ctx.telegram.editMessageText(
-      ctx.chat.id,
-      msg.message_id,
-      undefined,
-      `📢 Broadcasting message: "${messageText}"\n\n` +
-        `Progress: ${progressText} (${completd}/${total})\n` +
-        `Failed: ${failed}`
-    )
+      await ctx.telegram.editMessageText(
+        ctx.chat.id,
+        msg.message_id,
+        undefined,
+        `📢 Broadcasting message: "${messageText}"\n\n` +
+          `Progress: ${progressText} (${completd}/${total})\n` +
+          `Failed: ${failed}`
+      )
+    } catch (err) {
+      console.error('Error updating broadcast progress:', err)
+      logToChannel(
+        `❌ Error updating broadcast progress: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      )
+    }
   })
 }
