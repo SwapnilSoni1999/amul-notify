@@ -26,7 +26,7 @@ export const initiateAmulSessions = async () => {
         console.log(
           `Initiated session for user with pincode: ${user.pincode}, substore: ${user.substore}`
         )
-        await sleep(30 * 1000) // Sleep for 30 seconds between each session initiation
+        await sleep(10 * 1000) // Sleep for 30 seconds between each session initiation
       } catch (err) {
         console.error(
           `Failed to initiate session for user with pincode: ${user.pincode}, substore: ${user.substore}`,
