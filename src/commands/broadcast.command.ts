@@ -38,7 +38,7 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
         `Broadcast progress: ${completd}/${total} (${percentage}%) - Failed: ${failed}`
       )
 
-      if (Date.now() - lastUpdatedAt < waitIntervalMs) {
+      if (Date.now() - lastUpdatedAt < waitIntervalMs && completd < total) {
         return // Skip update if not enough time has passed
       }
 
