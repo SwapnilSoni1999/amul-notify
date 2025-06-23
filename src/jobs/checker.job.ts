@@ -114,7 +114,7 @@ const stockCheckerJob = schedule(
           // Log the changed products
 
           logToChannel(
-            `🔄 Stock update (${substore}): ${changedProducts
+            `${emojis.refresh} Stock update (${substore}): ${changedProducts
               .map((p) => `${p.name} (${p.sku})`)
               .join(', ')}`
           )
@@ -201,7 +201,7 @@ const stockCheckerJob = schedule(
                   `Failed to send message to user ${user._id}: ${err.message}`
                 )
                 logToChannel(
-                  `❌ Failed to send message to user ${user._id}: ${err.message}`
+                  `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
                 )
               })
               .finally(async () => {
@@ -215,7 +215,7 @@ const stockCheckerJob = schedule(
         } catch (err: any) {
           console.error(`Error processing substore ${substore}: ${err.message}`)
           logToChannel(
-            `❌ Error processing substore ${substore}: ${
+            `${emojis.crossMark} Error processing substore ${substore}: ${
               err instanceof Error ? err.message : String(err)
             }`
           )
@@ -224,7 +224,7 @@ const stockCheckerJob = schedule(
     } catch (err) {
       console.error('Error in check-stock-job:', err)
       logToChannel(
-        `❌ Error in check-stock-job: ${
+        `${emojis.crossMark} Error in check-stock-job: ${
           err instanceof Error ? err.message : String(err)
         }`
       )

@@ -1,5 +1,6 @@
 import { MiddlewareFn, TelegramError } from 'telegraf'
 import { logToChannel } from './logger.util'
+import { emojis } from './emoji.util'
 import { MyContext } from '@/types/context.types'
 import UserModel from '@/models/user.model'
 
@@ -18,7 +19,7 @@ export function withCatchAsync<T extends MyContext>(
       ) {
         console.warn(`User ${ctx.from?.id} has blocked the bot.`)
         logToChannel(
-          `⚠️ User ${ctx.from?.id} has blocked the bot. Removing from database.`
+          `${emojis.warning} User ${ctx.from?.id} has blocked the bot. Removing from database.`
         )
         await UserModel.deleteOne({ tgId: ctx.from?.id })
 
@@ -28,7 +29,7 @@ export function withCatchAsync<T extends MyContext>(
       console.error('Unhandled Telegraf error:', err)
       try {
         await ctx.reply?.(
-          '⚠️ An unexpected error occurred. Please try again later.'
+          `${emojis.warning} An unexpected error occurred. Please try again later.`
         )
       } catch (e) {
         console.log('[IGNORE] Failed to send error reply:', e)

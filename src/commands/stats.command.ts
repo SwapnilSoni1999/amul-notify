@@ -6,6 +6,7 @@ import {
   getDistinctSubstores
 } from '@/services/user.service'
 import { CommandContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
@@ -18,7 +19,7 @@ export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
 
   await ctx.reply(
     [
-      `<b>📊 Bot Statistics</b>`,
+      `<b>${emojis.chart} Bot Statistics</b>`,
       `Total Users: <b>${totalUsers}</b>`,
       `Total Tracked Products: <b>${totalTracked}</b>`,
       `Total Amul Sessions: <b>${totalAmulSessions}</b>`,

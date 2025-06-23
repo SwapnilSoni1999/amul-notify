@@ -1,10 +1,11 @@
 import { MiddlewareFn } from 'telegraf'
 import { adminCommands, userCommands } from '@/config'
 import { MyContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 
 export const setCommands: MiddlewareFn<MyContext> = async (ctx, next) => {
   if (!ctx.from) {
-    return ctx.reply('❌ Unable to identify user.')
+    return ctx.reply(`${emojis.crossMark} Unable to identify user.`)
   }
 
   const user = ctx.user

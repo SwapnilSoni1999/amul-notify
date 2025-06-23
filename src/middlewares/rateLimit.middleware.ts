@@ -1,4 +1,5 @@
 import { MyContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
 const RATE_LIMIT = 10 // max allowed actions
@@ -9,7 +10,7 @@ const userSearchLog = new Map<number, number[]>()
 
 export const rateLimit: MiddlewareFn<MyContext> = async (ctx, next) => {
   if (!ctx.from?.id) {
-    return ctx.reply('❌ User ID not found.')
+    return ctx.reply(`${emojis.crossMark} User ID not found.`)
   }
 
   const userId = ctx.from.id

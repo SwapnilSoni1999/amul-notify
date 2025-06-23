@@ -1,4 +1,5 @@
 import { CommandContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 import { inlineKeyboard } from 'telegraf/markup'
 
@@ -9,7 +10,7 @@ export const supportCommand: MiddlewareFn<CommandContext> = async (
   const keyboard = inlineKeyboard([
     [
       {
-        text: `Give ⭐️ on GitHub`,
+        text: `Give ${emojis.star} on GitHub`,
         url: `https://github.com/SwapnilSoni1999/amul-notify`
       },
       {

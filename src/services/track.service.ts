@@ -1,5 +1,6 @@
 import ProductModel from '@/models/product.model'
 import { MyContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 
 export const untrackProduct = async (ctx: MyContext, sku: string) => {
   const existingProduct = await ProductModel.findOneAndDelete({
@@ -12,14 +13,14 @@ export const untrackProduct = async (ctx: MyContext, sku: string) => {
 
   if (!existingProduct) {
     return ctx.reply(
-      `❌ You are not tracking the product: <b>${product?.name}</b>`,
+      `${emojis.crossMark} You are not tracking the product: <b>${product?.name}</b>`,
       { parse_mode: 'HTML' }
     )
   }
   ctx.trackedProducts = ctx.trackedProducts.filter((p) => p.sku !== sku)
 
   return ctx.reply(
-    `🔍 <b>Untracking product: ${product?.name}</b>\n` +
+    `${emojis.search} <b>Untracking product: ${product?.name}</b>\n` +
       `You will no longer receive updates for this product.`,
     { parse_mode: 'HTML' }
   )
@@ -36,7 +37,7 @@ export const trackProduct = async (ctx: MyContext, sku: string) => {
 
   if (existingProduct) {
     return ctx.reply(
-      `✅ You are already tracking the product: <b>${product?.name}</b>`,
+      `${emojis.checkMark} You are already tracking the product: <b>${product?.name}</b>`,
       { parse_mode: 'HTML' }
     )
   }
@@ -49,7 +50,7 @@ export const trackProduct = async (ctx: MyContext, sku: string) => {
   ctx.trackedProducts.push(newProduct)
 
   return ctx.reply(
-    `🔍 <b>Tracking product: ${product.name}</b>\n` +
+    `${emojis.search} <b>Tracking product: ${product.name}</b>\n` +
       `You will receive updates when the product is available.`,
     { parse_mode: 'HTML' }
   )

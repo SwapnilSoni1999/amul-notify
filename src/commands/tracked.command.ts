@@ -1,5 +1,6 @@
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
+import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
@@ -11,7 +12,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
 ) => {
   const trackedProducts = ctx.trackedProducts
   if (trackedProducts.length === 0) {
-    ctx.reply('❌ You are not tracking any products.')
+    ctx.reply(`${emojis.crossMark} You are not tracking any products.`)
     return next()
   }
 
@@ -25,9 +26,9 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
 
         if (!product) {
           logToChannel(
-            `❌ Product with SKU ${trackedProduct.sku} not found in tracked command.`
+            `${emojis.crossMark} Product with SKU ${trackedProduct.sku} not found in tracked command.`
           )
-          return `❌ Product with SKU ${trackedProduct.sku} not found.`
+          return `${emojis.crossMark} Product with SKU ${trackedProduct.sku} not found.`
         }
 
         const isAvlblToPurchase = isAvailableToPurchase(product)

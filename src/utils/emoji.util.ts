@@ -1,6 +1,27 @@
 export const emojis = {
+  // Status indicators
   redDot: '🔴',
   greenDot: '🟢',
+  checkMark: '✅',
+  crossMark: '❌',
+  warning: '⚠️',
+  exclamation: '❗',
+
+  // Actions
+  refresh: '🔄',
+  search: '🔍',
+
+  // UI elements
   pin: '📍',
-  fire: '🔥'
+  fire: '🔥',
+  chart: '📊',
+  wave: '👋',
+  megaphone: '📢',
+  star: '⭐',
+
+  // Common symbols
+  target: '🎯',
+  box: '📦',
+  lightning: '⚡',
+  cart: '🛒'
 }

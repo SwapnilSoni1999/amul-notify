@@ -1,5 +1,6 @@
 import UserModel from '@/models/user.model'
 import { CommandContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const amulSessionsCommand: MiddlewareFn<CommandContext> = async (
@@ -41,8 +42,8 @@ export const amulSessionsCommand: MiddlewareFn<CommandContext> = async (
 
   ctx.reply(
     message.length
-      ? `📊 Active sessions:\n${message.join('\n')}`
-      : '❗️ No active sessions found.',
+      ? `${emojis.chart} Active sessions:\n${message.join('\n')}`
+      : `${emojis.warning} No active sessions found.`,
     {
       parse_mode: 'HTML',
       link_preview_options: {

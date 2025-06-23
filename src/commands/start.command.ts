@@ -1,5 +1,6 @@
 import { trackProduct, untrackProduct } from '@/services/track.service'
 import { CommandContext } from '@/types/context.types'
+import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
@@ -18,7 +19,7 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
   }
 
   const welcomeMessages = [
-    `👋 <b>Welcome to Amul Stock Notification Bot!</b>`,
+    `${emojis.wave} <b>Welcome to Amul Stock Notification Bot!</b>`,
     ``,
     ctx.user && ctx.user.pincode?.length && ctx.user.substore?.length
       ? `Your Current Pincode: <b>${ctx.user.pincode} (${ctx.user.substore})</b>`

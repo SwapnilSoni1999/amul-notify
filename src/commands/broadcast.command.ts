@@ -1,6 +1,7 @@
 import { broadcastMessage } from '@/services/broadcast.service'
 import { CommandContext } from '@/types/context.types'
 import { getProgressBar } from '@/utils/bot.utils'
+import { emojis } from '@/utils/emoji.util'
 import { logToChannel } from '@/utils/logger.util'
 import { MiddlewareFn } from 'telegraf'
 
@@ -14,14 +15,14 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
   const messageText = text.join(' ').trim()
 
   if (!messageText) {
-    ctx.reply('❗️ Please provide a message to broadcast.')
+    ctx.reply(`${emojis.warning} Please provide a message to broadcast.`)
     return next() // to logger middleware
   }
 
   console.log('Broadcasting message:', messageText)
 
   const msg = await ctx.reply(
-    `📢 Broadcasting message: "${messageText}"\n\n` +
+    `${emojis.megaphone} Broadcasting message: "${messageText}"\n\n` +
       'This may take a while, please be patient...'
   )
 
@@ -48,14 +49,14 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
         ctx.chat.id,
         msg.message_id,
         undefined,
-        `📢 Broadcasting message: "${messageText}"\n\n` +
+        `${emojis.megaphone} Broadcasting message: "${messageText}"\n\n` +
           `Progress: ${progressText} (${completd}/${total})\n` +
           `Failed: ${failed}`
       )
     } catch (err) {
       console.error('Error updating broadcast progress:', err)
       logToChannel(
-        `❌ Error updating broadcast progress: ${
+        `${emojis.crossMark} Error updating broadcast progress: ${
           err instanceof Error ? err.message : String(err)
         }`
       )

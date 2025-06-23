@@ -5,6 +5,7 @@ import { startCommand } from '@/commands/start.command'
 import { sessionMiddleware } from '@/middlewares/session.middleware'
 import { setCommands } from '@/middlewares/setCommands.middleware'
 import { withCatchAsync } from '@/utils/withCatchAsync.util'
+import { emojis } from '@/utils/emoji.util'
 import { productsCommand } from '@/commands/products.command'
 import { onlyPvtChat } from '@/middlewares/onlyPvtChat.middleware'
 import { trackedCommand } from '@/commands/tracked.command'
@@ -51,7 +52,7 @@ bot.use(loggerMiddleware)
 
 bot.catch((err, ctx) => {
   console.error('Error in bot:', err)
-  ctx.reply('❌ An error occurred. Please try again later.')
+  ctx.reply(`${emojis.crossMark} An error occurred. Please try again later.`)
 })
 
 export default bot
