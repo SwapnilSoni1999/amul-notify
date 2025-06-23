@@ -19,6 +19,8 @@ interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
   trackedBy: IUser & { _id: Types.ObjectId }
 }
 
+const MAX_SESSION_OLD_DAYS = 5 // Maximum age of session in days
+
 const stockCheckerJob = schedule(
   '*/5 * * * *', // Every 5 minutes
   async () => {
@@ -33,6 +35,22 @@ const stockCheckerJob = schedule(
       for await (const substore of distinctSubstores) {
         try {
           let amulApi = await getAmulApiFromSubstore(substore)
+
+          const currentTime = new Date()
+          const sessionAgeInDays =
+            (currentTime.getTime() -
+              (amulApi?.instanceInitializedAt.getTime() || 0)) /
+            (1000 * 60 * 60 * 24) // Convert milliseconds to days
+
+          if (amulApi && sessionAgeInDays > MAX_SESSION_OLD_DAYS) {
+            console.log(
+              `Session for substore ${substore} is older than ${MAX_SESSION_OLD_DAYS} days. Reinitializing...`
+            )
+            // Close the old session
+            amulApi.close()
+            // Remove the old session from the map
+            amulApi = undefined
+          }
 
           if (!amulApi) {
             // find any user with this substore and initialize

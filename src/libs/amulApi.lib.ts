@@ -370,7 +370,7 @@ export class AmulApi {
   private amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
-  private instanceInitializedAt: number = Date.now()
+  public instanceInitializedAt: Date = new Date()
 
   constructor() {
     const jar = new CookieJar()
@@ -562,6 +562,10 @@ export class AmulApi {
     )
 
     return response.data.data
+  }
+
+  public close() {
+    substoreSessions.delete(this.pincodeRecord.substore)
   }
 }
 
