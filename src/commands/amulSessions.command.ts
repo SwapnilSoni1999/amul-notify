@@ -1,4 +1,4 @@
-import { substoreSessions } from '@/libs/amulApi.lib'
+import UserModel from '@/models/user.model'
 import { CommandContext } from '@/types/context.types'
 import { MiddlewareFn } from 'telegraf'
 
@@ -8,8 +8,35 @@ export const amulSessionsCommand: MiddlewareFn<CommandContext> = async (
 ) => {
   const message: string[] = []
 
-  for (const key of substoreSessions.keys()) {
-    message.push(`${key}`)
+  const substoresWithCount = await UserModel.aggregate<{
+    _id: string
+    count: number
+  }>([
+    {
+      $match: {
+        substore: {
+          $exists: true,
+          $ne: null
+        }
+      }
+    },
+    {
+      $group: {
+        _id: '$substore',
+        count: {
+          $sum: 1
+        }
+      }
+    },
+    {
+      $sort: {
+        count: -1
+      }
+    }
+  ])
+
+  for (const substore of substoresWithCount) {
+    message.push(`${substore._id} <b>(${substore.count})</b>`)
   }
 
   ctx.reply(
