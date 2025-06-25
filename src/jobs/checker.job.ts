@@ -214,6 +214,10 @@ const stockCheckerJob = schedule(
               })
           }
 
+          logToChannel(
+            `Notified ${usersToNotify.length} users about stock changes in ${substore}.`
+          )
+
           await sleep(2000) // Sleep for 2 seconds to avoid rate limiting
         } catch (err: any) {
           console.error(`Error processing substore ${substore}: ${err.message}`)
