@@ -6,6 +6,7 @@ import UserModel, { IUser } from '@/models/user.model'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
 import { getDistinctSubstores } from '@/services/user.service'
+import { sleep } from '@/utils'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
@@ -32,7 +33,7 @@ const stockCheckerJob = schedule(
 
       const distinctSubstores = await getDistinctSubstores()
 
-      for await (const substore of distinctSubstores) {
+      for (const substore of distinctSubstores) {
         try {
           let amulApi = await getAmulApiFromSubstore(substore)
 
@@ -84,7 +85,7 @@ const stockCheckerJob = schedule(
               freshProducts
             )
             console.log(`Cache set response:`, resp)
-            return
+            continue
           }
           console.log(`cachedProducts`, cachedProducts.length)
 
@@ -97,8 +98,6 @@ const stockCheckerJob = schedule(
             return (
               freshProduct.available !== cachedProduct.available ||
               freshProduct.inventory_quantity !==
-                cachedProduct.inventory_quantity ||
-              freshProduct.inventory_quantity !==
                 cachedProduct.inventory_quantity
             )
           })
@@ -108,7 +107,7 @@ const stockCheckerJob = schedule(
           if (!changedProducts.length) {
             console.log('No stock changes detected.')
 
-            return
+            continue
           }
 
           // Log the changed products
@@ -130,7 +129,9 @@ const stockCheckerJob = schedule(
               }
             },
             {
-              $unwind: '$user'
+              $unwind: {
+                path: '$user'
+              }
             },
             {
               $match: {
@@ -212,6 +213,8 @@ const stockCheckerJob = schedule(
                 })
               })
           }
+
+          await sleep(2000) // Sleep for 2 seconds to avoid rate limiting
         } catch (err: any) {
           console.error(`Error processing substore ${substore}: ${err.message}`)
           logToChannel(
