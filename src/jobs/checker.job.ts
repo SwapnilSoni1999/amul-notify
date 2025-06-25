@@ -150,6 +150,8 @@ const stockCheckerJob = schedule(
             }
           ])
 
+          let notifiedCount = 0
+
           for (const dbProduct of usersToNotify) {
             const product = changedProducts.find((p) => p.sku === dbProduct.sku)
             if (!product) continue
@@ -164,6 +166,8 @@ const stockCheckerJob = schedule(
               )
               continue
             }
+
+            notifiedCount++
 
             const keyboard = inlineKeyboard([
               [
@@ -215,7 +219,7 @@ const stockCheckerJob = schedule(
           }
 
           logToChannel(
-            `Notified ${usersToNotify.length} users about stock changes in ${substore}.`
+            `Notified ${notifiedCount} users about stock changes in ${substore}.`
           )
 
           await sleep(2000) // Sleep for 2 seconds to avoid rate limiting
