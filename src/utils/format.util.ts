@@ -23,7 +23,7 @@ export const formatProductDetails = (
       .tz(TIMEZONE)
       .fromNow()} at ${dayjs(product.last_order_date)
       .tz(TIMEZONE)
-      .format('DD-MM-YYY, hh:mm A')}</i>`,
+      .format('DD-MM-YYYY, hh:mm A')}</i>`,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`
