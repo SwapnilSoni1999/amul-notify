@@ -36,6 +36,27 @@ export const analyticsCommand: MiddlewareFn<CommandContext> = async (
 
   const messages = await Promise.all(mappedMessage)
 
-  await ctx.reply(messages.join('\n\n'), { parse_mode: 'HTML' })
-  next()
+  // split messages into chunks of 4096 characters
+  const chunks: string[] = []
+  let currentChunk = ''
+  for (const message of messages) {
+    if (currentChunk.length + message.length > 4096) {
+      chunks.push(currentChunk)
+      currentChunk = ''
+    }
+    currentChunk += message + '\n\n'
+  }
+  if (currentChunk) {
+    chunks.push(currentChunk)
+  }
+  // send each chunk
+  for (const chunk of chunks) {
+    await ctx.replyWithHTML(chunk, {
+      link_preview_options: {
+        is_disabled: true
+      },
+      parse_mode: 'HTML'
+    })
+  }
+  return next()
 }
