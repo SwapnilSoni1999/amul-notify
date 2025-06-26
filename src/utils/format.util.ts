@@ -19,11 +19,11 @@ export const formatProductDetails = (
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
     }</b>`,
-    `${emptySpace(5)}Last Order: <b>${dayjs(product.last_order_date)
+    `${emptySpace(5)}Last Order: <i>${dayjs(product.last_order_date)
       .tz(TIMEZONE)
       .fromNow()} at ${dayjs(product.last_order_date)
       .tz(TIMEZONE)
-      .format('hh:mm A')}</b>`,
+      .format('DD-MM-YYY, hh:mm A')}</i>`,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`
