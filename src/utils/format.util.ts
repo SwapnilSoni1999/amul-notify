@@ -21,7 +21,9 @@ export const formatProductDetails = (
     }</b>`,
     `${emptySpace(5)}Last Order: <b>${dayjs(product.last_order_date)
       .tz(TIMEZONE)
-      .fromNow()}</b>`,
+      .fromNow()} at ${dayjs(product.last_order_date)
+      .tz(TIMEZONE)
+      .format('hh:mm A')}</b>`,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`
