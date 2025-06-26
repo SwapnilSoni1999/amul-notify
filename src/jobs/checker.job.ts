@@ -1,4 +1,5 @@
 import bot from '@/bot'
+import { TIMEZONE } from '@/config'
 import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
@@ -244,7 +245,7 @@ const stockCheckerJob = schedule(
     }
   },
   {
-    timezone: 'Asia/Kolkata',
+    timezone: TIMEZONE,
     name: 'check-stock-job'
   }
 )

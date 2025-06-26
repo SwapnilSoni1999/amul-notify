@@ -10,6 +10,7 @@ export interface AmulProduct {
   original_price: number
   available: number
   inventory_quantity: number
+  last_order_date: string
   net_quantity?: string
   catalog_only: boolean
   is_catalog: boolean

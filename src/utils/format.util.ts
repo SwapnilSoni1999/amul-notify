@@ -1,6 +1,8 @@
 import { AmulProduct } from '@/types/amul.types'
 import { emojis } from './emoji.util'
 import { getInventoryQuantity, getProductUrl } from './amul.util'
+import dayjs from '@/libs/dayjs.lib'
+import { TIMEZONE } from '@/config'
 
 export const emptySpace = (count: number): string => {
   return ' '.repeat(count)
@@ -17,6 +19,9 @@ export const formatProductDetails = (
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
     }</b>`,
+    `${emptySpace(5)}Last Order: <b>${dayjs(product.last_order_date)
+      .tz(TIMEZONE)
+      .fromNow()}</b>`,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`

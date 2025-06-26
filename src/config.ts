@@ -17,3 +17,5 @@ export const adminCommands: readonly BotCommand[] = [
   { command: 'stats', description: 'Get bot statistics' },
   { command: 'analytics', description: 'Get analytics of products' }
 ]
+
+export const TIMEZONE = 'Asia/Kolkata'
