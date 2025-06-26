@@ -18,6 +18,7 @@ import { isAdmin } from './middlewares/isAdmin.middleware'
 import { broadcastCommand } from './commands/broadcast.command'
 import { amulSessionsCommand } from './commands/amulSessions.command'
 import { statsCommand } from './commands/stats.command'
+import { analyticsCommand } from './commands/analytics.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -47,6 +48,11 @@ bot.command(
   withCatchAsync(amulSessionsCommand)
 )
 bot.command('stats', withCatchAsync(isAdmin), withCatchAsync(statsCommand))
+bot.command(
+  'analytics',
+  withCatchAsync(isAdmin),
+  withCatchAsync(analyticsCommand)
+)
 
 bot.use(loggerMiddleware)
 
