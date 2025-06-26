@@ -3,6 +3,7 @@ import { logToChannel } from './logger.util'
 import { emojis } from './emoji.util'
 import { MyContext } from '@/types/context.types'
 import UserModel from '@/models/user.model'
+import ProductModel from '@/models/product.model'
 
 export function withCatchAsync<T extends MyContext>(
   fn: MiddlewareFn<T>
@@ -21,7 +22,10 @@ export function withCatchAsync<T extends MyContext>(
         logToChannel(
           `${emojis.warning} User ${ctx.from?.id} has blocked the bot. Removing from database.`
         )
-        await UserModel.deleteOne({ tgId: ctx.from?.id })
+        const deleteUser = await UserModel.findOneAndDelete({
+          tgId: ctx.from?.id
+        })
+        await ProductModel.deleteMany({ trackedBy: deleteUser?._id })
 
         return // Don't propagate further
       }
