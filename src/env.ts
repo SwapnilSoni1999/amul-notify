@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { existsSync, writeFileSync } from 'fs'
-import path from 'path'
+// import path from 'path'
 import { z } from 'zod'
 
 const envSchema = z.object({
@@ -21,16 +21,8 @@ const envSchema = z.object({
     .default('true')
     .transform((val) => val === 'true'),
 
-  // Proxy Configuration
-  PROXY_ENABLED: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform((val) => val === 'true'),
-  // PROXY_HOST: z.string().default(''),
-  // PROXY_PORT: z.coerce.number().min(0).default(0),
-  // PROXY_USERNAME: z.string().default(''),
-  // PROXY_PASSWORD: z.string().default(''),
-  PROXY_PROTOCOL: z.enum(['http', 'https']).default('http')
+  // PAY URL
+  PAY_URL: z.string().default('https://razorpay.me/@10xdev')
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -66,39 +58,7 @@ if (!existsSync('.env.example')) {
   })
 }
 
-const refinedEnv = envSchema.superRefine((data, ctx) => {
-  if (data.PROXY_ENABLED) {
-    const proxyFile = path.join(__dirname, '../proxylist.txt')
-    if (!existsSync(proxyFile)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'Proxy list file is required when PROXY_ENABLED is true, Please create a proxylist.txt file in the root directory.'
-      })
-    }
-
-    // if (!data.PROXY_HOST && !data.PROXY_PORT) {
-    //   ctx.addIssue({
-    //     code: z.ZodIssueCode.custom,
-    //     message:
-    //       'PROXY_HOST and PROXY_PORT are required when PROXY_ENABLED is true'
-    //   })
-    // }
-
-    // // Check for both username and password if either is provided
-    // if (
-    //   (data.PROXY_USERNAME && !data.PROXY_PASSWORD) ||
-    //   (!data.PROXY_USERNAME && data.PROXY_PASSWORD)
-    // ) {
-    //   ctx.addIssue({
-    //     code: z.ZodIssueCode.custom,
-    //     message:
-    //       'Both PROXY_USERNAME and PROXY_PASSWORD must be provided if one is set'
-    //   })
-    // }
-  }
-})
-const result = refinedEnv.safeParse(process.env)
+const result = envSchema.safeParse(process.env)
 if (!result.success) {
   console.error(
     chalk.red('Invalid environment variables Please check your .env file:')

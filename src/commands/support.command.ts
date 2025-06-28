@@ -1,3 +1,4 @@
+import env from '@/env'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
@@ -16,6 +17,12 @@ export const supportCommand: MiddlewareFn<CommandContext> = async (
       {
         text: `Contact Developer`,
         url: `https://t.me/SoniSins`
+      }
+    ],
+    [
+      {
+        text: 'Support Development',
+        url: env.PAY_URL
       }
     ]
   ])

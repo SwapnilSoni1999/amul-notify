@@ -1,5 +1,4 @@
 import cacheService from '@/services/cache.service'
-import { getProxy } from '@/services/proxy.service'
 import {
   AmulPincodeResponse,
   AmulProduct,
@@ -392,10 +391,7 @@ export class AmulApi {
 
   public async initCookies() {
     const cookieResponse = await this.amulApi.get(
-      'https://shop.amul.com/en/browse/protein',
-      {
-        proxy: getProxy()
-      }
+      'https://shop.amul.com/en/browse/protein'
     )
 
     console.log('Cookie Response:', cookieResponse.headers['set-cookie'])
@@ -422,7 +418,6 @@ export class AmulApi {
     const infoResponse = await this.amulApi.get<string>(
       `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
       {
-        proxy: getProxy(),
         headers: {
           ...defaultHeaders,
           cookie: await this.jar.getCookieString('https://shop.amul.com')
@@ -450,8 +445,7 @@ export class AmulApi {
         headers: {
           ...defaultHeaders,
           cookie: await this.jar.getCookieString('https://shop.amul.com')
-        },
-        proxy: getProxy()
+        }
       }
     )
     console.log('Set Pincode Response:', response.data)
@@ -475,7 +469,6 @@ export class AmulApi {
     const response = await this.amulApi.get<AmulPincodeResponse>(
       `http://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
       {
-        proxy: getProxy(),
         headers: {
           ...defaultHeaders,
           cookie: await this.jar.getCookieString('https://shop.amul.com')
@@ -543,7 +536,6 @@ export class AmulApi {
     const response = await axios.get<AmulProductsResponse>(
       `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[last_order_date]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=24&total=1&start=0&cdc=1m&substore=${this.getSubstoreId()}`,
       {
-        proxy: getProxy(),
         headers: {
           ...defaultHeaders,
           cookie: await this.jar.getCookieString('https://shop.amul.com')
