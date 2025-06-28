@@ -1,7 +1,6 @@
 import bot from '@/bot'
 import env from '@/env'
 import Bull from 'bull'
-import { TelegramError } from 'telegraf'
 
 const broadcastQueue = new Bull<{
   chatId: string
@@ -41,11 +40,7 @@ broadcastQueue.process(5, async (job) => {
         console.log(`Message sent to ${chatId}: ${text}`)
       })
       .catch((err) => {
-        if (err instanceof TelegramError) {
-          console.log({
-            ...err
-          })
-        }
+        throw err
       })
 
     return

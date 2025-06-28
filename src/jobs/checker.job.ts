@@ -111,14 +111,6 @@ const stockCheckerJob = schedule(
             continue
           }
 
-          // Log the changed products
-
-          logToChannel(
-            `${emojis.refresh} Stock update (${substore}): ${changedProducts
-              .map((p) => `${p.name} (${p.sku})`)
-              .join(', ')}`
-          )
-
           // Notify users about the stock changes
           const usersToNotify = await ProductModel.aggregate<ProductWithUser>([
             {
@@ -220,6 +212,11 @@ const stockCheckerJob = schedule(
           }
 
           if (notifiedCount > 0) {
+            logToChannel(
+              `${emojis.refresh} Stock update (${substore}): ${changedProducts
+                .map((p) => `${p.name} (${p.sku})`)
+                .join(', ')}`
+            )
             logToChannel(
               `Notified ${notifiedCount} users about stock changes in ${substore}.`
             )
