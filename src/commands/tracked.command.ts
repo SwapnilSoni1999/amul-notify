@@ -1,3 +1,4 @@
+import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
@@ -44,8 +45,18 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
         const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
         console.log('isTracked:', isTracked)
 
+        const lastSeen = await getLastInStockAt(
+          product.sku,
+          ctx.amul.getSubstore()!
+        )
+
         return [
-          formatProductDetails(product, isAvlblToPurchase, index),
+          formatProductDetails(
+            product,
+            isAvlblToPurchase,
+            index,
+            lastSeen?.lastSeenInStockAt
+          ),
           isTracked ? untrackBtn : trackBtn
         ].join('\n')
       })

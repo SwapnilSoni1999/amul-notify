@@ -3,6 +3,7 @@ import { TIMEZONE } from '@/config'
 import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
+import ProductStockHistoryModel from '@/models/productStockHistory.model'
 import UserModel, { IUser } from '@/models/user.model'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
@@ -96,6 +97,43 @@ const stockCheckerJob = schedule(
               (p) => p.sku === freshProduct.sku
             )
             if (!cachedProduct) return false
+
+            const isAvailablForPurchase = isAvailableToPurchase(freshProduct)
+            if (isAvailablForPurchase) {
+              ProductStockHistoryModel.updateOne(
+                {
+                  sku: freshProduct.sku,
+                  substore: substore
+                },
+                {
+                  $setOnInsert: {
+                    sku: freshProduct.sku,
+                    substore: substore
+                  },
+                  $currentDate: {
+                    lastSeenInStockAt: true
+                  }
+                },
+                {
+                  upsert: true
+                }
+              )
+                .then((result) => {
+                  console.log(
+                    `Stock history updated for product ${freshProduct.sku}`,
+                    JSON.stringify(result)
+                  )
+                })
+                .catch((err) => {
+                  console.error(
+                    `Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                  logToChannel(
+                    `${emojis.crossMark} Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                })
+            }
+
             return (
               freshProduct.available !== cachedProduct.available ||
               freshProduct.inventory_quantity !==

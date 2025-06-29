@@ -5,6 +5,7 @@ import {
 } from '@/libs/amulApi.lib'
 import { sleep } from '@/utils'
 import { getDistinctPincodes } from './user.service'
+import ProductStockHistoryModel from '@/models/productStockHistory.model'
 
 export const initiateAmulSessions = async () => {
   const distinctPincodes = await getDistinctPincodes()
@@ -31,4 +32,11 @@ export const getAmulApiFromSubstore = async (substore: string) => {
   if (existingApi) {
     return existingApi
   }
+}
+
+export const getLastInStockAt = async (sku: string, substore: string) => {
+  return await ProductStockHistoryModel.findOne({
+    sku,
+    substore
+  }).lean()
 }

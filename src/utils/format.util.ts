@@ -11,7 +11,8 @@ export const emptySpace = (count: number): string => {
 export const formatProductDetails = (
   product: AmulProduct,
   isAvlblToPurchase: boolean,
-  index: number
+  index: number,
+  lastSeenInStockAt?: Date
 ) => {
   return [
     `${index + 1}. <a href="${getProductUrl(product)}">${product.name}</a>`,
@@ -19,13 +20,17 @@ export const formatProductDetails = (
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
     }</b>`,
-    `${emptySpace(5)}Last Order: <b>${dayjs(product.last_order_date)
-      .tz(TIMEZONE)
-      .fromNow()} | ${dayjs(product.last_order_date)
-      .tz(TIMEZONE)
-      .format('DD-MM-YYYY, hh:mm A')}</b>`,
+    lastSeenInStockAt
+      ? `${emptySpace(5)}Last InStock: <b>${dayjs(lastSeenInStockAt)
+          .tz(TIMEZONE)
+          .fromNow()} | ${dayjs(lastSeenInStockAt)
+          .tz(TIMEZONE)
+          .format('DD-MM-YYYY, hh:mm A')}</b>`
+      : null,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`
-  ].join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
