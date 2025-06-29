@@ -12,51 +12,92 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   const products = await ctx.amul.getProteinProducts()
   //   console.log('Products:', products)
 
-  const message: string = [
-    `<b>Amul Protein Products</b>`,
+  const title = `<b>Amul Protein Products</b>`
 
-    ...(await Promise.all(
-      products.map(async (product, index) => {
-        const isAvlblToPurchase = isAvailableToPurchase(product)
+  const messages: string[][] = []
 
-        // const trackBtn = link('[Track]', getProductUrl(product))
+  const productMessageBlocks = await Promise.all(
+    products.map(async (product, index) => {
+      const isAvlblToPurchase = isAvailableToPurchase(product)
 
-        const trackBtn = `<b><a href="${await startCommandLink(
-          `track_${product.sku}`
-        )}">[Track]</a></b>`
+      // const trackBtn = link('[Track]', getProductUrl(product))
 
-        const untrackBtn = `<b><a href="${await startCommandLink(
-          `untrack_${product.sku}`
-        )}">[Untrack]</a></b>`
+      const trackBtn = `<b><a href="${await startCommandLink(
+        `track_${product.sku}`
+      )}">[Track]</a></b>`
 
-        const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
+      const untrackBtn = `<b><a href="${await startCommandLink(
+        `untrack_${product.sku}`
+      )}">[Untrack]</a></b>`
 
-        const lastSeen = await getLastInStockAt(
-          product.sku,
-          ctx.amul.getSubstore()!
-        )
+      const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
 
-        return [
-          formatProductDetails(
-            product,
-            isAvlblToPurchase,
-            index,
-            lastSeen?.lastSeenInStockAt
-          ),
-          isTracked ? untrackBtn : trackBtn
-        ]
-          .filter(Boolean)
-          .join('\n')
-      })
-    ))
-  ].join('\n\n')
+      const lastSeen = await getLastInStockAt(
+        product.sku,
+        ctx.amul.getSubstore()!
+      )
 
-  await ctx.reply(message, {
-    parse_mode: 'HTML',
-    link_preview_options: {
-      is_disabled: true
+      const productMessage = [
+        formatProductDetails(
+          product,
+          isAvlblToPurchase,
+          index,
+          lastSeen?.lastSeenInStockAt
+        ),
+        isTracked ? untrackBtn : trackBtn
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+      return productMessage
+    })
+  )
+
+  console.log('Product Message Blocks:', productMessageBlocks)
+
+  let currentChunk: string[] = []
+  for (const block of productMessageBlocks) {
+    if (currentChunk.join('\n\n').length + block.length > 4096) {
+      messages.push(currentChunk)
+      console.log('IN LOOP MESSAGES:', messages)
+      console.log('Chunk pushed:', currentChunk.length)
+      currentChunk = []
+      console.log('Current Chunk Cleared:', currentChunk.length)
     }
-  })
+
+    console.log('Block:', block.length)
+    currentChunk.push(block)
+    console.log('Current Chunk Length:', currentChunk.join('\n\n').length)
+  }
+
+  if (currentChunk.length > 0) {
+    console.log('Pushing last chunk:', currentChunk.length)
+    messages.push(currentChunk)
+  }
+
+  console.log('Messages:', messages)
+
+  for (let i = 0; i < messages.length; i++) {
+    const chunk = messages[i]
+    if (i === 0) {
+      // attach title only to the first message
+      chunk.unshift(title)
+    }
+
+    await ctx.reply(chunk.join('\n\n'), {
+      parse_mode: 'HTML',
+      link_preview_options: {
+        is_disabled: true
+      }
+    })
+  }
+
+  // await ctx.reply(message, {
+  //   parse_mode: 'HTML',
+  //   link_preview_options: {
+  //     is_disabled: true
+  //   }
+  // })
 
   next()
 }

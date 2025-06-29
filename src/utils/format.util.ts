@@ -15,7 +15,9 @@ export const formatProductDetails = (
   lastSeenInStockAt?: Date
 ) => {
   return [
-    `${index + 1}. <a href="${getProductUrl(product)}">${product.name}</a>`,
+    `${+index + 1}. <b><a href="${getProductUrl(product)}">${
+      product.name
+    }</a></b>`,
     `${emptySpace(5)}Price: <b>${product.price}</b>`,
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
