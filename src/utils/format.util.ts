@@ -22,13 +22,13 @@ export const formatProductDetails = (
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
     }</b>`,
-    lastSeenInStockAt
-      ? `${emptySpace(5)}Last InStock: <b>${dayjs(lastSeenInStockAt)
-          .tz(TIMEZONE)
-          .fromNow()} | ${dayjs(lastSeenInStockAt)
-          .tz(TIMEZONE)
-          .format('DD-MM-YYYY, hh:mm A')}</b>`
-      : null,
+    `${emptySpace(5)}Last InStock: <b>${
+      !lastSeenInStockAt
+        ? 'Awaiting Restock'
+        : dayjs(lastSeenInStockAt).tz(TIMEZONE).fromNow()
+    } | ${dayjs(lastSeenInStockAt)
+      .tz(TIMEZONE)
+      .format('DD-MM-YYYY, hh:mm A')}</b>`,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
     )}</b>`
