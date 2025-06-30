@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Track Amul protein product availability via Telegram Bot"
+    />
+    <title>Amul Stock Checker Bot</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Amul brand colors */
+      .amul-red {
+        background-color: #ed1c24;
+      }
+      .amul-white {
+        color: #ffffff;
+      }
+      .amul-dark {
+        background-color: #212529;
+      }
+      .amul-gray {
+        color: #333333;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/github-fork-ribbon-css/0.2.3/gh-fork-ribbon.min.css"
+    />
+  </head>
+  <body
+    class="amul-dark min-h-screen flex flex-col items-center justify-center p-6"
+  >
+    <a
+      class="github-fork-ribbon"
+      href="https://github.com/SwapnilSoni1999/amul-notify"
+      data-ribbon="Fork me on GitHub"
+      title="Fork me on GitHub"
+      >Fork me on GitHub</a
+    >
+    <div id="hero" class="max-w-md text-center opacity-0">
+      <h1 class="text-5xl font-extrabold amul-white mb-4">
+        Amul Stock Checker Bot
+      </h1>
+      <p class="text-lg amul-white mb-8">
+        Real-time updates on availability of Amul protein products.<br />Track
+        on Telegram!
+      </p>
+      <a
+        href="https://t.me/AmulOSSBot"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="cta-btn inline-flex items-center justify-center px-6 py-3 bg-white amul-red text-lg font-semibold rounded-full hover:bg-gray-100 transition transform"
+      >
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg"
+          alt="Telegram Logo"
+          class="w-6 h-6 mr-2"
+        />
+        <span>Launch Bot</span>
+      </a>
+      <p class="mt-6 text-sm amul-white">Built with ❤️ by Swapnil Soni</p>
+    </div>
+
+    <!-- Anime.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        anime({
+          targets: '#hero',
+          opacity: [0, 1],
+          translateY: [20, 0],
+          duration: 1200,
+          easing: 'easeOutBounce'
+        })
+        anime({
+          targets: '.cta-btn',
+          scale: [1, 1.05],
+          duration: 1000,
+          direction: 'alternate',
+          loop: true,
+          easing: 'easeInOutSine',
+          delay: 1500
+        })
+      })
+    </script>
+  </body>
+</html>
