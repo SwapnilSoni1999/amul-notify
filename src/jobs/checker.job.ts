@@ -236,7 +236,7 @@ const stockCheckerJob = schedule(
                     `Failed to send message to user ${user._id}: ${err.message}`
                   )
                   logToChannel(
-                    `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
+                    `${emojis.crossMark} [err:onComplete] Failed to send message to user ${user._id}: ${err.message}`
                   )
                 } else {
                   console.log(
@@ -250,10 +250,10 @@ const stockCheckerJob = schedule(
               }
             }).catch((err) => {
               console.error(
-                `Failed to send message to user ${user._id}: ${err.message}`
+                `[checker.job]Failed to send message to user ${user._id}: ${err.message}`
               )
               logToChannel(
-                `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
+                `${emojis.crossMark} [checker.job] Failed to send message to user ${user._id}: ${err.message}`
               )
             })
           }

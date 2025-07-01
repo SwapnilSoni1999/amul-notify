@@ -54,10 +54,12 @@ broadcastQueue.process(5, async (job) => {
     console.error(`Failed to send message to ${chatId}:`, error)
     if (error instanceof TelegramError) {
       throw new Error(
-        `[${error.name}] ${chatId}: ${error.message} -> ${error.description}`
+        `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
     }
-    throw new Error(`Failed to send message to ${chatId}: ${error.message}`)
+    throw new Error(
+      `[broadcast.queue:60] Failed to send message to ${chatId}: ${error.message}`
+    )
   }
 })
 
