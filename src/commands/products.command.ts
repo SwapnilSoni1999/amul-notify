@@ -12,7 +12,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   const products = await ctx.amul.getProteinProducts()
   //   console.log('Products:', products)
 
-  const title = `<b>Amul Protein Products</b>`
+  const title = `<b>Amul Protein Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
 
   const messages: string[][] = []
 
@@ -59,15 +59,10 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   for (const block of productMessageBlocks) {
     if (currentChunk.join('\n\n').length + block.length > 4096) {
       messages.push(currentChunk)
-      console.log('IN LOOP MESSAGES:', messages)
-      console.log('Chunk pushed:', currentChunk.length)
       currentChunk = []
-      console.log('Current Chunk Cleared:', currentChunk.length)
     }
 
-    console.log('Block:', block.length)
     currentChunk.push(block)
-    console.log('Current Chunk Length:', currentChunk.join('\n\n').length)
   }
 
   if (currentChunk.length > 0) {

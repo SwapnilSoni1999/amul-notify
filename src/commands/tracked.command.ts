@@ -20,7 +20,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
   const products = await ctx.amul.getProteinProducts()
 
   const message: string = [
-    `<b>Tracked Products</b>`,
+    `<b>Tracked Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
     ...(await Promise.all(
       trackedProducts.map(async (trackedProduct, index) => {
         const product = products.find((p) => p.sku === trackedProduct.sku)
