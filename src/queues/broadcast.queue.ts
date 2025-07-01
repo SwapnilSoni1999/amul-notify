@@ -1,10 +1,12 @@
 import bot from '@/bot'
 import env from '@/env'
 import Bull from 'bull'
+import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 
 const broadcastQueue = new Bull<{
   chatId: string
   text: string
+  extra?: ExtraReplyMessage
 }>('broadcast', {
   // 30 messages per second
 
@@ -20,7 +22,7 @@ const broadcastQueue = new Bull<{
 })
 
 broadcastQueue.process(5, async (job) => {
-  const { chatId, text } = job.data
+  const { chatId, text, extra } = job.data
   console.log(`Job data:`, job.data)
 
   try {
@@ -28,14 +30,17 @@ broadcastQueue.process(5, async (job) => {
     console.log(`Sending message to ${chatId}: ${text}`)
 
     // Here you would use your bot's sendMessage method
+    const defaultExtra: ExtraReplyMessage = {
+      parse_mode: 'HTML',
+      link_preview_options: {
+        is_disabled: true
+      }
+    }
+
+    Object.assign(defaultExtra, extra)
 
     await bot.telegram
-      .sendMessage(chatId, text, {
-        parse_mode: 'HTML',
-        link_preview_options: {
-          is_disabled: true
-        }
-      })
+      .sendMessage(chatId, text, defaultExtra)
       .then(() => {
         console.log(`Message sent to ${chatId}: ${text}`)
       })
@@ -53,13 +58,15 @@ broadcastQueue.process(5, async (job) => {
 export const sendMessageQueue = async (payload: {
   chatId: number
   text: string
+  extra?: ExtraReplyMessage
   onComplete: (error?: Error) => void
 }) => {
   // console.log('Args:', payload, onComplete)
   const job = await broadcastQueue.add(
     {
       chatId: String(payload.chatId),
-      text: payload.text
+      text: payload.text,
+      extra: payload.extra
     },
     {
       attempts: 3,

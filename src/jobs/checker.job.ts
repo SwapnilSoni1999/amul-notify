@@ -1,10 +1,10 @@
-import bot from '@/bot'
 import { TIMEZONE } from '@/config'
 import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
 import ProductStockHistoryModel from '@/models/productStockHistory.model'
 import UserModel, { IUser } from '@/models/user.model'
+import { sendMessageQueue } from '@/queues/broadcast.queue'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
 import { getDistinctSubstores } from '@/services/user.service'
@@ -224,14 +224,27 @@ const stockCheckerJob = schedule(
               continue
             }
 
-            bot.telegram
-              .sendMessage(user.tgId!, message, {
-                parse_mode: 'HTML',
-                reply_markup: keyboard.reply_markup,
-                link_preview_options: {
-                  is_disabled: true
+            await sendMessageQueue({
+              chatId: user.tgId!,
+              text: message,
+              extra: {
+                reply_markup: keyboard.reply_markup
+              },
+              onComplete: (err) => {
+                if (err) {
+                  console.error(
+                    `Failed to send message to user ${user._id}: ${err.message}`
+                  )
+                  logToChannel(
+                    `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
+                  )
+                } else {
+                  console.log(
+                    `Notification sent to user ${user._id} for product ${product.sku}`
+                  )
                 }
-              })
+              }
+            })
               .catch((err) => {
                 console.error(
                   `Failed to send message to user ${user._id}: ${err.message}`
@@ -256,7 +269,7 @@ const stockCheckerJob = schedule(
                 .join(', ')}`
             )
             logToChannel(
-              `Notified ${notifiedCount} users about stock changes in ${substore}.`
+              `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.<u>`
             )
           }
 
