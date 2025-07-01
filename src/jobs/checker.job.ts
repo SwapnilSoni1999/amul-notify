@@ -230,7 +230,7 @@ const stockCheckerJob = schedule(
               extra: {
                 reply_markup: keyboard.reply_markup
               },
-              onComplete: (err) => {
+              onComplete: async (err) => {
                 if (err) {
                   console.error(
                     `Failed to send message to user ${user._id}: ${err.message}`
@@ -242,24 +242,20 @@ const stockCheckerJob = schedule(
                   console.log(
                     `Notification sent to user ${user._id} for product ${product.sku}`
                   )
+                  await ProductModel.findOneAndDelete({
+                    sku: product.sku,
+                    trackedBy: user._id
+                  })
                 }
               }
+            }).catch((err) => {
+              console.error(
+                `Failed to send message to user ${user._id}: ${err.message}`
+              )
+              logToChannel(
+                `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
+              )
             })
-              .catch((err) => {
-                console.error(
-                  `Failed to send message to user ${user._id}: ${err.message}`
-                )
-                logToChannel(
-                  `${emojis.crossMark} Failed to send message to user ${user._id}: ${err.message}`
-                )
-              })
-              .finally(async () => {
-                // remove the tracked product from database
-                await ProductModel.findOneAndDelete({
-                  sku: product.sku,
-                  trackedBy: user._id
-                })
-              })
           }
 
           if (notifiedCount > 0) {
