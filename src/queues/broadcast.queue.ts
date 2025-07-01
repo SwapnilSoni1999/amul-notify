@@ -1,6 +1,7 @@
 import bot from '@/bot'
 import env from '@/env'
 import Bull from 'bull'
+import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 
 const broadcastQueue = new Bull<{
@@ -51,7 +52,12 @@ broadcastQueue.process(5, async (job) => {
     return
   } catch (error: any) {
     console.error(`Failed to send message to ${chatId}:`, error)
-    throw new Error(`Failed to send message to ${chatId}`)
+    if (error instanceof TelegramError) {
+      throw new Error(
+        `Failed to send message to ${chatId}: ${error.message} -> ${error.description}`
+      )
+    }
+    throw new Error(`Failed to send message to ${chatId}: ${error.message}`)
   }
 })
 
