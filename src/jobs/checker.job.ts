@@ -265,7 +265,7 @@ const stockCheckerJob = schedule(
                 .join(', ')}`
             )
             logToChannel(
-              `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.<u>`
+              `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.</u>`
             )
           }
 
