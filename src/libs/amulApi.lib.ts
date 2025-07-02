@@ -421,7 +421,8 @@ export class AmulApi {
       {
         headers: {
           ...defaultHeaders,
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
+          cookie: await this.jar.getCookieString('https://shop.amul.com'),
+          tid: await this.calculateTidHeader()
         }
       }
     )
@@ -549,8 +550,8 @@ export class AmulApi {
       {
         headers: {
           ...defaultHeaders,
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
-          // tid: await this.calculateTidHeader()
+          cookie: await this.jar.getCookieString('https://shop.amul.com'),
+          tid: await this.calculateTidHeader()
         }
       }
     )
