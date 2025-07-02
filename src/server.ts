@@ -14,10 +14,10 @@ redis.on('error', (err) => {
 
 mongoose
   .connect(env.MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB successfully')
 
-    initiateAmulSessions()
+    await initiateAmulSessions()
 
     bot
       .launch(() => {

@@ -14,7 +14,7 @@ export const initiateAmulSessions = async () => {
     try {
       await getOrCreateAmulApi(pincode)
       console.log(`Initiated session for pincode: ${pincode}`)
-      await sleep(10 * 1000) // Sleep for 30 seconds between each session initiation
+      await sleep(10 * 1000) // Sleep for 10 seconds between each session initiation
     } catch (err) {
       console.error(`Failed to initiate session for pincode: ${pincode}`, err)
     }

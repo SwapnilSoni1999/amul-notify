@@ -344,7 +344,7 @@ const substoreList = [
 // }
 export const substoreSessions: Map<string, AmulApi> = new Map()
 
-const defaultHeaders = {
+export const defaultHeaders = {
   accept: 'application/json, text/plain, */*',
   'accept-language': 'en-US,en;q=0.9',
   base_url: 'https://shop.amul.com/en/browse/protein',
@@ -367,7 +367,7 @@ const defaultHeaders = {
 
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
-  private amulApi: ReturnType<typeof wrapper>
+  public amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
   public instanceInitializedAt: Date = new Date()
@@ -435,13 +435,17 @@ export class AmulApi {
   }
 
   public async setPincode(record: PincodeRecord) {
-    console.log('[setPincode] Request Headers:', {
-      ...defaultHeaders,
-      cookie: await this.jar.getCookieString('https://shop.amul.com')
-    })
-    console.log(`[setPincode] Body:`, {
-      store: record.substore
-    })
+    console.log(`this.amulApi:`, this.amulApi)
+
+    // await setPincodeQueue({
+    //   tid: await this.calculateTidHeader(),
+    //   cookieStr: await this.jar.getCookieString('https://shop.amul.com'),
+    //   record,
+    //   amulApi: this.amulApi
+    // })
+
+    const tid = await this.calculateTidHeader()
+    const cookieStr = await this.jar.getCookieString('https://shop.amul.com')
 
     const response = await this.amulApi.put(
       'https://shop.amul.com/entity/ms.settings/_/setPreferences',
@@ -453,12 +457,12 @@ export class AmulApi {
       {
         headers: {
           ...defaultHeaders,
-          tid: await this.calculateTidHeader(),
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
+          tid: tid,
+          cookie: cookieStr // Use the cookie string from the job data
         }
       }
     )
-    // console.log('Set Pincode Response:', response.data)
+    console.log('Set Pincode Response:', response.data)
     this.pincodeRecord = record
 
     const existingSubstore: AmulApi | undefined = substoreSessions.get(
@@ -471,8 +475,6 @@ export class AmulApi {
     } else {
       console.log(`Using existing substore session for ${record.substore}`)
     }
-
-    return response.data
   }
 
   public async searchPincode(pincode: string) {
