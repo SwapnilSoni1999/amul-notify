@@ -435,8 +435,16 @@ export class AmulApi {
   }
 
   public async setPincode(record: PincodeRecord) {
+    console.log('[setPincode] Request Headers:', {
+      ...defaultHeaders,
+      cookie: await this.jar.getCookieString('https://shop.amul.com')
+    })
+    console.log(`[setPincode] Body:`, {
+      store: record.substore
+    })
+
     const response = await this.amulApi.put(
-      'http://shop.amul.com/entity/ms.settings/_/setPreferences',
+      'https://shop.amul.com/entity/ms.settings/_/setPreferences',
       {
         data: {
           store: record.substore
@@ -445,6 +453,7 @@ export class AmulApi {
       {
         headers: {
           ...defaultHeaders,
+          tid: await this.calculateTidHeader(),
           cookie: await this.jar.getCookieString('https://shop.amul.com')
         }
       }
@@ -468,7 +477,7 @@ export class AmulApi {
 
   public async searchPincode(pincode: string) {
     const response = await this.amulApi.get<AmulPincodeResponse>(
-      `http://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
+      `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
       {
         headers: {
           ...defaultHeaders,
