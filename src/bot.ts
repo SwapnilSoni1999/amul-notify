@@ -19,6 +19,7 @@ import { broadcastCommand } from './commands/broadcast.command'
 import { amulSessionsCommand } from './commands/amulSessions.command'
 import { statsCommand } from './commands/stats.command'
 import { analyticsCommand } from './commands/analytics.command'
+import { productCountCommand } from './commands/productCount.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -56,7 +57,7 @@ bot.command(
 bot.command(
   'productcount',
   withCatchAsync(isAdmin),
-  withCatchAsync(productsCommand)
+  withCatchAsync(productCountCommand)
 )
 
 bot.use(loggerMiddleware)
