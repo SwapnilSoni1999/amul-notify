@@ -50,7 +50,10 @@ export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
     }).sort({
       createdAt: -1
     }),
-    amul: await getOrCreateAmulApi(user.pincode) // Note: pincode should be set before this middleware is called (exception for /setpincode)
+    amul:
+      (await getOrCreateAmulApi(user.pincode).catch((err) =>
+        console.log(err)
+      )) ?? ({} as AmulApi) // Note: pincode should be set before this middleware is called (exception for /setpincode)
   })
 
   return next()
