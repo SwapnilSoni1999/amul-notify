@@ -17,7 +17,7 @@ mongoose
   .then(async () => {
     console.log('Connected to MongoDB successfully')
 
-    await initiateAmulSessions()
+    initiateAmulSessions()
 
     bot
       .launch(() => {
