@@ -54,7 +54,7 @@ bot.command(
   withCatchAsync(analyticsCommand)
 )
 bot.command(
-  'productscount',
+  'productcount',
   withCatchAsync(isAdmin),
   withCatchAsync(productsCommand)
 )
