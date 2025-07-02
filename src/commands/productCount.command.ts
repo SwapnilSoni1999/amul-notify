@@ -38,9 +38,9 @@ export const productCountCommand: MiddlewareFn<CommandContext> = async (
   const message = results
     .map(
       (item, index) =>
-        `${index + 1}. ${products.find((p) => p.sku === item.sku)?.name} (${
-          item.count
-        })`
+        `${index + 1}. <u>${
+          products.find((p) => p.sku === item.sku)?.name
+        }</u> <b>(${item.count})</b>`
     )
     .join('\n')
 
@@ -49,9 +49,6 @@ export const productCountCommand: MiddlewareFn<CommandContext> = async (
     return next()
   }
 
-  ctx.reply(
-    `<b>Product Count</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})\n\n${message}`,
-    { parse_mode: 'HTML' }
-  )
+  ctx.reply(`<b>Product Count</b>\n\n${message}`, { parse_mode: 'HTML' })
   return next()
 }
