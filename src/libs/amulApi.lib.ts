@@ -483,6 +483,7 @@ export class AmulApi {
       {
         headers: {
           ...defaultHeaders,
+          tid: await this.calculateTidHeader(),
           cookie: await this.jar.getCookieString('https://shop.amul.com')
         }
       }

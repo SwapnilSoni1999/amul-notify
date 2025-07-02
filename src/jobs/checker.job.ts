@@ -269,7 +269,7 @@ const stockCheckerJob = schedule(
             )
           }
 
-          await sleep(1000) // Sleep for 1 seconds to avoid rate limiting
+          await sleep(120 * 1000) // Sleep for 120 seconds to avoid rate limiting
         } catch (err: any) {
           console.error(`Error processing substore ${substore}: ${err.message}`)
           logToChannel(
