@@ -32,10 +32,7 @@ broadcastQueue.process(5, async (job) => {
 
     // Here you would use your bot's sendMessage method
     const defaultExtra: ExtraReplyMessage = {
-      parse_mode: 'HTML',
-      link_preview_options: {
-        is_disabled: true
-      }
+      parse_mode: 'HTML'
     }
 
     Object.assign(defaultExtra, extra)
