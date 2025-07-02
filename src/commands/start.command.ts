@@ -28,7 +28,7 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     ``,
     `Here’s what I can do:`,
     `• <b>/setpincode</b> – Set your pincode to get local stock updates`,
-    `• <b>/products</b> – List all protein products`,
+    `• <b>/products</b> – List all protein products to track`,
     `• <b>/tracked</b> – Show products you're tracking`,
     ``,
     `• <b>/support</b> – Support the bot and contact the developer`,
