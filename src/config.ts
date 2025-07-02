@@ -15,7 +15,8 @@ export const adminCommands: readonly BotCommand[] = [
   { command: 'broadcast', description: 'Broadcast a message to all users' },
   { command: 'sessions', description: 'List all Amul sessions' },
   { command: 'stats', description: 'Get bot statistics' },
-  { command: 'analytics', description: 'Get analytics of products' }
+  { command: 'analytics', description: 'Get analytics of products' },
+  { command: 'productscount', description: 'Get product count by SKU' }
 ]
 
 export const TIMEZONE = 'Asia/Kolkata'

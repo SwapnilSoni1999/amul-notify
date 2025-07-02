@@ -53,6 +53,11 @@ bot.command(
   withCatchAsync(isAdmin),
   withCatchAsync(analyticsCommand)
 )
+bot.command(
+  'productscount',
+  withCatchAsync(isAdmin),
+  withCatchAsync(productsCommand)
+)
 
 bot.use(loggerMiddleware)
 
