@@ -435,8 +435,6 @@ export class AmulApi {
   }
 
   public async setPincode(record: PincodeRecord) {
-    console.log(`this.amulApi:`, this.amulApi)
-
     // await setPincodeQueue({
     //   tid: await this.calculateTidHeader(),
     //   cookieStr: await this.jar.getCookieString('https://shop.amul.com'),
