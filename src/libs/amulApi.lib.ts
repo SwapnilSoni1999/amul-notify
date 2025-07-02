@@ -6,6 +6,7 @@ import {
   AmulSessionInfo,
   PincodeRecord
 } from '@/types/amul.types'
+import { logToChannel } from '@/utils/logger.util'
 import axios from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
@@ -543,6 +544,16 @@ export class AmulApi {
         }
       }
     )
+
+    if (!response.data.data.length) {
+      console.warn(
+        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
+      )
+      logToChannel(
+        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
+      )
+      return []
+    }
 
     // console.log('Response:', response.request)
 

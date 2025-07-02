@@ -20,7 +20,7 @@ A powerful Telegram bot that helps you track the availability of Amul's protein-
 - 📍 **Location-Based**: Set your pincode to get local stock updates
 - � **Smart Notifications**: Get notified instantly when tracked products are back in stock
 - � **Stock Tracking**: Monitor inventory levels and stock changes
-- ⚡ **Real-Time Updates**: Automated checks every 5 minutes
+- ⚡ **Real-Time Updates**: Automated checks every 3 minutes
 - 📱 **User-Friendly**: Simple Telegram interface with inline buttons
 - 🎯 **Selective Tracking**: Track only the products you care about
 - 📈 **Analytics**: View bot statistics and usage data

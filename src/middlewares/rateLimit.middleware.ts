@@ -2,7 +2,7 @@ import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
-const RATE_LIMIT = 10 // max allowed actions
+const RATE_LIMIT = 5 // max allowed actions
 const WINDOW_MS = 60 * 1000 // 1 minute in milliseconds
 
 // Map<userId, timestamp[]>
