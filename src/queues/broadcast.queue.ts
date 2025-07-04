@@ -1,5 +1,6 @@
 import bot from '@/bot'
 import env from '@/env'
+import { emojis } from '@/utils/emoji.util'
 import Bull from 'bull'
 import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
@@ -24,11 +25,11 @@ const broadcastQueue = new Bull<{
 
 broadcastQueue.process(5, async (job) => {
   const { chatId, text, extra } = job.data
-  console.log(`Job data:`, job.data)
+  // console.log(`Job data:`, job.data)
 
   try {
     // Simulate sending message
-    console.log(`Sending message to ${chatId}: ${text}`)
+    // console.log(`Sending message to ${chatId}: ${text}`)
 
     // Here you would use your bot's sendMessage method
     const defaultExtra: ExtraReplyMessage = {
@@ -41,9 +42,12 @@ broadcastQueue.process(5, async (job) => {
     await bot.telegram
       .sendMessage(chatId, text, defaultExtra)
       .then(() => {
-        console.log(`Message sent to ${chatId}: ${text}`)
+        console.log(`${emojis.checkMark} Message sent to ${chatId}: ${text}`)
       })
       .catch((err) => {
+        console.error(
+          `${emojis.crossMark} Failed to send message to ${chatId}: ${err.message}`
+        )
         throw err
       })
 
