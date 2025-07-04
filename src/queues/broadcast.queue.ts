@@ -32,7 +32,8 @@ broadcastQueue.process(5, async (job) => {
 
     // Here you would use your bot's sendMessage method
     const defaultExtra: ExtraReplyMessage = {
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      disable_notification: true // we don't want to spam users with notifications
     }
 
     Object.assign(defaultExtra, extra)
