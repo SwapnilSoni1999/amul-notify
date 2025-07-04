@@ -14,10 +14,23 @@ export const formatProductDetails = (
   index: number,
   lastSeenInStockAt?: Date
 ) => {
+  // console.log(product.metafields)
+  const proteinRegex =
+    /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
+
+  const protein =
+    product.metafields?.benefits
+      ?.match(proteinRegex)?.[0]
+      ?.replace('<li>', '')
+      .replace('</li>', '') || 'N/A'
+
+  console.log('Protein:', protein)
+
   return [
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${
       product.name
     }</a></b>`,
+    `${emptySpace(5)}Protein: <b>${protein}</b>`,
     `${emptySpace(5)}Price: <b>${product.price}</b>`,
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`

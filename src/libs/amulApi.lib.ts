@@ -520,6 +520,7 @@ export class AmulApi {
 
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
+    search?: string
   }): Promise<AmulProduct[]> {
     const { bypassCache = true } = opts || {}
 
@@ -574,6 +575,18 @@ export class AmulApi {
       },
       response.data
     )
+
+    if (opts?.search?.length) {
+      const searchRegex = new RegExp(opts.search, 'i')
+      const filteredProducts = response.data.data.filter(
+        (product) =>
+          searchRegex.test(product.name) ||
+          searchRegex.test(product.sku) ||
+          searchRegex.test(product.alias)
+      )
+
+      return filteredProducts
+    }
 
     return response.data.data
   }

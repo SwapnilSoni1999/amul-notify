@@ -9,7 +9,11 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   ctx,
   next
 ) => {
-  const products = await ctx.amul.getProteinProducts()
+  const query = ctx.payload
+
+  const products = await ctx.amul.getProteinProducts({
+    search: query
+  })
   //   console.log('Products:', products)
 
   const title = `<b>Amul Protein Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
@@ -53,7 +57,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
     })
   )
 
-  console.log('Product Message Blocks:', productMessageBlocks)
+  // console.log('Product Message Blocks:', productMessageBlocks)
 
   let currentChunk: string[] = []
   for (const block of productMessageBlocks) {
@@ -66,11 +70,11 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   }
 
   if (currentChunk.length > 0) {
-    console.log('Pushing last chunk:', currentChunk.length)
+    // console.log('Pushing last chunk:', currentChunk.length)
     messages.push(currentChunk)
   }
 
-  console.log('Messages:', messages)
+  // console.log('Messages:', messages)
 
   for (let i = 0; i < messages.length; i++) {
     const chunk = messages[i]
