@@ -9,11 +9,13 @@ const ProductStockHistorySchema = new Schema(
   {
     sku: {
       type: String,
-      required: true
+      required: true,
+      index: true // Index for faster lookups
     },
     substore: {
       type: String,
-      required: true
+      required: true,
+      index: true // Index for faster lookups
     },
     lastSeenInStockAt: {
       type: Date,

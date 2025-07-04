@@ -31,6 +31,9 @@ export function withCatchAsync<T extends MyContext>(
       }
 
       console.error('Unhandled Telegraf error:', err)
+      logToChannel(
+        `${emojis.warning} Unhandled Telegraf error: ${err.message || err}`
+      )
       try {
         await ctx.reply?.(
           `${emojis.warning} An unexpected error occurred. Please try again later.`

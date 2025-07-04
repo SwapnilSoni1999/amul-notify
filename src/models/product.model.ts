@@ -4,7 +4,8 @@ const ProductSchema = new Schema(
   {
     sku: {
       type: String,
-      required: true
+      required: true,
+      index: true // Index for faster lookups
     },
     trackedBy: {
       type: Schema.Types.ObjectId,

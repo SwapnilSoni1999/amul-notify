@@ -37,11 +37,13 @@ const UserSchema = new Schema(
     },
     pincode: {
       type: String,
-      required: false
+      required: false,
+      index: true // Index for faster lookups
     },
     substore: {
       type: String,
-      required: false
+      required: false,
+      index: true // Index for faster lookups
     }
   },
   {
