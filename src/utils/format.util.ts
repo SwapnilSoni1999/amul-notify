@@ -14,7 +14,6 @@ export const formatProductDetails = (
   index: number,
   lastSeenInStockAt?: Date
 ) => {
-  // console.log(product.metafields)
   const proteinRegex =
     /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
 
@@ -23,8 +22,6 @@ export const formatProductDetails = (
       ?.match(proteinRegex)?.[0]
       ?.replace('<li>', '')
       .replace('</li>', '') || 'N/A'
-
-  console.log('Protein:', protein)
 
   return [
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${
