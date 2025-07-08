@@ -16,7 +16,6 @@ import { logToChannel } from '@/utils/logger.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { Types } from 'mongoose'
 import { schedule } from 'node-cron'
-import { TelegramError } from 'telegraf'
 import { inlineKeyboard } from 'telegraf/markup'
 
 interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
@@ -239,20 +238,6 @@ const stockCheckerJob = schedule(
                   logToChannel(
                     `${emojis.crossMark} [err:onComplete] Failed to send message to user ${user._id}: ${err.message}`
                   )
-
-                  if (err instanceof TelegramError) {
-                    if (err.code === 403) {
-                      // User has blocked the bot or left the chat
-                      console.warn(
-                        `User ${user._id} has blocked the bot or left the chat. Removing from database.`
-                      )
-                      await UserModel.deleteOne({ _id: user._id })
-                    } else {
-                      console.error(
-                        `Telegram error for user ${user._id}: ${err.description}`
-                      )
-                    }
-                  }
                 } else {
                   console.log(
                     `Notification sent to user ${user._id} for product ${product.sku}`
