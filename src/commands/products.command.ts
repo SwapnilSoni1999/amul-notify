@@ -11,6 +11,8 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
 ) => {
   const query = ctx.payload
 
+  const waitMsg = await ctx.reply(`Fetching from Amul... Please wait...`)
+
   const products = await ctx.amul.getProteinProducts({
     search: query
   })
@@ -75,6 +77,10 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   }
 
   // console.log('Messages:', messages)
+
+  await ctx.deleteMessage(waitMsg.message_id).catch(() => {
+    // ignore if message is not found
+  })
 
   for (let i = 0; i < messages.length; i++) {
     const chunk = messages[i]

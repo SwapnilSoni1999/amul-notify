@@ -17,11 +17,18 @@ export const formatProductDetails = (
   const proteinRegex =
     /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
 
-  const protein =
+  let protein =
     product.metafields?.benefits
       ?.match(proteinRegex)?.[0]
       ?.replace('<li>', '')
       .replace('</li>', '') || 'N/A'
+
+  if (protein === 'N/A') {
+    const fallbackSku = ['BTMCP11_30']
+    if (fallbackSku.includes(product.sku)) {
+      protein = '15g protein'
+    }
+  }
 
   return [
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${
