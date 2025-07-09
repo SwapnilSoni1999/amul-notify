@@ -76,6 +76,23 @@ broadcastQueue.process(5, async (job) => {
           }
         }
 
+        if (err.toString().includes('bot was blocked by the user')) {
+          console.warn(
+            `User ${chatId} has blocked the bot. Removing from database.`
+          )
+          console.log(
+            `[catchFn](broadcast.queue): Removing user ${chatId} from database due to bot being blocked`
+          )
+          const deleteResponse = await UserModel.deleteOne({
+            tgId: Number(chatId)
+          })
+          console.log(
+            `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
+              deleteResponse
+            )}` // Log the number of deleted users
+          )
+        }
+
         console.error(
           `${emojis.crossMark} Failed to send message to ${chatId}: ${err.message}`
         )
@@ -95,13 +112,15 @@ broadcastQueue.process(5, async (job) => {
           deleteResponse
         )}` // Log the number of deleted users
       )
-      throw new Error(
+      console.error(
         `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
     }
-    throw new Error(
+    console.error(
       `[broadcast.queue:60] Failed to send message to ${chatId}: ${error.message}`
     )
+
+    throw error // Re-throw the error to mark the job as failed
   }
 })
 
@@ -109,7 +128,7 @@ export const sendMessageQueue = async (payload: {
   chatId: number
   text: string
   extra?: ExtraReplyMessage
-  onComplete: (error?: Error) => void
+  onComplete: (error?: Error | TelegramError) => void
 }) => {
   // console.log('Args:', payload, onComplete)
   const job = await broadcastQueue.add(
@@ -131,6 +150,6 @@ export const sendMessageQueue = async (payload: {
     payload.onComplete()
   } catch (err) {
     console.error(`Job failed:`, err)
-    payload.onComplete(err as Error)
+    payload.onComplete(err as Error | TelegramError)
   }
 }
