@@ -53,6 +53,9 @@ broadcastQueue.process(5, async (job) => {
             console.warn(
               `User ${chatId} has blocked the bot or left the chat. Removing from database.`
             )
+            console.log(
+              `[catchFn](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
+            )
             await UserModel.deleteOne({ tgId: chatId })
           } else {
             console.error(
@@ -74,6 +77,10 @@ broadcastQueue.process(5, async (job) => {
   } catch (error: any) {
     console.error(`Failed to send message to ${chatId}:`, error)
     if (error instanceof TelegramError) {
+      console.log(
+        `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
+      )
+      await UserModel.deleteOne({ tgId: chatId })
       throw new Error(
         `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
