@@ -56,7 +56,7 @@ broadcastQueue.process(5, async (job) => {
             console.log(
               `[catchFn](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
             )
-            await UserModel.deleteOne({ tgId: chatId })
+            await UserModel.deleteOne({ tgId: Number(chatId) })
           } else {
             console.error(
               `Telegram error for user ${chatId}: ${err.description}`
@@ -80,7 +80,7 @@ broadcastQueue.process(5, async (job) => {
       console.log(
         `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
       )
-      await UserModel.deleteOne({ tgId: chatId })
+      await UserModel.deleteOne({ tgId: Number(chatId) })
       throw new Error(
         `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
