@@ -9,7 +9,7 @@ import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
-import { isAvailableToPurchase } from '@/utils/amul.util'
+import { getInventoryQuantity, isAvailableToPurchase } from '@/utils/amul.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
@@ -261,13 +261,9 @@ const stockCheckerJob = schedule(
           if (notifiedCount > 0) {
             logToChannel(
               `${emojis.refresh} Stock update (${substore}): ${changedProducts
-                .map((p) => `${p.name} (${p.sku})`)
-                .join(', ')}`
-            ).then(() => {
-              logToChannel(
-                `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.</u>`
-              )
-            })
+                .map((p) => `${p.name} (${getInventoryQuantity(p)})`)
+                .join(', ')}\nNotified ${notifiedCount} users.`
+            )
           }
 
           await sleep(1 * 1000) // Sleep for 1 seconds to avoid rate limiting
