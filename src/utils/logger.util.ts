@@ -1,16 +1,23 @@
-import bot from '@/bot'
 import { LOG_CHANNEL } from '@/config'
+import { sendMessageQueue } from '@/queues/broadcast.queue'
 
 export const logToChannel = async (text: string, next?: () => void) => {
   try {
-    bot.telegram
-      .sendMessage(LOG_CHANNEL, text, {
+    sendMessageQueue({
+      chatId: LOG_CHANNEL,
+      text,
+      extra: {
         parse_mode: 'HTML'
-      })
-      .catch((err) => {
-        console.error('Failed to send log message:', err)
-      })
-    console.log('Log message sent to channel:', text)
+      },
+      onComplete: (error?: Error) => {
+        if (error) {
+          console.error('Error sending log message:', error)
+        } else {
+          console.log('Log message sent successfully:', text)
+        }
+      }
+    })
+
     next?.()
   } catch (err) {
     console.error('Error in logToChannel:', err)
