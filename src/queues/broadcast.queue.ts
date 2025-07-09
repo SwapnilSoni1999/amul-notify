@@ -8,7 +8,7 @@ import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 
 const broadcastQueue = new Bull<{
-  chatId: string
+  chatId: string | number
   text: string
   extra?: ExtraReplyMessage
 }>('broadcast', {
@@ -56,7 +56,14 @@ broadcastQueue.process(5, async (job) => {
             console.log(
               `[catchFn](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
             )
-            await UserModel.deleteOne({ tgId: Number(chatId) })
+            const deleteResponse = await UserModel.deleteOne({
+              tgId: Number(chatId)
+            })
+            console.log(
+              `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
+                deleteResponse
+              )}` // Log the number of deleted users
+            )
           } else {
             console.error(
               `Telegram error for user ${chatId}: ${err.description}`
@@ -80,7 +87,12 @@ broadcastQueue.process(5, async (job) => {
       console.log(
         `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
       )
-      await UserModel.deleteOne({ tgId: Number(chatId) })
+      const deleteResponse = await UserModel.deleteOne({ tgId: Number(chatId) })
+      console.log(
+        `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
+          deleteResponse
+        )}` // Log the number of deleted users
+      )
       throw new Error(
         `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
@@ -100,7 +112,7 @@ export const sendMessageQueue = async (payload: {
   // console.log('Args:', payload, onComplete)
   const job = await broadcastQueue.add(
     {
-      chatId: String(payload.chatId),
+      chatId: payload.chatId,
       text: payload.text,
       extra: payload.extra
     },

@@ -263,10 +263,11 @@ const stockCheckerJob = schedule(
               `${emojis.refresh} Stock update (${substore}): ${changedProducts
                 .map((p) => `${p.name} (${p.sku})`)
                 .join(', ')}`
-            )
-            logToChannel(
-              `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.</u>`
-            )
+            ).then(() => {
+              logToChannel(
+                `<u>Notified ${notifiedCount} user(s) about stock changes in ${substore}.</u>`
+              )
+            })
           }
 
           await sleep(1 * 1000) // Sleep for 1 seconds to avoid rate limiting
