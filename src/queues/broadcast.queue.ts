@@ -47,6 +47,8 @@ broadcastQueue.process(5, async (job) => {
         console.log(`${emojis.checkMark} Message sent to ${chatId}: ${text}`)
       })
       .catch(async (err) => {
+        console.log('[ATTENTION:] ERROR:', err)
+        console.log(JSON.stringify(err))
         if (err instanceof TelegramError) {
           if (err.code === 403) {
             // User has blocked the bot or left the chat
