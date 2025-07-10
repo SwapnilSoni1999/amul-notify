@@ -27,6 +27,7 @@ jobs:
           echo "BOT_TOKEN=${{ secrets.PROD_BOT_TOKEN }}" >> .env.prod
 
           echo "TRACKER_ENABLED=${{ vars.PROD_TRACKER_ENABLED }}" >> .env.prod
+          echo "BOT_WEBHOOK_URL=${{ vars.PROD_BOT_WEBHOOK_URL}}" >> .env.prod
 
       - name: Build Docker image
         run: |
