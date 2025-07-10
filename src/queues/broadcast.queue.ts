@@ -6,6 +6,10 @@ import { logToChannel } from '@/utils/logger.util'
 import Bull from 'bull'
 import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
+import { setServers, getServers } from 'dns'
+
+setServers(['8.8.8.8', '1.1.1.1'] as const)
+console.log(`Using DNS servers: ${getServers()}`)
 
 const broadcastQueue = new Bull<{
   chatId: string | number
