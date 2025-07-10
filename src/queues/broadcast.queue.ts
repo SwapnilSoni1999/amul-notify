@@ -2,7 +2,6 @@ import bot from '@/bot'
 import env from '@/env'
 import UserModel from '@/models/user.model'
 import { emojis } from '@/utils/emoji.util'
-import { logToChannel } from '@/utils/logger.util'
 import Bull from 'bull'
 import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
@@ -80,9 +79,6 @@ broadcastQueue.process(5, async (job) => {
             )
           } else {
             console.error(
-              `Telegram error for user ${chatId}: ${err.description}`
-            )
-            logToChannel(
               `Telegram error for user ${chatId}: ${err.description}`
             )
           }
