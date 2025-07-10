@@ -17,7 +17,6 @@ const broadcastQueue = new Bull<{
   extra?: ExtraReplyMessage
 }>('broadcast', {
   // 30 messages per second
-
   limiter: {
     max: 30,
     duration: 2000 // keeping it at 30 messages per 2 seconds
