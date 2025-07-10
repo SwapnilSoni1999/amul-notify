@@ -19,7 +19,9 @@ const broadcastQueue = new Bull<{
 }>('broadcast', {
   // 30 messages per second
   defaultJobOptions: {
-    attempts: 1 // Retry once if it fails
+    attempts: 1, // Retry once if it fails
+    removeOnComplete: true, // Remove job from queue after completion
+    removeOnFail: true // Remove job from queue after failure
   },
   limiter: {
     max: 30,
