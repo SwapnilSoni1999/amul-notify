@@ -4,6 +4,7 @@ import bot from '@/bot'
 import redis from '@/redis'
 import { stockCheckerJob } from './jobs/checker.job'
 import { initiateAmulSessions } from './services/amul.service'
+import app from '@/app'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -14,28 +15,58 @@ redis.on('error', (err) => {
 
 mongoose
   .connect(env.MONGO_URI)
-  .then(async () => {
+  .then(() => {
     console.log('Connected to MongoDB successfully')
+    app.listen(env.PORT, async () => {
+      console.log(`Server is running on port ${env.PORT}`)
 
-    initiateAmulSessions()
+      initiateAmulSessions()
 
-    bot
-      .launch(() => {
-        console.log('Bot is running...')
+      if (env.BOT_WEBHOOK_URL) {
+        const botSecret = `amul_${bot.secretPathComponent()}`
+        console.log(`Setting webhook to: ${env.BOT_WEBHOOK_URL}`)
+        await bot.telegram.setWebhook(env.BOT_WEBHOOK_URL, {
+          secret_token: botSecret
+        })
 
-        // Start job
-        if (env.TRACKER_ENABLED) {
-          console.log('Starting stock checker job...')
-          stockCheckerJob.start()
-          stockCheckerJob.execute()
-          console.log('Stock checker job started')
-        } else {
-          console.log('Stock tracker is disabled. Skipping job execution.')
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to launch bot:', err)
-      })
+        const url = new URL(env.BOT_WEBHOOK_URL)
+        const hookPath = url.pathname.endsWith('/')
+          ? url.pathname.slice(0, -1)
+          : url.pathname
+
+        app.use(hookPath, (req, res) => {
+          // console.log('Bot Secret:', req.get('X-Telegram-Bot-Api-Secret-Token'))
+          if (req.get('X-Telegram-Bot-Api-Secret-Token') !== botSecret) {
+            console.error('Invalid secret token')
+            return res.status(403).end()
+          }
+
+          bot.handleUpdate(req.body, res).catch((err) => {
+            console.error('Error in bot.handleUpdate:', err)
+            // Still respond 200 so Telegram won’t retry endlessly
+            res.status(200).end()
+          })
+        })
+      } else {
+        bot
+          .launch(() => {
+            console.log('Bot is running...')
+          })
+          .catch((err) => {
+            console.error('Failed to launch bot:', err)
+          })
+      }
+
+      // Start job
+      if (env.TRACKER_ENABLED) {
+        console.log('Starting stock checker job...')
+        stockCheckerJob.start()
+        stockCheckerJob.execute()
+        console.log('Stock checker job started')
+      } else {
+        console.log('Stock tracker is disabled. Skipping job execution.')
+      }
+    })
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB:', err)

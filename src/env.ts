@@ -6,9 +6,11 @@ import { z } from 'zod'
 const envSchema = z.object({
   NODE_ENV: z.enum(['local', 'production', 'staging', 'test']).default('local'),
   // Server Configuration
+  PORT: z.coerce.number().default(5999),
   MONGO_URI: z.string().min(1, { message: 'MONGO_URI is required' }),
   // Bot Configuration
   BOT_TOKEN: z.string().min(1, { message: 'BOT_TOKEN is required' }),
+  BOT_WEBHOOK_URL: z.string().optional(),
 
   // Redis
   REDIS_HOST: z.string().default('localhost'),
