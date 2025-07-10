@@ -18,6 +18,9 @@ const broadcastQueue = new Bull<{
   extra?: ExtraReplyMessage
 }>('broadcast', {
   // 30 messages per second
+  defaultJobOptions: {
+    attempts: 1 // Retry once if it fails
+  },
   limiter: {
     max: 30,
     duration: 2000 // keeping it at 30 messages per 2 seconds
@@ -153,8 +156,7 @@ export const sendMessageQueue = async (payload: {
       extra: payload.extra
     },
     {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
+      attempts: 1, // Retry once if it fails
       jobId: String(payload.chatId), // Use chatId as job ID to avoid duplicates
       removeOnComplete: true // Remove job from queue after completion
     }
