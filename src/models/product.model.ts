@@ -11,6 +11,11 @@ const ProductSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    trackAlways: {
+      type: Boolean,
+      default: false,
+      index: true // Index for faster lookups in job queries
     }
   },
   {

@@ -34,16 +34,16 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
 
         const isAvlblToPurchase = isAvailableToPurchase(product)
 
-        const trackBtn = `<b><a href="${await startCommandLink(
-          `track_${product.sku}`
-        )}">[Track]</a></b>`
-
         const untrackBtn = `<b><a href="${await startCommandLink(
           `untrack_${product.sku}`
         )}">[Untrack]</a></b>`
 
-        const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
-        console.log('isTracked:', isTracked)
+        const toggleBtn = `<b><a href="${await startCommandLink(
+          `toggle_${product.sku}`
+        )}">[Toggle]</a></b>`
+
+        const isTrackedAlways = trackedProduct.trackAlways || false
+        const trackType = isTrackedAlways ? '🔁 Always' : '🔍 Once'
 
         const lastSeen = await getLastInStockAt(
           product.sku,
@@ -57,7 +57,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
             index,
             lastSeen?.lastSeenInStockAt
           ),
-          isTracked ? untrackBtn : trackBtn
+          `<i>Tracking: ${trackType}</i> | ${toggleBtn} | ${untrackBtn}`
         ].join('\n')
       })
     ))

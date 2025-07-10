@@ -10,6 +10,7 @@ export const emojis = {
   // Actions
   refresh: '🔄',
   search: '🔍',
+  repeat: '🔁',
 
   // UI elements
   pin: '📍',
