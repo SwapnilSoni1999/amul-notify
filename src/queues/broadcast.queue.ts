@@ -158,9 +158,7 @@ export const sendMessageQueue = async (payload: {
       extra: payload.extra
     },
     {
-      attempts: 1, // Retry once if it fails
-      jobId: String(payload.chatId), // Use chatId as job ID to avoid duplicates
-      removeOnComplete: true // Remove job from queue after completion
+      jobId: String(payload.chatId) // Use chatId as job ID to avoid duplicates
     }
   )
 
