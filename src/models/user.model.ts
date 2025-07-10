@@ -4,7 +4,6 @@ import {
   Schema,
   model
 } from 'mongoose'
-import ProductModel from './product.model'
 
 const UserSchema = new Schema(
   {
@@ -51,13 +50,6 @@ const UserSchema = new Schema(
     timestamps: true
   }
 )
-
-// Cascade delete for related documents
-UserSchema.pre('deleteOne', async function (next) {
-  const userId = this.getQuery()._id
-  await ProductModel.deleteMany({ userId }).exec()
-  next()
-})
 
 const UserModel = model<IUser>('User', UserSchema, 'users')
 

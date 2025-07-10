@@ -7,6 +7,7 @@ import Bull from 'bull'
 import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 import { setServers, getServers } from 'dns'
+import ProductModel from '@/models/product.model'
 
 setServers(['8.8.8.8', '1.1.1.1'] as const)
 console.log(`Using DNS servers: ${getServers()}`)
@@ -61,9 +62,12 @@ broadcastQueue.process(5, async (job) => {
             console.log(
               `[catchFn](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
             )
-            const deleteResponse = await UserModel.deleteOne({
+            const deleteResponse = await UserModel.findOneAndDelete({
               tgId: Number(chatId)
             })
+            if (deleteResponse?._id) {
+              await ProductModel.deleteMany({ trackedBy: deleteResponse._id })
+            }
             console.log(
               `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
                 deleteResponse
@@ -86,9 +90,12 @@ broadcastQueue.process(5, async (job) => {
           console.log(
             `[catchFn](broadcast.queue): Removing user ${chatId} from database due to bot being blocked`
           )
-          const deleteResponse = await UserModel.deleteOne({
+          const deleteResponse = await UserModel.findOneAndDelete({
             tgId: Number(chatId)
           })
+          if (deleteResponse?._id) {
+            await ProductModel.deleteMany({ trackedBy: deleteResponse._id })
+          }
           console.log(
             `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
               deleteResponse
@@ -109,7 +116,12 @@ broadcastQueue.process(5, async (job) => {
       console.log(
         `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
       )
-      const deleteResponse = await UserModel.deleteOne({ tgId: Number(chatId) })
+      const deleteResponse = await UserModel.findOneAndDelete({
+        tgId: Number(chatId)
+      })
+      if (deleteResponse?._id) {
+        await ProductModel.deleteMany({ trackedBy: deleteResponse._id })
+      }
       console.log(
         `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
           deleteResponse
