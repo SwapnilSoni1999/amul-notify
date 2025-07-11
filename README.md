@@ -3,6 +3,7 @@
 [![Telegram](https://img.shields.io/badge/Chat-Telegram-blue?logo=telegram)](https://t.me/AmulOSSBot)
 [![GitHub stars](https://img.shields.io/github/stars/SwapnilSoni1999/amul-notify?style=social)](https://github.com/SwapnilSoni1999/amul-notify)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fbots.10xdev.me%2Famul-bot%2Fbadge)
 
 A powerful Telegram bot that helps you track the availability of Amul's protein-rich products including protein shakes, lassi, whey protein, paneer, and more. Get real-time notifications when your favorite products are back in stock in your local area!
 
