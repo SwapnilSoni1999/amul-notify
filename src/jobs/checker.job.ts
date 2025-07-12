@@ -228,6 +228,7 @@ const stockCheckerJob = schedule(
               chatId: user.tgId!,
               text: message,
               extra: {
+                disable_notification: false, // Enable notifications
                 reply_markup: keyboard.reply_markup
               },
               onComplete: async (err) => {
