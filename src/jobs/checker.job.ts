@@ -20,6 +20,7 @@ import { inlineKeyboard } from 'telegraf/markup'
 
 interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
   trackedBy: IUser & { _id: Types.ObjectId }
+  trackAlways: boolean
 }
 
 const MAX_SESSION_OLD_DAYS = 5 // Maximum age of session in days
@@ -200,21 +201,26 @@ const stockCheckerJob = schedule(
 
             notifiedCount++
 
+            const isAlwaysTracked = dbProduct.trackAlways || false
+            
             const keyboard = inlineKeyboard([
               [
                 {
-                  text: 'Track Again',
+                  text: isAlwaysTracked ? 'Manage Tracking' : 'Track Again',
                   url: await startCommandLink(`track_${product.sku}`)
                 }
               ]
             ])
 
+            const trackStatus = isAlwaysTracked 
+              ? `<i>🔁 Always tracking - you'll continue to receive notifications.</i>`
+              : `<i>🔍 One-time tracking - product is now untracked. You can track it again using the button below.</i>`
+
             const message = [
               `${emojis.fire} <b>Product Update: ${product.name}</b>`,
               formatProductDetails(product, isAvailablForPurchase, 0),
               '',
-              // Show untracked info
-              `<i>The product is now untracked. You can track it again using the button below.</i>`
+              trackStatus
             ].join('\n')
 
             if (!user.tgId) {
@@ -243,10 +249,20 @@ const stockCheckerJob = schedule(
                   console.log(
                     `Notification sent to user ${user._id} for product ${product.sku}`
                   )
-                  await ProductModel.findOneAndDelete({
-                    sku: product.sku,
-                    trackedBy: user._id
-                  })
+                  // Only delete if it's not always tracked
+                  if (!isAlwaysTracked) {
+                    await ProductModel.findOneAndDelete({
+                      sku: product.sku,
+                      trackedBy: user._id
+                    })
+                    console.log(
+                      `Product ${product.sku} untracked for user ${user._id} (one-time tracking)`
+                    )
+                  } else {
+                    console.log(
+                      `Product ${product.sku} remains tracked for user ${user._id} (always tracking)`
+                    )
+                  }
                 }
               }
             }).catch((err) => {

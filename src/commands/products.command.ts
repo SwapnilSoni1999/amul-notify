@@ -26,22 +26,38 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
     products.map(async (product, index) => {
       const isAvlblToPurchase = isAvailableToPurchase(product)
 
-      // const trackBtn = link('[Track]', getProductUrl(product))
-
       const trackBtn = `<b><a href="${await startCommandLink(
         `track_${product.sku}`
       )}">[Track]</a></b>`
+
+      const trackAlwaysBtn = `<b><a href="${await startCommandLink(
+        `trackalways_${product.sku}`
+      )}">[Track Always]</a></b>`
 
       const untrackBtn = `<b><a href="${await startCommandLink(
         `untrack_${product.sku}`
       )}">[Untrack]</a></b>`
 
-      const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
+      const toggleBtn = `<b><a href="${await startCommandLink(
+        `toggle_${product.sku}`
+      )}">[Toggle]</a></b>`
+
+      const trackedProduct = ctx.trackedProducts.find((p) => p.sku === product.sku)
+      const isTracked = !!trackedProduct
+      const isTrackedAlways = trackedProduct?.trackAlways || false
 
       const lastSeen = await getLastInStockAt(
         product.sku,
         ctx.amul.getSubstore()!
       )
+
+      let trackingButtons = ''
+      if (isTracked) {
+        const trackType = isTrackedAlways ? '🔁 Always' : '🔍 Once'
+        trackingButtons = `<i>Tracking: ${trackType}</i> | ${toggleBtn} | ${untrackBtn}`
+      } else {
+        trackingButtons = `${trackBtn} | ${trackAlwaysBtn}`
+      }
 
       const productMessage = [
         formatProductDetails(
@@ -50,7 +66,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
           index,
           lastSeen?.lastSeenInStockAt
         ),
-        isTracked ? untrackBtn : trackBtn
+        trackingButtons
       ]
         .filter(Boolean)
         .join('\n')
