@@ -1,4 +1,9 @@
-import { HydratedDocumentFromSchema, model, Schema } from 'mongoose'
+import {
+  HydratedDocumentFromSchema,
+  InferSchemaType,
+  model,
+  Schema
+} from 'mongoose'
 
 const ProductSchema = new Schema(
   {
@@ -11,6 +16,10 @@ const ProductSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    remainingNotifyCount: {
+      type: Number,
+      default: 1 // Default to 1 notification
     }
   },
   {
@@ -21,5 +30,7 @@ const ProductSchema = new Schema(
 const ProductModel = model('Product', ProductSchema, 'products')
 
 export type HydratedProduct = HydratedDocumentFromSchema<typeof ProductSchema>
+
+export type IProduct = InferSchemaType<typeof ProductSchema>
 
 export default ProductModel

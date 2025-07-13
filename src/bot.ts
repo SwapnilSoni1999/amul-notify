@@ -1,4 +1,4 @@
-import { Telegraf } from 'telegraf'
+import { Scenes, session, Telegraf } from 'telegraf'
 import { MyContext } from '@/types/context.types'
 import env from '@/env'
 import { startCommand } from '@/commands/start.command'
@@ -20,12 +20,22 @@ import { amulSessionsCommand } from './commands/amulSessions.command'
 import { statsCommand } from './commands/stats.command'
 import { analyticsCommand } from './commands/analytics.command'
 import { productCountCommand } from './commands/productCount.command'
+import { settingsCommand } from './commands/settings.command'
+import { ACTIONS } from './config'
+import { toggleTrackingStyleAction } from './actions/toggleTrackingStyle.action'
+import { changeMaxNotifyCount } from './actions/changeMaxNotifyCount.action'
+import { changeMaxNotifyCountWizard } from './wizards/changeMaxNotifyCount.wizard'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
+
+const stage = new Scenes.Stage<MyContext>([changeMaxNotifyCountWizard])
+bot.use(session())
 
 bot.use(withCatchAsync(onlyPvtChat))
 bot.use(withCatchAsync(sessionMiddleware))
 bot.use(withCatchAsync(setCommands))
+
+bot.use(stage.middleware())
 
 bot.start(withCatchAsync(startCommand))
 
@@ -37,6 +47,7 @@ bot.command('products', withCatchAsync(productsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
 bot.command('pincode', withCatchAsync(pincodeCommand))
+bot.command('settings', withCatchAsync(settingsCommand))
 
 bot.command(
   'broadcast',
@@ -58,6 +69,16 @@ bot.command(
   'productcount',
   withCatchAsync(isAdmin),
   withCatchAsync(productCountCommand)
+)
+
+bot.action(
+  ACTIONS.settings.trackingStyle.toggle,
+  withCatchAsync(toggleTrackingStyleAction)
+)
+
+bot.action(
+  ACTIONS.settings.trackingStyle.changeMaxNotifyCount,
+  withCatchAsync(changeMaxNotifyCount)
 )
 
 bot.use(loggerMiddleware)

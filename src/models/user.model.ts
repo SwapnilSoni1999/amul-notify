@@ -5,6 +5,26 @@ import {
   model
 } from 'mongoose'
 
+const UserSettingsSchema = new Schema(
+  {
+    trackingStyle: {
+      type: String,
+      enum: ['once', 'always']
+    },
+    maxNotifyCount: {
+      // Maximum number of notifications to show per tracked product
+      type: Number,
+      default: 3,
+      min: 1, // At least one notification
+      max: 100 // Arbitrary upper limit
+    }
+  },
+  {
+    _id: false, // Prevents creation of a separate collection for settings
+    timestamps: false // No need for timestamps in settings
+  }
+)
+
 const UserSchema = new Schema(
   {
     tgUsername: {
@@ -44,6 +64,13 @@ const UserSchema = new Schema(
       type: String,
       required: false,
       index: true // Index for faster lookups
+    },
+    settings: {
+      type: UserSettingsSchema,
+      default: () => ({
+        trackingStyle: 'once', // Default tracking style
+        maxNotifyCount: 3 // Default maximum notifications
+      })
     }
   },
   {

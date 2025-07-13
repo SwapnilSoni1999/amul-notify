@@ -7,6 +7,7 @@ import UserModel, { IUser } from '@/models/user.model'
 import { sendMessageQueue } from '@/queues/broadcast.queue'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
+import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.service'
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
 import { getInventoryQuantity, isAvailableToPurchase } from '@/utils/amul.util'
@@ -92,11 +93,16 @@ const stockCheckerJob = schedule(
           console.log(`cachedProducts`, cachedProducts.length)
 
           // map through fresh products and check if any have changed
+          const promises: Promise<any>[] = []
+
           const changedProducts = freshProducts.filter((freshProduct) => {
             const cachedProduct = cachedProducts.find(
               (p) => p.sku === freshProduct.sku
             )
             if (!cachedProduct) return false
+
+            const wasUnavailableForPurchase =
+              !isAvailableToPurchase(cachedProduct)
 
             const isAvailablForPurchase = isAvailableToPurchase(freshProduct)
             if (isAvailablForPurchase) {
@@ -134,6 +140,14 @@ const stockCheckerJob = schedule(
                 })
             }
 
+            if (wasUnavailableForPurchase && isAvailablForPurchase) {
+              // If the product was previously unavailable and is now available, we consider it changed
+              // Now those users who were always tracking this product will be notified
+              promises.push(
+                findAndUpdateProductsWithAlwaysTracking(freshProduct.sku)
+              )
+            }
+
             return (
               freshProduct.available !== cachedProduct.available ||
               freshProduct.inventory_quantity !==
@@ -148,6 +162,8 @@ const stockCheckerJob = schedule(
 
             continue
           }
+
+          await Promise.allSettled(promises) // Wait for all findAndUpdateProductsWithAlwaysTracking promises to resolve
 
           // Notify users about the stock changes
           const usersToNotify = await ProductModel.aggregate<ProductWithUser>([
@@ -243,10 +259,28 @@ const stockCheckerJob = schedule(
                   console.log(
                     `Notification sent to user ${user._id} for product ${product.sku}`
                   )
-                  await ProductModel.findOneAndDelete({
-                    sku: product.sku,
-                    trackedBy: user._id
-                  })
+
+                  if (user.settings.trackingStyle === 'always') {
+                    await ProductModel.findOneAndUpdate(
+                      {
+                        sku: product.sku,
+                        trackedBy: user._id
+                      },
+                      {
+                        $inc: {
+                          remainingNotifyCount: -1 // Decrease the remaining notify count
+                        }
+                      },
+                      {
+                        new: true
+                      }
+                    )
+                  } else if (user.settings.trackingStyle === 'once') {
+                    await ProductModel.findOneAndDelete({
+                      sku: product.sku,
+                      trackedBy: user._id
+                    })
+                  }
                 }
               }
             }).catch((err) => {

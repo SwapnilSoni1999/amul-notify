@@ -7,6 +7,12 @@ export const emojis = {
   warning: '⚠️',
   exclamation: '❗',
 
+  // Tracking Style
+  always: '♾️',
+  once: '☝️',
+  count: '🔢',
+  notify: '📣',
+
   // Actions
   refresh: '🔄',
   search: '🔍',
@@ -23,5 +29,6 @@ export const emojis = {
   target: '🎯',
   box: '📦',
   lightning: '⚡',
-  cart: '🛒'
+  cart: '🛒',
+  settings: '⚙️'
 }

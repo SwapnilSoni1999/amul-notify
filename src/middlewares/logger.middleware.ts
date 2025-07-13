@@ -15,7 +15,13 @@ export const loggerMiddleware: MiddlewareFn<MyContext> = async (ctx) => {
         `Text: ${
           ctx.message && 'text' in ctx.message ? ctx.message.text : 'N/A'
         }`,
-        `Payload: ${'payload' in ctx ? ctx.payload : 'N/A'}`
+        `Payload: ${
+          'payload' in ctx
+            ? ctx.payload
+            : (ctx.callbackQuery && 'data' in ctx.callbackQuery
+                ? ctx.callbackQuery.data
+                : 'N/A') || 'N/A'
+        }`
       ].join('\n')
     )
   } catch (error) {

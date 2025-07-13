@@ -1,6 +1,9 @@
-import ProductModel from '@/models/product.model'
+import ProductModel, { HydratedProduct, IProduct } from '@/models/product.model'
+import UserModel, { HydratedUser } from '@/models/user.model'
 import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
+import { logToChannel } from '@/utils/logger.util'
+import { AnyBulkWriteOperation } from 'mongoose'
 
 export const untrackProduct = async (ctx: MyContext, sku: string) => {
   const existingProduct = await ProductModel.findOneAndDelete({
@@ -54,4 +57,46 @@ export const trackProduct = async (ctx: MyContext, sku: string) => {
       `You will receive updates when the product is available.`,
     { parse_mode: 'HTML' }
   )
+}
+
+export const findAndUpdateProductsWithAlwaysTracking = async (sku: string) => {
+  const products = await ProductModel.aggregate<
+    HydratedProduct & { user: HydratedUser }
+  >([
+    {
+      $match: { sku }
+    },
+    {
+      $lookup: {
+        from: UserModel.collection.name,
+        localField: 'trackedBy',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    // 2. Unwind the resulting array to get a single object
+    { $unwind: '$user' },
+    // 3. Keep only those where settings.trackingStyle is 'always'
+    { $match: { 'user.settings.trackingStyle': 'always' } }
+  ]).exec()
+
+  const bulkOp = products.map<AnyBulkWriteOperation<IProduct>>((product) => ({
+    updateOne: {
+      filter: { _id: product._id },
+      update: {
+        $set: {
+          remainingNotifyCount: product.user.settings.maxNotifyCount || 1
+        }
+      }
+    }
+  }))
+
+  await ProductModel.bulkWrite(bulkOp).catch((err) => {
+    console.error('Error updating remainingNotifyCount:', err)
+    logToChannel(
+      `${emojis.crossMark} Error updating remainingNotifyCount: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    )
+  })
 }

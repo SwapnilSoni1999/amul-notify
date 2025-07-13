@@ -50,7 +50,7 @@ export const broadcastCommand: MiddlewareFn<CommandContext> = async (
         msg.message_id,
         undefined,
         `${emojis.megaphone} Broadcasting message: "${messageText}"\n\n` +
-          `Progress: ${progressText} (${completd}/${total})\n` +
+          `${progressText} (${completd}/${total})\n` +
           `Failed: ${failed}`
       )
     } catch (err) {
