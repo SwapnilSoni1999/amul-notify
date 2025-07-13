@@ -8,7 +8,11 @@ export const adminSeeder = async () => {
       isAdmin: true,
       isBlocked: false,
       tgId: 317890515,
-      tgUsername: 'SoniSins'
+      tgUsername: 'SoniSins',
+      settings: {
+        trackingStyle: 'once',
+        maxNotifyCount: 1
+      }
     }
   ]
 
