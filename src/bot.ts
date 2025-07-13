@@ -25,6 +25,7 @@ import { ACTIONS } from './config'
 import { toggleTrackingStyleAction } from './actions/toggleTrackingStyle.action'
 import { changeMaxNotifyCount } from './actions/changeMaxNotifyCount.action'
 import { changeMaxNotifyCountWizard } from './wizards/changeMaxNotifyCount.wizard'
+import { favouritesCommand } from './commands/favourites.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -48,6 +49,7 @@ bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
 bot.command('pincode', withCatchAsync(pincodeCommand))
 bot.command('settings', withCatchAsync(settingsCommand))
+bot.command('favourites', withCatchAsync(favouritesCommand))
 
 bot.command(
   'broadcast',

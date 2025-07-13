@@ -71,7 +71,14 @@ const UserSchema = new Schema(
         trackingStyle: 'once', // Default tracking style
         maxNotifyCount: 3 // Default maximum notifications
       })
-    }
+    },
+    favSkus: [
+      {
+        type: String,
+        required: false,
+        default: []
+      }
+    ]
   },
   {
     timestamps: true

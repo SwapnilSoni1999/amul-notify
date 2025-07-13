@@ -1,4 +1,8 @@
-import { trackProduct, untrackProduct } from '@/services/track.service'
+import {
+  toggleFavouriteProduct,
+  trackProduct,
+  untrackProduct
+} from '@/services/track.service'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
@@ -15,6 +19,12 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     await ctx.deleteMessage()
     const [, ...sku] = payload.split('_')
     await untrackProduct(ctx, sku.join('_'))
+    return next()
+  }
+  if (payload.startsWith('fav_')) {
+    await ctx.deleteMessage()
+    const [, ...sku] = payload.split('_')
+    await toggleFavouriteProduct(ctx, sku.join('_'))
     return next()
   }
 

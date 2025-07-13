@@ -12,7 +12,8 @@ export const adminSeeder = async () => {
       settings: {
         trackingStyle: 'once',
         maxNotifyCount: 1
-      }
+      },
+      favSkus: []
     }
   ]
 

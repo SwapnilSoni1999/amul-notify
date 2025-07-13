@@ -36,6 +36,12 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
         `untrack_${product.sku}`
       )}">[Untrack]</a></b>`
 
+      const isFav = ctx.user.favSkus.includes(product.sku)
+
+      const favBtn = `<b><a href="${await startCommandLink(
+        `fav_${product.sku}`
+      )}">${isFav ? '[Unfavourite]' : '[Favourite]'}</a></b>`
+
       const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
 
       const lastSeen = await getLastInStockAt(
@@ -50,7 +56,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
           index,
           lastSeen?.lastSeenInStockAt
         ),
-        isTracked ? untrackBtn : trackBtn
+        `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`
       ]
         .filter(Boolean)
         .join('\n')

@@ -5,6 +5,32 @@ import { emojis } from '@/utils/emoji.util'
 import { logToChannel } from '@/utils/logger.util'
 import { AnyBulkWriteOperation } from 'mongoose'
 
+export const toggleFavouriteProduct = async (ctx: MyContext, sku: string) => {
+  const products = await ctx.amul.getProteinProducts()
+
+  if (ctx.user.favSkus.includes(sku)) {
+    ctx.user.favSkus = ctx.user.favSkus.filter((s) => s !== sku)
+    await ctx.user.save()
+    return ctx.reply(
+      `${emojis.crossMark} <b>Removed from favourites:</b> ${
+        products.find((p) => p.sku === sku)?.name || sku
+      }`,
+      { parse_mode: 'HTML' }
+    )
+  } else {
+    ctx.user.favSkus.push(sku)
+    await ctx.user.save()
+    return ctx.reply(
+      `${emojis.checkMark} <b>Added to favourites:</b> ${
+        products.find((p) => p.sku === sku)?.name || sku
+      }`,
+      {
+        parse_mode: 'HTML'
+      }
+    )
+  }
+}
+
 export const untrackProduct = async (ctx: MyContext, sku: string) => {
   const existingProduct = await ProductModel.findOneAndDelete({
     sku,
