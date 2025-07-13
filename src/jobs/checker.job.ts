@@ -219,8 +219,17 @@ const stockCheckerJob = schedule(
             const keyboard = inlineKeyboard([
               [
                 {
-                  text: 'Track Again',
-                  url: await startCommandLink(`track_${product.sku}`)
+                  text:
+                    user.settings.trackingStyle === 'once'
+                      ? 'Track Again'
+                      : 'Untrack',
+                  url: await startCommandLink(
+                    `${
+                      user.settings.trackingStyle === 'once'
+                        ? 'track'
+                        : 'untrack'
+                    }_${product.sku}`
+                  )
                 }
               ]
             ])
