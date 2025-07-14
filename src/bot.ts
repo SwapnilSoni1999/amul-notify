@@ -83,7 +83,7 @@ bot.action(
   withCatchAsync(changeMaxNotifyCount)
 )
 
-bot.use(loggerMiddleware)
+bot.use(withCatchAsync(loggerMiddleware))
 
 bot.catch((err, ctx) => {
   console.error('Error in bot:', err)

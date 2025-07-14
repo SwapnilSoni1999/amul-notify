@@ -169,9 +169,13 @@ const stockCheckerJob = schedule(
           const usersToNotify = await ProductModel.aggregate<ProductWithUser>([
             {
               $match: {
-                sku: { $in: changedProducts.map((p) => p.sku) },
-                trackedBy: { $exists: true },
-                remainingNotifyCount: { $gt: 0 }
+                $or: [
+                  { remainingNotifyCount: { $gt: 0 } },
+                  // New migration will not have this field so pick them all for once notification
+                  {
+                    remainingNotifyCount: { $exists: false }
+                  }
+                ]
               }
             },
             {
