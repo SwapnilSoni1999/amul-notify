@@ -43,7 +43,10 @@ export const settingsCommand: MiddlewareFn<
     `This will repeat each cycle until you untrack the product.`,
     `<i>Note: This setting is per product. Users might feel getting spammed due to this feature, So use it if you really want to.</i>`,
     '',
-    `- <b>Max Notify Count</b>: The maximum number of notifications to send for a product when tracking is set to <b>Always</b>.`
+    `- <b>Max Notify Count</b>: The maximum number of notifications to send for a product when tracking is set to <b>Always</b>.`,
+    ``,
+    'Eg.',
+    `An ideal way to use this feature is to set it to <b>always</b> and set a <b>Max Notify Count</b> to 1. This way, you will get notified once when the product is available, and <b>it will not untrack</b> the product. It will stay tracked, and next time when the product restocks, you will get notified again.`
   ].join('\n')
 
   if (ctx.callbackQuery?.message?.message_id) {
