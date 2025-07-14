@@ -168,6 +168,13 @@ const stockCheckerJob = schedule(
           // Notify users about the stock changes
           const usersToNotify = await ProductModel.aggregate<ProductWithUser>([
             {
+              $match: {
+                sku: { $in: changedProducts.map((p) => p.sku) },
+                trackedBy: { $exists: true },
+                remainingNotifyCount: { $gt: 0 }
+              }
+            },
+            {
               $lookup: {
                 from: 'users',
                 localField: 'trackedBy',
