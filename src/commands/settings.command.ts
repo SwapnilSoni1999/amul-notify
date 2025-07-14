@@ -1,6 +1,7 @@
 import { ACTIONS } from '@/config'
 import { ActionContext, CommandContext, MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
+import { withCatchAsync } from '@/utils/withCatchAsync.util'
 import { MiddlewareFn } from 'telegraf'
 import { inlineKeyboard } from 'telegraf/markup'
 import {
@@ -10,7 +11,7 @@ import {
 
 export const settingsCommand: MiddlewareFn<
   CommandContext | ActionContext | MyContext<Update>
-> = async (ctx, next?) => {
+> = withCatchAsync(async (ctx, next?) => {
   const { trackingStyle = 'once' } = ctx.user.settings
 
   const btns: InlineKeyboardButton[][] = [
@@ -68,4 +69,4 @@ export const settingsCommand: MiddlewareFn<
     })
   }
   return next?.()
-}
+})

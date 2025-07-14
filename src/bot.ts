@@ -48,7 +48,7 @@ bot.command('products', withCatchAsync(productsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
 bot.command('pincode', withCatchAsync(pincodeCommand))
-bot.command('settings', withCatchAsync(settingsCommand))
+bot.command('settings', settingsCommand)
 bot.command('favourites', withCatchAsync(favouritesCommand))
 
 bot.command(
