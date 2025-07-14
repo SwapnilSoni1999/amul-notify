@@ -61,7 +61,10 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
             product,
             isAvlblToPurchase,
             index,
-            lastSeen?.lastSeenInStockAt
+            lastSeen?.lastSeenInStockAt,
+            ctx.user.settings?.trackingStyle === 'always'
+              ? trackedProduct.remainingNotifyCount
+              : undefined
           ),
           `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`
         ].join('\n')

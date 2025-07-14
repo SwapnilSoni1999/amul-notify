@@ -12,7 +12,8 @@ export const formatProductDetails = (
   product: AmulProduct,
   isAvlblToPurchase: boolean,
   index: number,
-  lastSeenInStockAt?: Date
+  lastSeenInStockAt?: Date,
+  remainingNotifyCount?: number
 ) => {
   const proteinRegex =
     /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
@@ -45,6 +46,11 @@ export const formatProductDetails = (
           .fromNow()} | ${dayjs(lastSeenInStockAt)
           .tz(TIMEZONE)
           .format('DD-MM-YYYY, hh:mm A')}</b>`
+      : null,
+    remainingNotifyCount
+      ? `${emptySpace(
+          5
+        )}Remaining Notifications: <b>${remainingNotifyCount}</b>`
       : null,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
