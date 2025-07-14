@@ -44,6 +44,8 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `<i>Tip: Hold the command from the menu to instantly add the command.</i>`,
     `• <b>/tracked</b> – Show products you're tracking`,
     ``,
+    `• <b>/favourites</b> – Show your favourite products`,
+    `• <b>/settings</b> – View or change your settings for notifications`,
     `• <b>/support</b> – Support the bot and contact the developer`,
     `Get started by typing <b>/products</b> or simply explore available stock.`
   ]
