@@ -8,10 +8,10 @@ export const toggleTrackingStyleAction: MiddlewareFn<ActionContext> = async (
 ) => {
   console.log('Inside toggleTrackingStyleAction')
   await ctx.answerCbQuery(`Updating tracking style`) // Acknowledge the callback query
-  const currentStyle = ctx.user.settings.trackingStyle || 'once'
+  const currentStyle = ctx.user?.settings?.trackingStyle || 'once'
   const newStyle = currentStyle === 'once' ? 'always' : 'once'
 
-  ctx.user.settings.trackingStyle = newStyle
+  ctx.user.set('settings.trackingStyle', newStyle)
   await ctx.user.save()
   settingsCommand(ctx, next)
 }

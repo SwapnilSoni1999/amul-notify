@@ -223,19 +223,16 @@ const stockCheckerJob = schedule(
 
             notifiedCount++
 
+            const trackingStyle = user.settings?.trackingStyle || 'once'
+
             const keyboard = inlineKeyboard([
               [
                 {
-                  text:
-                    user.settings.trackingStyle === 'once'
-                      ? 'Track Again'
-                      : 'Untrack',
+                  text: trackingStyle === 'once' ? 'Track Again' : 'Untrack',
                   url: await startCommandLink(
-                    `${
-                      user.settings.trackingStyle === 'once'
-                        ? 'track'
-                        : 'untrack'
-                    }_${product.sku}`
+                    `${trackingStyle === 'once' ? 'track' : 'untrack'}_${
+                      product.sku
+                    }`
                   )
                 }
               ]
@@ -276,7 +273,7 @@ const stockCheckerJob = schedule(
                     `Notification sent to user ${user._id} for product ${product.sku}`
                   )
 
-                  if (user.settings.trackingStyle === 'always') {
+                  if (trackingStyle === 'always') {
                     await ProductModel.findOneAndUpdate(
                       {
                         sku: product.sku,
@@ -291,7 +288,7 @@ const stockCheckerJob = schedule(
                         new: true
                       }
                     )
-                  } else if (user.settings.trackingStyle === 'once') {
+                  } else if (trackingStyle === 'once') {
                     await ProductModel.findOneAndDelete({
                       sku: product.sku,
                       trackedBy: user._id
