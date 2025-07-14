@@ -250,7 +250,7 @@ const stockCheckerJob = schedule(
                 trackingStyle === 'always' &&
                 (dbProduct.remainingNotifyCount ?? 1) - 1 < 1
               ) {
-                return ``
+                return `<i>You will receive more updates when the product will be restocked.</i>`
               } else {
                 return `<i>You will receive updates ${
                   dbProduct.remainingNotifyCount - 1
