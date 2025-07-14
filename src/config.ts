@@ -10,7 +10,7 @@ export const userCommands: readonly BotCommand[] = [
   { command: 'settings', description: 'View or change your settings' },
   { command: 'tracked', description: 'List all tracked products' },
   { command: 'favourites', description: 'List your favourite products' },
-  // { command: 'settings', description: 'View or change your settings' },
+  { command: 'settings', description: 'View or change your settings' },
   { command: 'support', description: 'Get support' }
 ]
 
