@@ -248,8 +248,8 @@ const stockCheckerJob = schedule(
               (trackingStyle === 'always' && trackingCount <= 1)
                 ? `<i>The product is now untracked. You can track it again using the button below.</i>`
                 : `<i>You will receive updates ${
-                    trackingCount - 1
-                  } more times for this product. Once done, You'll receive update on next restock.</i>`
+                    dbProduct.remainingNotifyCount - 1
+                  } more times for this product. Once done, You'll receive ${trackingCount} update(s) on next restock.</i>`
             ].join('\n')
 
             if (!user.tgId) {
