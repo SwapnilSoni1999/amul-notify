@@ -224,6 +224,7 @@ const stockCheckerJob = schedule(
             notifiedCount++
 
             const trackingStyle = user.settings?.trackingStyle || 'once'
+            const trackingCount = user.settings?.maxNotifyCount || 1
 
             const keyboard = inlineKeyboard([
               [
@@ -243,7 +244,12 @@ const stockCheckerJob = schedule(
               formatProductDetails(product, isAvailablForPurchase, 0),
               '',
               // Show untracked info
-              `<i>The product is now untracked. You can track it again using the button below.</i>`
+              trackingStyle === 'once' ||
+              (trackingStyle === 'always' && trackingCount <= 1)
+                ? `<i>The product is now untracked. You can track it again using the button below.</i>`
+                : `<i>You will receive updates ${
+                    trackingCount - 1
+                  } more times for this product. Once done, You'll receive update on next restock.</i>`
             ].join('\n')
 
             if (!user.tgId) {
