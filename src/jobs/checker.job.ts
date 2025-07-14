@@ -249,7 +249,8 @@ const stockCheckerJob = schedule(
               '',
               // Show untracked info
               trackingStyle === 'once' ||
-              (trackingStyle === 'always' && trackingCount - 1 < 1)
+              (trackingStyle === 'always' &&
+                (dbProduct.remainingNotifyCount ?? 1) - 1 < 1)
                 ? `<i>The product is now untracked. You can track it again using the button below.</i>`
                 : `<i>You will receive updates ${
                     dbProduct.remainingNotifyCount - 1
