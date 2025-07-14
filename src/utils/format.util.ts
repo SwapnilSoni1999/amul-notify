@@ -47,7 +47,7 @@ export const formatProductDetails = (
           .tz(TIMEZONE)
           .format('DD-MM-YYYY, hh:mm A')}</b>`
       : null,
-    remainingNotifyCount
+    remainingNotifyCount || remainingNotifyCount === 0
       ? `${emptySpace(
           5
         )}Remaining Notifications: <b>${remainingNotifyCount}</b>`
