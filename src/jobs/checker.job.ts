@@ -243,18 +243,27 @@ const stockCheckerJob = schedule(
               ]
             ])
 
+            const getInfoMessage = () => {
+              if (trackingStyle === 'once') {
+                return `<i>The product is now untracked. You can track it again using the button below.</i>`
+              } else if (
+                trackingStyle === 'always' &&
+                (dbProduct.remainingNotifyCount ?? 1) - 1 < 1
+              ) {
+                return ``
+              } else {
+                return `<i>You will receive updates ${
+                  dbProduct.remainingNotifyCount - 1
+                } more times for this product. Once done, You'll receive ${trackingCount} update(s) on next restock.</i>`
+              }
+            }
+
             const message = [
               `${emojis.fire} <b>Product Update: ${product.name}</b>`,
               formatProductDetails(product, isAvailablForPurchase, 0),
               '',
+              getInfoMessage()
               // Show untracked info
-              trackingStyle === 'once' ||
-              (trackingStyle === 'always' &&
-                (dbProduct.remainingNotifyCount ?? 1) - 1 < 1)
-                ? `<i>The product is now untracked. You can track it again using the button below.</i>`
-                : `<i>You will receive updates ${
-                    dbProduct.remainingNotifyCount - 1
-                  } more times for this product. Once done, You'll receive ${trackingCount} update(s) on next restock.</i>`
             ].join('\n')
 
             if (!user.tgId) {
