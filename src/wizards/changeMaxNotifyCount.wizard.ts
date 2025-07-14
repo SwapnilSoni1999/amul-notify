@@ -1,4 +1,5 @@
 import { settingsCommand } from '@/commands/settings.command'
+import ProductModel from '@/models/product.model'
 import { MyContext } from '@/types/context.types'
 import { Scenes } from 'telegraf'
 
@@ -36,6 +37,18 @@ export const changeMaxNotifyCountWizard = new Scenes.WizardScene<MyContext>(
     await ctx.reply(
       `Maximum notification count updated to ${newCount}. You will now receive max ${newCount} updates for the tracked products.`
     )
+
+    await ProductModel.updateMany(
+      {
+        trackedBy: ctx.user._id
+      },
+      {
+        $set: {
+          remainingNotifyCount: newCount
+        }
+      }
+    )
+
     await settingsCommand(ctx, async () => {})
     return ctx.scene.leave() // Exit the wizard
   }
