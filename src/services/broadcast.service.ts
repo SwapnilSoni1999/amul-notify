@@ -1,9 +1,11 @@
 import UserModel from '@/models/user.model'
 import { sendMessageQueue } from '@/queues/broadcast.queue'
+import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 
 export const broadcastMessage = async (
   text: string,
-  onProgress: (completed: number, total: number, failed: number) => void
+  onProgress: (completed: number, total: number, failed: number) => void,
+  extra?: ExtraReplyMessage
 ) => {
   const pageSize = 100
 
@@ -30,6 +32,7 @@ export const broadcastMessage = async (
           sendMessageQueue({
             chatId: user.tgId,
             text,
+            extra,
             onComplete: async (err) => {
               if (err) {
                 console.error(
