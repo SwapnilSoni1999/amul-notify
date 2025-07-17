@@ -26,7 +26,7 @@ interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
 const MAX_SESSION_OLD_DAYS = 5 // Maximum age of session in days
 
 const stockCheckerJob = schedule(
-  '* * * * *', // Every 1 minute
+  '*/2 * * * *', // Every 2 minutes
   async () => {
     try {
       if (!env.TRACKER_ENABLED) {
@@ -345,7 +345,7 @@ const stockCheckerJob = schedule(
             )
           }
 
-          await sleep(200) // Sleep for 200ms to avoid rate limiting
+          await sleep(500) // Sleep for 500ms to avoid rate limiting
         } catch (err: any) {
           console.error(`Error processing substore ${substore}: ${err.message}`)
           logToChannel(
