@@ -76,6 +76,17 @@ const stockCheckerJob = schedule(
           const freshProducts = await amulApi.getProteinProducts({
             bypassCache: true
           })
+
+          if (!freshProducts || !freshProducts.length) {
+            console.warn(
+              `No fresh products found for substore ${substore}. Skipping stock check.`
+            )
+            logToChannel(
+              `${emojis.warning} No fresh products found for substore ${substore}. Skipping stock check.`
+            )
+            continue
+          }
+
           console.log(`Fetched fresh products:`, freshProducts.length)
           const cachedProducts = await cacheService.jobData.get({
             substore
