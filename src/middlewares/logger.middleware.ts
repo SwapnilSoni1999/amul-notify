@@ -12,6 +12,7 @@ export const loggerMiddleware: MiddlewareFn<MyContext> = async (ctx) => {
         `User: ${ctx.from?.first_name} ${ctx.from?.last_name || ''} (@${
           ctx.from?.username
         })`,
+        `Pincode: ${ctx.user.pincode || 'N/A'} (${ctx.user.substore || 'N/A'})`,
         `Text: ${
           ctx.message && 'text' in ctx.message ? ctx.message.text : 'N/A'
         }`,
