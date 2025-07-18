@@ -577,12 +577,16 @@ export class AmulApi {
     )
 
     if (opts?.search?.length) {
-      const searchRegex = new RegExp(opts.search, 'i')
+      // const searchRegex = new RegExp(opts.search, 'i')
+      const fuzzySearchRegex = new RegExp(
+        `${opts.search.split('').join('.*?')}`,
+        'i'
+      )
       const filteredProducts = response.data.data.filter(
         (product) =>
-          searchRegex.test(product.name) ||
-          searchRegex.test(product.sku) ||
-          searchRegex.test(product.alias)
+          fuzzySearchRegex.test(product.name) ||
+          fuzzySearchRegex.test(product.sku) ||
+          fuzzySearchRegex.test(product.alias)
       )
 
       return filteredProducts
