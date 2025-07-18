@@ -26,7 +26,7 @@ interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
 const MAX_SESSION_OLD_DAYS = 5 // Maximum age of session in days
 
 const stockCheckerJob = schedule(
-  '*/2 * * * *', // Every 2 minutes
+  '* * * * *', // Every 1 minutes
   async () => {
     try {
       if (!env.TRACKER_ENABLED) {
@@ -54,6 +54,10 @@ const stockCheckerJob = schedule(
             amulApi.close()
             // Remove the old session from the map
             amulApi = undefined
+            // Inform
+            logToChannel(
+              `${emojis.warning} Session for substore ${substore} is older than ${MAX_SESSION_OLD_DAYS} days. Reinitializing...`
+            )
           }
 
           if (!amulApi) {
@@ -71,6 +75,10 @@ const stockCheckerJob = schedule(
             }
 
             amulApi = await getOrCreateAmulApi(user.pincode)
+            // Inform
+            logToChannel(
+              `${emojis.info} Initialized Amul API for substore ${substore} with pincode ${user.pincode}.`
+            )
           }
 
           const freshProducts = await amulApi.getProteinProducts({

@@ -6,6 +6,7 @@ export const emojis = {
   crossMark: '❌',
   warning: '⚠️',
   exclamation: '❗',
+  info: 'ℹ️',
 
   // Tracking Style
   always: '♾️',
