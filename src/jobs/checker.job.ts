@@ -26,7 +26,7 @@ interface ProductWithUser extends Omit<HydratedProduct, 'trackedBy'> {
 const MAX_SESSION_OLD_DAYS = 5 // Maximum age of session in days
 
 const stockCheckerJob = schedule(
-  '* * * * *', // Every 1 minutes
+  '*/2 * * * *', // Every 2 minutes
   async () => {
     try {
       if (!env.TRACKER_ENABLED) {
