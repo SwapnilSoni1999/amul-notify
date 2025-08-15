@@ -13,7 +13,10 @@ export const mapCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `<b>How to use it?</b>`,
     `- Open the map from button below.`,
     `- Enter the pincode you want to check.`,
-    `- Click on the highlighted area to see the number of users from that pincode.`
+    `- Click on the highlighted area to see the number of users from that pincode.`,
+    '',
+    `If the button doesn't work, you can open the map directly from the link below:`,
+    `<a href="${mapUrl}">${mapUrl}</a>`
   ].join('\n')
 
   const buttons = inlineKeyboard([
