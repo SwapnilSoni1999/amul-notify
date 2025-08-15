@@ -7,6 +7,7 @@ export const emojis = {
   warning: '⚠️',
   exclamation: '❗',
   info: 'ℹ️',
+  map: '🗺️',
 
   // Tracking Style
   always: '♾️',

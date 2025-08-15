@@ -11,7 +11,8 @@ export const userCommands: readonly BotCommand[] = [
   { command: 'tracked', description: 'List all tracked products' },
   { command: 'favourites', description: 'List your favourite products' },
   { command: 'settings', description: 'View or change your settings' },
-  { command: 'support', description: 'Get support' }
+  { command: 'support', description: 'Get support' },
+  { command: 'map', description: 'View interactive map' }
 ]
 
 export const adminCommands: readonly BotCommand[] = [
