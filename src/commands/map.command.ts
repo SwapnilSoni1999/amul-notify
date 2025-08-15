@@ -20,7 +20,9 @@ export const mapCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     [
       {
         text: 'Open Map',
-        url: mapUrl
+        web_app: {
+          url: mapUrl
+        }
       }
     ]
   ])
