@@ -46,9 +46,6 @@ mongoose
         })
       })
 
-      app.listen(env.PORT, () => {
-        console.log(`Server is running on port ${env.PORT}`)
-      })
       console.log('Bot is running with webhook mode...')
       console.log(await bot.telegram.getWebhookInfo())
     } else {
@@ -60,6 +57,10 @@ mongoose
           console.error('Failed to launch bot:', err)
         })
     }
+
+    app.listen(env.PORT, () => {
+      console.log(`Server is running on port ${env.PORT}`)
+    })
 
     // Start job
     if (env.TRACKER_ENABLED) {

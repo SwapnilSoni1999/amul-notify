@@ -1,6 +1,9 @@
+import env from '@/env'
 import UserModel, { IUser } from '@/models/user.model'
+import mongoose from 'mongoose'
 
 export const adminSeeder = async () => {
+  await mongoose.connect(env.MONGO_URI)
   const users: Omit<IUser, 'createdAt' | 'updatedAt'>[] = [
     {
       firstName: 'SoniSins',

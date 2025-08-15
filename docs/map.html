@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .controls {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      z-index: 1000;
+      display: flex;
+      gap: 5px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+    }
+
+    #highlight {
+      background-color: #3b82f6;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      cursor: pointer;
+      text-rendering: optimizeSpeed;
+    }
+  </style>
+  <body>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <div id="map" style="height: 100vh"></div>
+    <form class="controls" onsubmit="return false">
+      <input
+        type="text"
+        id="pincode"
+        class="form-input"
+        placeholder="Pincode"
+      />
+      <button
+        id="highlight"
+        onclick="highlightPin(document.getElementById('pincode').value)"
+      >
+        Highlight
+      </button>
+    </form>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const API = 'http://localhost:5999/api' // change if needed
+
+      const map = L.map('map').setView([22.9734, 78.6569], 5)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map)
+
+      const base = {
+        color: '#cbd5e1',
+        weight: 1,
+        fillColor: '#f1f5f9',
+        fillOpacity: 0.04
+      }
+      const hi = {
+        color: '#0f172a',
+        weight: 3,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.45
+      }
+
+      let hiLayer
+
+      async function highlightPin(pin) {
+        const r = await fetch(`${API}/pincode/${pin}`)
+        if (!r.ok) return alert('PIN not found')
+        const feature = await r.json()
+
+        console.log(feature)
+
+        if (hiLayer) map.removeLayer(hiLayer)
+        hiLayer = L.geoJSON(feature, {
+          coordsToLatLng: (c) => L.latLng(c[1], c[0]), // guards against any accidental flip
+          style: hi
+        }).addTo(map)
+
+        map.fitBounds(hiLayer.getBounds(), { padding: [40, 40] })
+
+        const name = [
+          feature.properties?.Office_Name ||
+            feature.properties?.Pincode ||
+            'Area',
+          `Total Users: ${feature.totalUsers}`
+        ].join('<br />')
+        hiLayer.bindTooltip(String(name))
+      }
+
+      // demo
+      highlightPin('380061')
+    </script>
+  </body>
+</html>
