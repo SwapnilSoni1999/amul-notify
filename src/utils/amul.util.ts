@@ -31,7 +31,9 @@ export const getInventoryQuantity = (product: AmulProduct): number => {
   ) {
     return 0
   }
-  return product.inventory_quantity < 0 ? 0 : product.inventory_quantity
+  return product.inventory_quantity < 0
+    ? 0
+    : product.inventory_quantity - product.inventory_low_stock_quantity
 }
 
 export const getProductUrl = (product: AmulProduct): string => {
