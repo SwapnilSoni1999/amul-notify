@@ -1,12 +1,12 @@
 # Use official Node.js 22 LTS image
-FROM node:22-slim
+FROM oven/bun:1 AS base
 
 # Create app directory
 WORKDIR /app
 
 # Install dependencies
-COPY package*.json ./
-RUN npm install
+COPY package*.json bun.lock* ./
+RUN bun install --frozen-lockfile
 
 # Copy .env.prod file if it exists
 COPY .env.prod .env.prod
@@ -15,7 +15,7 @@ COPY .env.prod .env.prod
 COPY . .
 
 # Build TypeScript
-RUN npm run build
+RUN bun run build
 
 # Run the app
-CMD ["npm", "start"]
+CMD ["bun", "start"]

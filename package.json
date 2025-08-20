@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "env:prod": "dotenv -e .env.prod",
-    "env:dev": "dotenv -e .env.dev",
-    "build": "npm run lint && tsc && tsc-alias",
-    "start": "npm run env:prod -- node dist/server.js",
-    "dev": "npm run env:dev -- tsx watch src/server.ts",
+    "env:dev": "dotenv -e .env.dev --",
+    "env:prod": "dotenv -e .env.prod --",
+    "build": "bun run lint && tsc && tsc-alias",
+    "start": "bun run env:prod bun run dist/server.js",
+    "dev": "bun run env:dev bun run --watch src/server.ts",
     "lint": "eslint . --ext .ts",
     "prettier": "prettier --write .",
-    "seed:dev": "dotenv -e .env.dev -- tsx src/seeders/index.ts",
-    "seed:prod": "dotenv -e .env.prod -- node dist/seeders/index.js"
+    "seed:dev": "bun run env:dev bun run src/seeders/index.ts",
+    "seed:prod": "bun run env:prod bun run dist/seeders/index.js"
   },
   "keywords": [],
   "author": "",
