@@ -15,7 +15,7 @@ export const analyticsMiddleware: MiddlewareFn<MyContext> = async (
     return next()
   }
 
-  const today = dayjs.tz(TIMEZONE)
+  const today = dayjs().tz(TIMEZONE)
 
   const dayKey = today.format('DD-MM-YYYY')
 
