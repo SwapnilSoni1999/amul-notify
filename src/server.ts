@@ -5,6 +5,7 @@ import redis from '@/redis'
 import { stockCheckerJob } from './jobs/checker.job'
 import { initiateAmulSessions } from './services/amul.service'
 import app from '@/app'
+import { activityNotifierJob } from './jobs/activityReport.job'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -68,6 +69,9 @@ mongoose
       stockCheckerJob.start()
       stockCheckerJob.execute()
       console.log('Stock checker job started')
+      console.log('Starting activity notifier job...')
+      activityNotifierJob.start()
+      console.log('Activity notifier job started')
     } else {
       console.log('Stock tracker is disabled. Skipping job execution.')
     }
