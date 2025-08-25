@@ -1,7 +1,6 @@
 import { substoreSessions } from '@/libs/amulApi.lib'
 import ProductModel from '@/models/product.model'
 import UserModel from '@/models/user.model'
-import { getTodayActiveCount } from '@/services/activity.service'
 import {
   getDistinctPincodes,
   getDistinctSubstores
@@ -18,9 +17,6 @@ export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
   const distinctSubstores = await getDistinctSubstores()
   const distinctPincodes = await getDistinctPincodes()
 
-  const todayActiveUsers = await getTodayActiveCount()
-  const inactiveUsers = totalUsers - todayActiveUsers
-
   await ctx.reply(
     [
       `<b>${emojis.chart} Bot Statistics</b>`,
@@ -28,9 +24,7 @@ export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
       `Total Tracked Products: <b>${totalTracked}</b>`,
       `Total Amul Sessions: <b>${totalAmulSessions}</b>`,
       `Total Unique Substores: <b>${distinctSubstores.length}</b>`,
-      `Total Unique Pincodes: <b>${distinctPincodes.length}</b>`,
-      `Total Active Users (Today): <b>${todayActiveUsers}</b>`,
-      `Total Inactive Users: <b>${inactiveUsers}</b>`
+      `Total Unique Pincodes: <b>${distinctPincodes.length}</b>`
     ].join('\n'),
     {
       parse_mode: 'HTML'

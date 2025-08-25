@@ -27,7 +27,6 @@ import { changeMaxNotifyCount } from './actions/changeMaxNotifyCount.action'
 import { changeMaxNotifyCountWizard } from './wizards/changeMaxNotifyCount.wizard'
 import { favouritesCommand } from './commands/favourites.command'
 import { mapCommand } from './commands/map.command'
-import { analyticsMiddleware } from './middlewares/analytics.middleware'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -36,7 +35,6 @@ bot.use(session())
 
 bot.use(withCatchAsync(onlyPvtChat))
 bot.use(withCatchAsync(sessionMiddleware))
-bot.use(withCatchAsync(analyticsMiddleware))
 bot.use(withCatchAsync(setCommands))
 
 bot.use(stage.middleware())
