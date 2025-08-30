@@ -50,7 +50,8 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `• <b>/map</b> – View interactive map of users`,
     `Get started by typing <b>/products</b> or simply explore available stock.`,
     '',
-    `For updates, please join <a href="https://t.me/AmulOSSBotUpdates">@AmulOSSBotUpdates</a> channel.`
+    `Updates Channel: <a href="https://t.me/AmulOSSBotUpdates">@AmulOSSBotUpdates</a>`,
+    `Group Chat: <a href="https://t.me/AmulOSSBotGroup">@AmulOSSBotGroup</a>`
   ]
 
   await ctx.reply(welcomeMessages.join('\n'), { parse_mode: 'HTML' })
