@@ -69,44 +69,56 @@ export class AmulApi {
       'https://shop.amul.com/en/browse/protein'
     )
 
-    // console.log('Cookie Response:', cookieResponse.headers['set-cookie'])
-
-    if (!cookieResponse.headers['set-cookie']) {
+    const setCookies = cookieResponse.headers['set-cookie']
+    if (!setCookies) {
       throw new Error('No cookies received from Amul API')
     }
 
-    const parsedCookies = cookieResponse.headers['set-cookie'].map(
-      (cookieStr) => parseCookie(cookieStr, { loose: true })
+    const requestUrl = 'https://shop.amul.com'
+    const requestHost = new URL(requestUrl).hostname
+
+    const parsedCookies = setCookies.map((cookieStr) =>
+      parseCookie(cookieStr, { loose: true })
     )
 
     for (const cookie of parsedCookies) {
-      if (!cookie || !cookie.key) {
-        console.warn('Invalid cookie:', cookie)
-        continue
-      }
+      if (!cookie || !cookie.key) continue
 
-      await this.jar.setCookie(cookie, 'https://shop.amul.com')
+      // ---- FIX: overwrite cookie domain ----
+      // StoreHippo incorrectly sends Domain=storehippo.com.
+      // We rewrite it so tough-cookie accepts it.
+      cookie.domain = requestHost
+      // Or: delete cookie.domain;  // also works, makes it host-only
+
+      // Now tough-cookie will accept it
+      await this.jar.setCookie(cookie.toString(), requestUrl)
     }
 
-    // console.log('Parsed Cookies:', parsedCookies)
-
+    // Now cookies are valid, fetch user/session info
     const infoResponse = await this.amulApi.get<string>(
       `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
       {
         headers: {
           ...defaultHeaders,
-          cookie: await this.jar.getCookieString('https://shop.amul.com'),
+          cookie: await this.jar.getCookieString(requestUrl),
           tid: await this.calculateTidHeader()
         }
       }
     )
-    // console.log('User Info Response:', infoResponse.data)
+
     const sessionObj = JSON.parse(
       infoResponse.data.replace('session = ', '')
     ) as AmulSessionInfo
-    // console.log('Session Object:', sessionObj.tid)
+
     this.tid = sessionObj.tid
     console.log('TID:', this.tid)
+  }
+
+  get session_tid() {
+    return this.tid
+  }
+  get session_cookie() {
+    return this.jar.getCookieString('https://shop.amul.com')
   }
 
   public async setPincode(record: PincodeRecord) {
