@@ -281,6 +281,82 @@ export class AmulApi {
     return response.data.data
   }
 
+  public async getAllProducts(opts?: {
+    bypassCache?: boolean
+    search?: string
+  }): Promise<AmulProduct[]> {
+    const { bypassCache = true } = opts || {}
+
+    const cachedProducts = await cacheService.allProducts.get({
+      substore: this.pincodeRecord.substore
+    })
+
+    if (cachedProducts && !bypassCache) {
+      return this.applySearch(cachedProducts.data, opts?.search)
+    }
+
+    console.log(`SubstoreId (all products):`, this.getSubstoreId())
+
+    const allProducts: AmulProduct[] = []
+    let start = 0
+    const limit = 32
+    let total = Infinity
+
+    while (start < total) {
+      const response = await axios.get<AmulProductsResponse>(
+        `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&facets=true&facetgroup=default_category_facet&limit=${limit}&total=1&start=${start}&substore=${this.getSubstoreId()}`,
+        {
+          headers: {
+            ...defaultHeaders,
+            cookie: await this.jar.getCookieString('https://shop.amul.com'),
+            tid: await this.calculateTidHeader()
+          }
+        }
+      )
+
+      if (total === Infinity) {
+        total = response.data.total
+      }
+
+      allProducts.push(...response.data.data)
+      start += limit
+    }
+
+    if (!allProducts.length) {
+      console.warn(
+        `No products found (all) for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
+      )
+      logToChannel(
+        `No products found (all) for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
+      )
+      return []
+    }
+
+    await cacheService.allProducts.set(
+      {
+        substore: this.pincodeRecord.substore
+      },
+      { data: allProducts, total: allProducts.length, start: 0, limit: allProducts.length, fileBaseUrl: '', facets: null, facetCounts: null }
+    )
+
+    return this.applySearch(allProducts, opts?.search)
+  }
+
+  private applySearch(products: AmulProduct[], search?: string): AmulProduct[] {
+    if (!search?.length) return products
+
+    const fuzzySearchRegex = new RegExp(
+      `${search.split('').join('.*?')}`,
+      'i'
+    )
+    return products.filter(
+      (product) =>
+        fuzzySearchRegex.test(product.name) ||
+        fuzzySearchRegex.test(product.sku) ||
+        fuzzySearchRegex.test(product.alias)
+    )
+  }
+
   public close() {
     substoreSessions.delete(this.pincodeRecord.substore)
   }

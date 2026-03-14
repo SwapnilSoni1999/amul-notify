@@ -25,6 +25,25 @@ const products = {
   }
 }
 
+const allProducts = {
+  set: async (keyData: ProductsCacheKeyData, value: AmulProductsResponse) => {
+    const key = `amul:allproducts:${keyData.substore}`
+    await redis.set(
+      key,
+      JSON.stringify(value),
+      'EX',
+      5 * 60 // Cache for 5 minutes
+    )
+  },
+  get: async (
+    keyData: ProductsCacheKeyData
+  ): Promise<AmulProductsResponse | null> => {
+    const key = `amul:allproducts:${keyData.substore}`
+    const cachedData = await redis.get(key)
+    return cachedData ? JSON.parse(cachedData) : null
+  }
+}
+
 const jobData = {
   set: async (keyData: ProductsCacheKeyData, value: AmulProduct[]) => {
     const key = `amul:jobdata:${keyData.substore}`
@@ -47,5 +66,6 @@ const jobData = {
 
 export default {
   products,
+  allProducts,
   jobData
 }
