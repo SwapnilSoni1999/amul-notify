@@ -17,7 +17,7 @@ A powerful Telegram bot that helps you track the availability of Amul's protein-
 
 ## ✨ Features
 
-- 🔍 **Browse Products**: View all Amul protein products with real-time availability
+- 🔍 **Browse Products**: View all Amul products or protein products with real-time availability
 - 📍 **Location-Based**: Set your pincode to get local stock updates
 - � **Smart Notifications**: Get notified instantly when tracked products are back in stock
 - � **Stock Tracking**: Monitor inventory levels and stock changes
@@ -34,7 +34,7 @@ A powerful Telegram bot that helps you track the availability of Amul's protein-
 
 1. **Start the Bot**: [Click here to open @AmulOSSBot](https://t.me/AmulOSSBot)
 2. **Set Your Location**: Use `/setpincode YOUR_PINCODE` to set your area
-3. **Browse Products**: Use `/products` to see all available items
+3. **Browse Products**: Use `/products` for protein products or `/allproducts` for all items
 4. **Track Items**: Click the "Track" button next to products you want to monitor
 5. **Get Notified**: Receive instant notifications when items are back in stock
 
@@ -44,6 +44,7 @@ A powerful Telegram bot that helps you track the availability of Amul's protein-
 /start                    # Welcome message and setup
 /setpincode 400001        # Set your pincode (Mumbai in this example)
 /products                 # Browse all protein products
+/allproducts              # Browse all Amul products
 /tracked                  # View your tracked items
 /support                  # Get help and contact info
 ```
@@ -57,6 +58,7 @@ A powerful Telegram bot that helps you track the availability of Amul's protein-
 | `/start`      | Initialize bot and show welcome message  | `/start`             |
 | `/setpincode` | Set your delivery pincode                | `/setpincode 400001` |
 | `/products`   | List all available Amul protein products | `/products`          |
+| `/allproducts`| List all available Amul products         | `/allproducts`       |
 | `/tracked`    | Show products you're currently tracking  | `/tracked`           |
 | `/pincode`    | View your current pincode setting        | `/pincode`           |
 | `/support`    | Get support and contact information      | `/support`           |

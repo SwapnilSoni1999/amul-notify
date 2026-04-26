@@ -7,6 +7,7 @@ export const userCommands: readonly BotCommand[] = [
   { command: 'setpincode', description: 'Set your pincode' },
   { command: 'pincode', description: 'Get your current pincode' },
   { command: 'products', description: 'List all protein products' },
+  { command: 'allproducts', description: 'List all products' },
   { command: 'settings', description: 'View or change your settings' },
   { command: 'tracked', description: 'List all tracked products' },
   { command: 'favourites', description: 'List your favourite products' },

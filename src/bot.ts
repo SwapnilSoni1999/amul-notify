@@ -7,6 +7,7 @@ import { setCommands } from '@/middlewares/setCommands.middleware'
 import { withCatchAsync } from '@/utils/withCatchAsync.util'
 import { emojis } from '@/utils/emoji.util'
 import { productsCommand } from '@/commands/products.command'
+import { allProductsCommand } from '@/commands/allProducts.command'
 import { onlyPvtChat } from '@/middlewares/onlyPvtChat.middleware'
 import { trackedCommand } from '@/commands/tracked.command'
 import { loggerMiddleware } from '@/middlewares/logger.middleware'
@@ -48,6 +49,7 @@ bot.command('setpincode', withCatchAsync(setPincodeCommand))
 bot.use(withCatchAsync(pincodeGuard))
 
 bot.command('products', withCatchAsync(productsCommand))
+bot.command('allproducts', withCatchAsync(allProductsCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
 bot.command('pincode', withCatchAsync(pincodeCommand))
