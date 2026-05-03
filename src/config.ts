@@ -30,6 +30,9 @@ export const ACTIONS = {
     trackingStyle: {
       toggle: 'settings:trackingStyle:toggle',
       changeMaxNotifyCount: 'settings:trackingStyle:changeMaxNotifyCount'
+    },
+    autoOrder: {
+      toggleEnabled: 'autoOrder:toggleEnabled'
     }
   }
 }

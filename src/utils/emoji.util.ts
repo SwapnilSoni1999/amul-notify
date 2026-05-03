@@ -8,6 +8,7 @@ export const emojis = {
   exclamation: '❗',
   info: 'ℹ️',
   map: '🗺️',
+  trash: '🗑️',
 
   // Tracking Style
   always: '♾️',

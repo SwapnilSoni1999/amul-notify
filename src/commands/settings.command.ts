@@ -32,6 +32,15 @@ export const settingsCommand: MiddlewareFn<
     ])
   }
 
+  if (ctx.user.orderSettings.permitted) {
+    btns.push([
+      {
+        text: `${emojis.cart} Auto Order: ${ctx.user.orderSettings.enabled ? 'Enabled' : 'Disabled'}`,
+        callback_data: ACTIONS.settings.autoOrder.toggleEnabled
+      }
+    ])
+  }
+
   const buttons = inlineKeyboard([...btns])
 
   const description = [

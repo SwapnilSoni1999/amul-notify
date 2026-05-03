@@ -1,3 +1,4 @@
+import { toggleAutoOrder } from '@/services/autoOrder.service'
 import {
   toggleFavouriteProduct,
   trackProduct,
@@ -25,6 +26,16 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     await ctx.deleteMessage()
     const [, ...sku] = payload.split('_')
     await toggleFavouriteProduct(ctx, sku.join('_'))
+    return next()
+  }
+
+  if (new RegExp(/(add|remove)autoorder_/).test(payload)) {
+    await ctx.deleteMessage()
+    const [actionString, ...sku] = payload.split('_')
+    const action = actionString.replace('autoorder', '').toLowerCase() as
+      | 'add'
+      | 'remove'
+    await toggleAutoOrder(ctx, sku.join('_'), action)
     return next()
   }
 

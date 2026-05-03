@@ -1,6 +1,7 @@
 import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
+import { getAutoOrderButton } from '@/utils/autoOrder.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
@@ -44,6 +45,10 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
 
       const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
 
+      const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
+
+      console.log('Auto Order Button:', autoOrderBtn)
+
       const lastSeen = await getLastInStockAt(
         product.sku,
         ctx.amul.getSubstore()!
@@ -56,7 +61,8 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
           index,
           lastSeen?.lastSeenInStockAt
         ),
-        `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`
+        `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
+        `<b>${autoOrderBtn}</b>`
       ]
         .filter(Boolean)
         .join('\n')

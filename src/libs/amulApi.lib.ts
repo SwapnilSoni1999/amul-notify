@@ -121,6 +121,10 @@ export class AmulApi {
     return this.jar.getCookieString('https://shop.amul.com')
   }
 
+  get pincode_record() {
+    return this.pincodeRecord
+  }
+
   public async setPincode(record: PincodeRecord) {
     // await setPincodeQueue({
     //   tid: await this.calculateTidHeader(),

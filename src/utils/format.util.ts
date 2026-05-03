@@ -22,7 +22,8 @@ export const formatProductDetails = (
     product.metafields?.benefits
       ?.match(proteinRegex)?.[0]
       ?.replace('<li>', '')
-      .replace('</li>', '') || 'N/A'
+      ?.replace('</li>', '')
+      ?.replace('&nbsp;', '') || 'N/A'
 
   if (protein === 'N/A') {
     const fallbackSku = ['BTMCP11_30']

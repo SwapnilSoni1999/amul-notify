@@ -1,3 +1,4 @@
+import { CookieExpiryRecord } from '@/types/orderApi.types'
 import {
   HydratedDocumentFromSchema,
   InferSchemaType,
@@ -22,6 +23,29 @@ const UserSettingsSchema = new Schema(
   {
     _id: false, // Prevents creation of a separate collection for settings
     timestamps: false // No need for timestamps in settings
+  }
+)
+
+const OrderSettingsSchema = new Schema(
+  {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    permitted: {
+      type: Boolean,
+      default: false
+    },
+    skus: [
+      {
+        type: String,
+        default: [],
+        index: true
+      }
+    ]
+  },
+  {
+    timestamps: false
   }
 )
 
@@ -78,7 +102,65 @@ const UserSchema = new Schema(
         required: false,
         default: []
       }
-    ]
+    ],
+    orderSettings: {
+      type: OrderSettingsSchema,
+      default: () => ({
+        enabled: false,
+        permitted: false,
+        skus: []
+      })
+    },
+    phone: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true // Allows multiple with null phone
+    },
+    cookies: [
+      {
+        key: {
+          type: String,
+          required: true
+        },
+        value: {
+          type: String,
+          required: true
+        },
+        domain: {
+          type: String,
+          required: false
+        },
+        path: {
+          type: String,
+          required: false
+        },
+        expiresAt: {
+          type: Date,
+          required: false
+        },
+        ttlSeconds: {
+          type: Number,
+          required: false
+        },
+        isSession: {
+          type: Boolean,
+          required: false
+        },
+        isExpired: {
+          type: Boolean,
+          required: false
+        }
+      }
+    ],
+    amulUserId: {
+      type: String,
+      required: false
+    },
+    amulCartId: {
+      type: String,
+      required: false
+    }
   },
   {
     timestamps: true
@@ -88,6 +170,8 @@ const UserSchema = new Schema(
 const UserModel = model<IUser>('User', UserSchema, 'users')
 
 export type HydratedUser = HydratedDocumentFromSchema<typeof UserSchema>
-export type IUser = InferSchemaType<typeof UserSchema>
+export type IUser = InferSchemaType<typeof UserSchema> & {
+  cookies: CookieExpiryRecord[]
+}
 
 export default UserModel

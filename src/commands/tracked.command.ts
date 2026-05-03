@@ -1,6 +1,7 @@
 import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
+import { getAutoOrderButton } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
@@ -51,6 +52,8 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
         const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
         console.log('isTracked:', isTracked)
 
+        const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
+
         const lastSeen = await getLastInStockAt(
           product.sku,
           ctx.amul.getSubstore()!
@@ -66,7 +69,8 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
               ? trackedProduct.remainingNotifyCount
               : undefined
           ),
-          `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`
+          `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
+          `<b>${autoOrderBtn}</b>`
         ].join('\n')
       })
     ))

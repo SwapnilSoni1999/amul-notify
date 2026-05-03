@@ -28,10 +28,14 @@ import { changeMaxNotifyCountWizard } from './wizards/changeMaxNotifyCount.wizar
 import { favouritesCommand } from './commands/favourites.command'
 import { mapCommand } from './commands/map.command'
 import { analyticsMiddleware } from './middlewares/analytics.middleware'
+import { amulLoginWizard } from './wizards/amulLogin.wizard'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
-const stage = new Scenes.Stage<MyContext>([changeMaxNotifyCountWizard])
+const stage = new Scenes.Stage<MyContext>([
+  changeMaxNotifyCountWizard,
+  amulLoginWizard
+])
 bot.use(session())
 
 bot.use(withCatchAsync(onlyPvtChat))

@@ -24,7 +24,10 @@ const envSchema = z.object({
     .transform((val) => val === 'true'),
 
   // PAY URL
-  PAY_URL: z.string().default('https://razorpay.me/@10xdev')
+  PAY_URL: z.string().default('https://razorpay.me/@10xdev'),
+
+  // Order server api
+  ORDER_SERVER_API_URL: z.string().optional()
 })
 
 export type Env = z.infer<typeof envSchema>
