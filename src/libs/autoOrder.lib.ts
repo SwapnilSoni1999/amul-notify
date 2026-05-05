@@ -2,7 +2,11 @@ import { AmulApi } from './amulApi.lib'
 import axios from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import env from '@/env'
-import { SendOtpResponse, VerifyOtpResponse } from '@/types/orderApi.types'
+import {
+  AddressRecordResponse,
+  SendOtpResponse,
+  VerifyOtpResponse
+} from '@/types/orderApi.types'
 
 const API_BASE_URL = env.ORDER_SERVER_API_URL
 
@@ -37,13 +41,29 @@ export class AmulAutoOrder {
     const cookieString = await this.amulApi.session_cookie
     const pincodeRecord = this.amulApi.pincode_record
 
-    const response = await this.orderApi.post('/verify-otp', {
-      phone,
-      cookieString,
-      substore: pincodeRecord.substore,
-      pincode: pincodeRecord.pincode,
-      otp
-    })
+    const response = await this.orderApi.post<VerifyOtpResponse>(
+      '/verify-otp',
+      {
+        phone,
+        cookieString,
+        substore: pincodeRecord.substore,
+        pincode: pincodeRecord.pincode,
+        otp
+      }
+    )
+
+    return response.data
+  }
+
+  async fetchAddresses(): Promise<AddressRecordResponse> {
+    const cookieString = await this.amulApi.session_cookie
+
+    const response = await this.orderApi.post<AddressRecordResponse>(
+      '/fetch-addresses',
+      {
+        cookieString
+      }
+    )
 
     return response.data
   }

@@ -28,3 +28,18 @@ export interface VerifyOtpResponse extends CookieResponseBase {
   cartId: string
   substore: string
 }
+
+export interface AddressRecordResponse extends CookieResponseBase {
+  userId: string
+  addresses: AddressRecord[]
+}
+
+export interface AddressRecord {
+  _id: string
+  full_name?: string
+  address?: string
+  city?: string
+  state?: string
+  zip?: string
+  phone?: string
+}

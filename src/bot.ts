@@ -29,12 +29,19 @@ import { favouritesCommand } from './commands/favourites.command'
 import { mapCommand } from './commands/map.command'
 import { analyticsMiddleware } from './middlewares/analytics.middleware'
 import { amulLoginWizard } from './wizards/amulLogin.wizard'
+import { autoOrderCommand } from './commands/autoorder.command'
+import { toggleAutoOrderEnabledAction } from './actions/toggleAutoOrderEnabled.action'
+import { setAddressAction } from './actions/setAddress.action'
+import { amulAddressSetWizard } from './wizards/amulAddressSet.wizard'
+import { amulLoginAction } from './actions/amulLogin.action'
+import { amulLogoutAction } from './actions/amulLogout.action'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
 const stage = new Scenes.Stage<MyContext>([
   changeMaxNotifyCountWizard,
-  amulLoginWizard
+  amulLoginWizard,
+  amulAddressSetWizard
 ])
 bot.use(session())
 
@@ -52,6 +59,7 @@ bot.command('setpincode', withCatchAsync(setPincodeCommand))
 bot.use(withCatchAsync(pincodeGuard))
 
 bot.command('products', withCatchAsync(productsCommand))
+bot.command('autoorder', withCatchAsync(autoOrderCommand))
 bot.command('tracked', withCatchAsync(trackedCommand))
 bot.command('support', withCatchAsync(supportCommand))
 bot.command('pincode', withCatchAsync(pincodeCommand))
@@ -89,6 +97,17 @@ bot.action(
 bot.action(
   ACTIONS.settings.trackingStyle.changeMaxNotifyCount,
   withCatchAsync(changeMaxNotifyCount)
+)
+
+bot.action(
+  ACTIONS.settings.autoOrder.toggleEnabled,
+  withCatchAsync(toggleAutoOrderEnabledAction)
+)
+bot.action(ACTIONS.settings.autoOrder.login, withCatchAsync(amulLoginAction))
+bot.action(ACTIONS.settings.autoOrder.logout, withCatchAsync(amulLogoutAction))
+bot.action(
+  ACTIONS.settings.autoOrder.setAddress,
+  withCatchAsync(setAddressAction)
 )
 
 bot.use(withCatchAsync(loggerMiddleware))

@@ -59,6 +59,8 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `• <b>/settings</b> – View or change your settings for notifications`,
     `• <b>/support</b> – Support the bot and contact the developer`,
     `• <b>/map</b> – View interactive map of users`,
+    `• ${emojis.star} <b>/autoorder</b> – Get started with auto-ordering your favourite products (limited beta)`,
+    ``,
     `Get started by typing <b>/products</b> or simply explore available stock.`,
     '',
     `Updates Channel: <a href="https://t.me/AmulOSSBotUpdates">@AmulOSSBotUpdates</a>`,

@@ -1,3 +1,4 @@
+import { autoOrderCommand } from '@/commands/autoorder.command'
 import { AmulAutoOrder } from '@/libs/autoOrder.lib'
 import { MyContext } from '@/types/context.types'
 import { Markup, Scenes } from 'telegraf'
@@ -23,7 +24,11 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
     }
 
     await ctx.reply(
-      'Please enter your phone number and we will send you an OTP to verify your phone number.',
+      [
+        'Please enter your phone number and we will send you an OTP to verify your phone number.',
+        '',
+        'send the command /cancel to cancel the login process'
+      ].join('\n'),
       { reply_markup: kb?.reply_markup }
     )
     return ctx.wizard.next()
@@ -105,7 +110,7 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
 
     console.dir(response, { depth: null })
 
-    // empty cookies
+    // empty cookies array and push new cookies from response
     ctx.user.cookies.splice(0, ctx.user.cookies.length)
     ctx.user.cookies.push(...response.cookieExpiry)
     ctx.user.amulCartId = response.cartId
@@ -119,7 +124,8 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
       `Successfully verified OTP. You are now logged in to the Amul Auto Order feature.`
     )
 
-    return ctx.scene.leave()
+    await ctx.scene.leave()
+    return autoOrderCommand(ctx, () => Promise.resolve()) // to refresh auto-order overview
   }
 )
 
@@ -128,4 +134,11 @@ amulLoginWizard.use((ctx, next) => {
     return ctx.reply('You do not have permission to use this feature.')
   }
   return next()
+})
+
+amulLoginWizard.command('cancel', async (ctx) => {
+  await ctx.reply('Login cancelled.')
+  await ctx.answerCbQuery() // Acknowledge the callback query to remove loading state
+  await ctx.scene.leave()
+  return autoOrderCommand(ctx, () => Promise.resolve()) // to refresh auto-order overview
 })

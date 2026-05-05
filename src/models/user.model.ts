@@ -1,10 +1,35 @@
-import { CookieExpiryRecord } from '@/types/orderApi.types'
 import {
   HydratedDocumentFromSchema,
   InferSchemaType,
   Schema,
   model
 } from 'mongoose'
+
+const AddressRecordSchema = new Schema({
+  amulId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  full_name: {
+    type: String
+  },
+  address: {
+    type: String
+  },
+  city: {
+    type: String
+  },
+  state: {
+    type: String
+  },
+  zip: {
+    type: String
+  },
+  phone: {
+    type: String
+  }
+})
 
 const UserSettingsSchema = new Schema(
   {
@@ -160,6 +185,10 @@ const UserSchema = new Schema(
     amulCartId: {
       type: String,
       required: false
+    },
+    address: {
+      type: AddressRecordSchema,
+      required: false
     }
   },
   {
@@ -170,8 +199,6 @@ const UserSchema = new Schema(
 const UserModel = model<IUser>('User', UserSchema, 'users')
 
 export type HydratedUser = HydratedDocumentFromSchema<typeof UserSchema>
-export type IUser = InferSchemaType<typeof UserSchema> & {
-  cookies: CookieExpiryRecord[]
-}
+export type IUser = InferSchemaType<typeof UserSchema>
 
 export default UserModel

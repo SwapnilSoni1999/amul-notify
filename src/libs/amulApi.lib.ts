@@ -1,3 +1,4 @@
+import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import {
   AmulPincodeResponse,
@@ -62,6 +63,17 @@ export class AmulApi {
     )
 
     this.amulApi = amulApi
+  }
+
+  public injectCookies(cookies: IUser['cookies']) {
+    for (const cookie of cookies) {
+      this.jar.setCookieSync(
+        `${cookie.key}=${cookie.value}; Expires=${new Date(cookie.expiresAt ?? '').toUTCString()}; Path=${cookie.path}; Domain=${cookie.domain}; ${
+          cookie.isSession ? '' : 'HttpOnly; '
+        }`,
+        'https://shop.amul.com'
+      )
+    }
   }
 
   public async initCookies() {

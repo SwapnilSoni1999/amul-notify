@@ -7,6 +7,7 @@ export const userCommands: readonly BotCommand[] = [
   { command: 'setpincode', description: 'Set your pincode' },
   { command: 'pincode', description: 'Get your current pincode' },
   { command: 'products', description: 'List all protein products' },
+  { command: 'autoorder', description: 'Toggle auto-ordering of products' },
   { command: 'settings', description: 'View or change your settings' },
   { command: 'tracked', description: 'List all tracked products' },
   { command: 'favourites', description: 'List your favourite products' },
@@ -26,13 +27,17 @@ export const adminCommands: readonly BotCommand[] = [
 export const TIMEZONE = 'Asia/Kolkata'
 
 export const ACTIONS = {
+  home: 'home',
   settings: {
     trackingStyle: {
       toggle: 'settings:trackingStyle:toggle',
       changeMaxNotifyCount: 'settings:trackingStyle:changeMaxNotifyCount'
     },
     autoOrder: {
-      toggleEnabled: 'autoOrder:toggleEnabled'
+      toggleEnabled: 'autoOrder:toggleEnabled',
+      login: 'autoOrder:login',
+      logout: 'autoOrder:logout',
+      setAddress: 'autoOrder:setAddress'
     }
   }
 }
