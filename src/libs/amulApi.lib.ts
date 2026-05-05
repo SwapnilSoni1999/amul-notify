@@ -310,7 +310,7 @@ const createAmulApi = async (pincode: string) => {
   console.log('Cookies initialized for AmulApi instance')
 
   const records = await amulApi.searchPincode(pincode)
-  console.log(`Found records for pincode ${pincode}:`, records)
+  // console.log(`Found records for pincode ${pincode}:`, records)
   if (!records.length) {
     throw new Error(`No pincode found for ${pincode}`)
   }

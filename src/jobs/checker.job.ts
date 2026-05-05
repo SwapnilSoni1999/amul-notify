@@ -145,11 +145,8 @@ const stockCheckerJob = schedule(
                   upsert: true
                 }
               )
-                .then((result) => {
-                  console.log(
-                    `Stock history updated for product ${freshProduct.sku}`,
-                    JSON.stringify(result)
-                  )
+                .then(() => {
+                  // do nothing
                 })
                 .catch((err) => {
                   console.error(
