@@ -32,7 +32,10 @@ export const toggleAutoOrder = async (
 
   if (!existingProduct) {
     return ctx.reply(
-      `${emojis.crossMark} You are not tracking the product: <b>${product.name}</b>`,
+      [
+        `${emojis.crossMark} You are not tracking the product: <b>${product.name}</b>`,
+        'Please track the product before adding it to auto order.'
+      ].join('\n'),
       { parse_mode: 'HTML' }
     )
   }
