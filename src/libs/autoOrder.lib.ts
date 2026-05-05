@@ -4,7 +4,9 @@ import { wrapper } from 'axios-cookiejar-support'
 import env from '@/env'
 import {
   AddressRecordResponse,
+  PlaceOrderResponse,
   SendOtpResponse,
+  SetAddressResponse,
   VerifyOtpResponse
 } from '@/types/orderApi.types'
 
@@ -18,7 +20,10 @@ export class AmulAutoOrder {
     this.orderApi = wrapper(
       axios.create({
         baseURL: API_BASE_URL,
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'x-api-secret': env.ORDER_SERVER_API_KEY
+        }
       })
     )
   }
@@ -62,6 +67,50 @@ export class AmulAutoOrder {
       '/fetch-addresses',
       {
         cookieString
+      }
+    )
+
+    return response.data
+  }
+
+  async setAddress(
+    addressId: string,
+    cartId: string
+  ): Promise<SetAddressResponse> {
+    const cookieString = await this.amulApi.session_cookie
+    const substore = await this.amulApi.getSubstore()
+
+    const response = await this.orderApi.post<SetAddressResponse>(
+      '/set-address',
+      {
+        cookieString,
+        addressId,
+        cartId,
+        substore
+      }
+    )
+
+    return response.data
+  }
+
+  async placeOrder(payload: {
+    addressId: string
+    cartId: string
+    sku: string
+  }): Promise<PlaceOrderResponse> {
+    const cookieString = await this.amulApi.session_cookie
+    const substore = await this.amulApi.getSubstore()
+    const quantity = 1 // Hardcoded to 1 for now, can be made dynamic in future
+
+    const response = await this.orderApi.post<PlaceOrderResponse>(
+      '/place-order',
+      {
+        cookieString,
+        addressId: payload.addressId,
+        cartId: payload.cartId,
+        sku: payload.sku,
+        substore,
+        quantity
       }
     )
 

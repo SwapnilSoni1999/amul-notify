@@ -1,6 +1,7 @@
 import { TIMEZONE } from '@/config'
 import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
+import { AmulAutoOrder } from '@/libs/autoOrder.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
 import ProductStockHistoryModel from '@/models/productStockHistory.model'
 import UserModel, { IUser } from '@/models/user.model'
@@ -11,6 +12,7 @@ import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.servic
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
 import { getInventoryQuantity, isAvailableToPurchase } from '@/utils/amul.util'
+import { isLoggedIn } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
@@ -332,6 +334,134 @@ const stockCheckerJob = schedule(
                       sku: product.sku,
                       trackedBy: user._id
                     })
+                  }
+
+                  // Auto Order Check
+                  if (
+                    user.orderSettings.permitted &&
+                    user.orderSettings.enabled &&
+                    user.orderSettings.skus.includes(product.sku) &&
+                    isLoggedIn(user)
+                  ) {
+                    try {
+                      await sendMessageQueue({
+                        chatId: user.tgId!,
+                        text: `${emojis.star} Your auto-order is being placed for ${product.name}. Please wait...`
+                      })
+
+                      const amulApi = await getAmulApiFromSubstore(
+                        user.substore!
+                      )
+
+                      if (!amulApi) {
+                        console.error(
+                          `Failed to initialize Amul API for user ${user._id} during auto-order.`
+                        )
+                        logToChannel(
+                          `${emojis.crossMark} Failed to initialize Amul API for user ${user._id} during auto-order.`
+                        )
+                        await sendMessageQueue({
+                          chatId: user.tgId!,
+                          text: `[E451] ${emojis.crossMark} Failed to initialize Amul API for auto-order. Please try again later.`
+                        })
+                        return
+                      }
+                      amulApi.injectCookies(user.cookies)
+                      const amulOrderApi = new AmulAutoOrder(amulApi)
+
+                      if (!user.address?.amulId) {
+                        console.error(
+                          `User ${user._id} does not have an address set for auto-order.`
+                        )
+                        logToChannel(
+                          `${emojis.crossMark} User ${user._id} does not have an address set for auto-order.`
+                        )
+                        await sendMessageQueue({
+                          chatId: user.tgId!,
+                          text: `[E452] ${emojis.crossMark} No address found for auto-order. Please set your address using /autoorder command.`
+                        })
+                        return
+                      }
+
+                      const response = await amulOrderApi
+                        .placeOrder({
+                          addressId: user.address.amulId,
+                          cartId: user.amulCartId!,
+                          sku: product.sku
+                        })
+                        .catch((err) => {
+                          console.error(
+                            `Failed to place order for user ${user._id}: ${err.message}`
+                          )
+                          logToChannel(
+                            `${emojis.crossMark} Failed to place order for user ${user._id}: ${err.message}`
+                          )
+                          return
+                        })
+
+                      if (!response) {
+                        await sendMessageQueue({
+                          chatId: user.tgId!,
+                          text: `[E454] ${emojis.crossMark} Failed to place auto-order. Please try again later.`
+                        })
+                        return
+                      }
+
+                      const paymentUrl =
+                        response.paymentUrl ||
+                        response.result.data?.gatewayInfo?.url
+
+                      if (!paymentUrl) {
+                        console.error(
+                          `Payment URL not found in response for user ${user._id}.`
+                        )
+                        logToChannel(
+                          `${emojis.crossMark} Payment URL not found in response for user ${user._id}.`
+                        )
+                        await sendMessageQueue({
+                          chatId: user.tgId!,
+                          text: `[E455] ${emojis.crossMark} Failed to retrieve payment URL. Please try again later.`
+                        })
+                        return
+                      }
+
+                      await sendMessageQueue({
+                        chatId: user.tgId!,
+                        text: [
+                          `${emojis.checkMark} Auto-order has been initiated for ${product.name}.`,
+                          `Please click on the button below to goto payment page and complete the order.`,
+                          ``,
+                          // give info to user that payment link is only valid for 15 minutes
+                          `<i>Note: The payment link is only valid for 15 minutes. Please complete the payment within that time to successfully place the order.</i>`
+                        ].join('\n'),
+                        extra: {
+                          reply_markup: inlineKeyboard([
+                            [
+                              {
+                                text: 'Go to Payment',
+                                url: paymentUrl
+                              }
+                            ]
+                          ]).reply_markup
+                        }
+                      })
+                    } catch (err) {
+                      console.error(
+                        `Failed to place auto-order for user ${user._id}: ${
+                          err instanceof Error ? err.message : String(err)
+                        }`
+                      )
+                      logToChannel(
+                        `${emojis.crossMark} Failed to place auto-order for user ${user._id}: ${
+                          err instanceof Error ? err.message : String(err)
+                        }`
+                      )
+                      await sendMessageQueue({
+                        chatId: user.tgId!,
+                        text: `[E453] ${emojis.crossMark} Failed to place auto-order. Please try again later.`
+                      })
+                      return
+                    }
                   }
                 }
               }

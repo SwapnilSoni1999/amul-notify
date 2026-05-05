@@ -144,7 +144,7 @@ export const sendMessageQueue = async (payload: {
   chatId: number
   text: string
   extra?: ExtraReplyMessage
-  onComplete: (error?: Error | TelegramError) => void
+  onComplete?: (error?: Error | TelegramError) => void
 }) => {
   // console.log('Args:', payload, onComplete)
   const job = await broadcastQueue.add(
@@ -160,9 +160,9 @@ export const sendMessageQueue = async (payload: {
 
   try {
     await job.finished()
-    payload.onComplete()
+    payload.onComplete?.()
   } catch (err) {
     console.error(`Job failed:`, err)
-    payload.onComplete(err as Error | TelegramError)
+    payload.onComplete?.(err as Error | TelegramError)
   }
 }

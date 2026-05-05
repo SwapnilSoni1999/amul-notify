@@ -123,12 +123,32 @@ amulAddressSetWizard.action(/select_address_(\d+)/, async (ctx) => {
   ctx.user.set('address', { ...address, amulId: address._id })
   await ctx.user.save()
 
-  await ctx.reply(
-    `Address "${ctx.user.get('address')?.address}" has been set for auto-ordering.`
-  )
+  const amulOrderApi = new AmulAutoOrder(ctx.amul)
+  ctx.amul.injectCookies(ctx.user.cookies)
+  const response = await amulOrderApi
+    .setAddress(address._id, ctx.user.amulCartId!)
+    .catch((err) => {
+      console.error('Error setting address:', err)
+      return
+    })
+
+  if (!response) {
+    await ctx.reply('Error setting address. Please try again later.')
+    return ctx.scene.leave()
+  }
+
+  // empty cookies array and push new cookies from response
+  ctx.user.cookies.splice(0, ctx.user.cookies.length)
+  ctx.user.cookies.push(...response.cookieExpiry)
+  await ctx.user.save()
+
+  console.dir(response, { depth: null })
 
   await ctx.answerCbQuery() // Acknowledge the callback query to remove loading state
   await ctx.scene.leave()
+  await ctx.reply(
+    `Address "${ctx.user.get('address')?.address}" has been set for auto-ordering.`
+  )
   return autoOrderCommand(ctx, () => Promise.resolve()) // to refresh auto-order overview
 })
 

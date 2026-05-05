@@ -43,3 +43,24 @@ export interface AddressRecord {
   zip?: string
   phone?: string
 }
+
+export interface SetAddressResponse extends CookieResponseBase {
+  addressSet: boolean
+  userId: string
+  cartId: string
+  address: AddressRecord
+}
+
+export interface PlaceOrderResponse extends CookieResponseBase {
+  userId: string
+  cartId: string
+  substore: string
+  paymentUrl?: string
+  result: {
+    data?: {
+      gatewayInfo?: {
+        url?: string
+      }
+    }
+  }
+}

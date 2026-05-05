@@ -5,9 +5,9 @@ name: Amul Notify Bot
 
 on:
   push:
-    branches: ['main']
+    branches: [ "main" ]
   pull_request:
-    branches: ['main']
+    branches: [ "main" ]
 
 env:
   BASH_ENV: /home/sonisins/.bashrc
@@ -28,6 +28,8 @@ jobs:
 
           echo "TRACKER_ENABLED=${{ vars.PROD_TRACKER_ENABLED }}" >> .env.prod
           echo "BOT_WEBHOOK_URL=${{ vars.PROD_BOT_WEBHOOK_URL}}" >> .env.prod
+          echo "ORDER_SERVER_API_URL=${{ vars.PROD_ORDER_SERVER_API_URL }}" >> .env.prod
+          echo "ORDER_SERVER_API_KEY=${{ secrets.PROD_ORDER_SERVER_API_KEY }}" >> .env.prod
 
       - name: Build Docker image
         run: |

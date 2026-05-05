@@ -1,4 +1,4 @@
-import { HydratedUser } from '@/models/user.model'
+import { HydratedUser, IUser } from '@/models/user.model'
 import { startCommandLink } from './telegram.util'
 import { createLink } from './bot.utils'
 import { inlineKeyboard } from 'telegraf/markup'
@@ -25,7 +25,7 @@ export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
   )
 }
 
-export const isLoggedIn = (user: HydratedUser): boolean => {
+export const isLoggedIn = (user: HydratedUser | IUser): boolean => {
   return (
     !!user.phone &&
     user.phone.length === 10 &&
