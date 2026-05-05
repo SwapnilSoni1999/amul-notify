@@ -1,11 +1,22 @@
 import { HydratedUser, IUser } from '@/models/user.model'
+import env from '@/env'
 import { startCommandLink } from './telegram.util'
 import { createLink } from './bot.utils'
 import { inlineKeyboard } from 'telegraf/markup'
 import { ACTIONS } from '@/config'
 import { Markup } from 'telegraf'
 
+export const isAutoOrderConfigured = (): boolean => {
+  return Boolean(
+    env.ORDER_SERVER_API_URL?.trim() && env.ORDER_SERVER_API_KEY?.trim()
+  )
+}
+
 export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
+  if (!isAutoOrderConfigured()) {
+    return ''
+  }
+
   if (!user.orderSettings.permitted) {
     return ''
   }
@@ -27,6 +38,7 @@ export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
 
 export const isLoggedIn = (user: HydratedUser | IUser): boolean => {
   return (
+    isAutoOrderConfigured() &&
     !!user.phone &&
     user.phone.length === 10 &&
     !!user.cookies.find((cookie) => {
@@ -42,30 +54,33 @@ export const isLoggedIn = (user: HydratedUser | IUser): boolean => {
 }
 
 export const buildAutoOrderKeyboard = (user: HydratedUser) => {
+  const isConfigured = isAutoOrderConfigured()
   const loggedIn = isLoggedIn(user)
   const isEnabled = user.orderSettings.enabled
 
   const keyboard = inlineKeyboard(
     [
-      Markup.button.callback(
-        user.orderSettings.enabled
-          ? 'Disable Auto-Ordering'
-          : 'Enable Auto-Ordering',
-        ACTIONS.settings.autoOrder.toggleEnabled
-      ),
-      !loggedIn && isEnabled
+      isConfigured
+        ? Markup.button.callback(
+            user.orderSettings.enabled
+              ? 'Disable Auto-Ordering'
+              : 'Enable Auto-Ordering',
+            ACTIONS.settings.autoOrder.toggleEnabled
+          )
+        : null,
+      isConfigured && !loggedIn && isEnabled
         ? Markup.button.callback(
             'Login to Amul',
             ACTIONS.settings.autoOrder.login
           )
         : null,
-      loggedIn && isEnabled
+      isConfigured && loggedIn && isEnabled
         ? Markup.button.callback(
             'Logout from Amul',
             ACTIONS.settings.autoOrder.logout
           )
         : null,
-      loggedIn && isEnabled
+      isConfigured && loggedIn && isEnabled
         ? Markup.button.callback(
             'Set Address',
             ACTIONS.settings.autoOrder.setAddress
@@ -82,6 +97,10 @@ export const buildAutoOrderKeyboard = (user: HydratedUser) => {
 }
 
 export const buildAutoOrderOverviewMessage = (user: HydratedUser): string => {
+  if (!isAutoOrderConfigured()) {
+    return `Auto-ordering is not configured for this bot.`
+  }
+
   const loggedIn = isLoggedIn(user)
   const isPermitted = user.orderSettings.permitted
 

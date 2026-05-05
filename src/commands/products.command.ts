@@ -62,7 +62,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
           lastSeen?.lastSeenInStockAt
         ),
         `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
-        `<b>${autoOrderBtn}</b>`
+        autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
       ]
         .filter(Boolean)
         .join('\n')

@@ -12,7 +12,7 @@ import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.servic
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
 import { getInventoryQuantity, isAvailableToPurchase } from '@/utils/amul.util'
-import { isLoggedIn } from '@/utils/autoOrder.util'
+import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
@@ -338,6 +338,7 @@ const stockCheckerJob = schedule(
 
                   // Auto Order Check
                   if (
+                    isAutoOrderConfigured() &&
                     user.orderSettings.permitted &&
                     user.orderSettings.enabled &&
                     user.orderSettings.skus.includes(product.sku) &&

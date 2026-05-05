@@ -70,8 +70,10 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
               : undefined
           ),
           `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
-          `<b>${autoOrderBtn}</b>`
-        ].join('\n')
+          autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
+        ]
+          .filter(Boolean)
+          .join('\n')
       })
     ))
   ].join('\n\n')

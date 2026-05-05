@@ -2,6 +2,7 @@ import { MiddlewareFn } from 'telegraf'
 import { adminCommands, userCommands } from '@/config'
 import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
+import { isAutoOrderConfigured } from '@/utils/autoOrder.util'
 
 export const setCommands: MiddlewareFn<MyContext> = async (ctx, next) => {
   if (!ctx.from) {
@@ -14,7 +15,9 @@ export const setCommands: MiddlewareFn<MyContext> = async (ctx, next) => {
     throw new Error('sessionMiddleware must be used before setCommands')
   }
 
-  const commands = [...userCommands]
+  const commands = userCommands.filter((command) => {
+    return isAutoOrderConfigured() || command.command !== 'autoorder'
+  })
 
   if (user.isAdmin) {
     commands.push(...adminCommands)

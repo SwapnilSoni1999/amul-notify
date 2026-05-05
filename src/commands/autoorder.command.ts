@@ -1,13 +1,19 @@
 import { ActionContext, CommandContext, MyContext } from '@/types/context.types'
 import {
   buildAutoOrderKeyboard,
-  buildAutoOrderOverviewMessage
+  buildAutoOrderOverviewMessage,
+  isAutoOrderConfigured
 } from '@/utils/autoOrder.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const autoOrderCommand: MiddlewareFn<
   CommandContext | ActionContext | MyContext
 > = async (ctx, next) => {
+  if (!isAutoOrderConfigured()) {
+    await ctx.reply(`Auto-ordering is not configured for this bot.`)
+    return next()
+  }
+
   const user = ctx.user
   if (!user.orderSettings.permitted) {
     await ctx.reply(

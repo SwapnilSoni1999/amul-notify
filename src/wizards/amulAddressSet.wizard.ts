@@ -2,7 +2,7 @@ import { autoOrderCommand } from '@/commands/autoorder.command'
 import { AmulAutoOrder } from '@/libs/autoOrder.lib'
 import { MyContext } from '@/types/context.types'
 import { AddressRecord } from '@/types/orderApi.types'
-import { isLoggedIn } from '@/utils/autoOrder.util'
+import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
 import { Markup, Scenes } from 'telegraf'
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram'
 
@@ -22,6 +22,11 @@ export const amulAddressSetWizard = new Scenes.WizardScene<MyContext>(
    *    Save user
    */
   async (ctx) => {
+    if (!isAutoOrderConfigured()) {
+      await ctx.reply('Auto-ordering is not configured for this bot.')
+      return ctx.scene.leave()
+    }
+
     // show button keyboard if phone number exists in database
     const loggedIn = isLoggedIn(ctx.user)
     if (!loggedIn) {

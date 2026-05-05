@@ -16,6 +16,15 @@ export class AmulAutoOrder {
   private amulApi: AmulApi
   private orderApi: ReturnType<typeof wrapper>
   constructor(amulApi: AmulApi) {
+    if (
+      !env.ORDER_SERVER_API_URL?.trim() ||
+      !env.ORDER_SERVER_API_KEY?.trim()
+    ) {
+      throw new Error(
+        'ORDER_SERVER_API_URL and ORDER_SERVER_API_KEY are required for auto-ordering'
+      )
+    }
+
     this.amulApi = amulApi
     this.orderApi = wrapper(
       axios.create({

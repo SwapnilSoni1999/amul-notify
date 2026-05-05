@@ -1,6 +1,7 @@
 import { autoOrderCommand } from '@/commands/autoorder.command'
 import { AmulAutoOrder } from '@/libs/autoOrder.lib'
 import { MyContext } from '@/types/context.types'
+import { isAutoOrderConfigured } from '@/utils/autoOrder.util'
 import { Markup, Scenes } from 'telegraf'
 import { keyboard } from 'telegraf/markup'
 
@@ -16,6 +17,11 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
    *    Save user
    */
   async (ctx) => {
+    if (!isAutoOrderConfigured()) {
+      await ctx.reply('Auto-ordering is not configured for this bot.')
+      return ctx.scene.leave()
+    }
+
     // show button keyboard if phone number exists in database
     let kb: ReturnType<typeof keyboard> | undefined
     if (ctx.user.phone) {

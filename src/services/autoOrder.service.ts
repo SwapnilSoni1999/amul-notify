@@ -1,5 +1,5 @@
 import { MyContext } from '@/types/context.types'
-import { isLoggedIn } from '@/utils/autoOrder.util'
+import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 
 export const toggleAutoOrder = async (
@@ -7,6 +7,12 @@ export const toggleAutoOrder = async (
   sku: string,
   action: 'add' | 'remove'
 ) => {
+  if (!isAutoOrderConfigured()) {
+    return ctx.reply(`${emojis.crossMark} Auto-ordering is not configured.`, {
+      parse_mode: 'HTML'
+    })
+  }
+
   if (!ctx.user.orderSettings.permitted) {
     return ctx.reply(
       `${emojis.crossMark} You do not have permission to use this feature.`,

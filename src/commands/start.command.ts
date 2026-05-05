@@ -5,6 +5,7 @@ import {
   untrackProduct
 } from '@/services/track.service'
 import { CommandContext } from '@/types/context.types'
+import { isAutoOrderConfigured } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
@@ -59,7 +60,9 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `• <b>/settings</b> – View or change your settings for notifications`,
     `• <b>/support</b> – Support the bot and contact the developer`,
     `• <b>/map</b> – View interactive map of users`,
-    `• ${emojis.star} <b>/autoorder</b> – Get started with auto-ordering your favourite products (limited beta)`,
+    isAutoOrderConfigured()
+      ? `• ${emojis.star} <b>/autoorder</b> – Get started with auto-ordering your favourite products (limited beta)`
+      : null,
     ``,
     `Get started by typing <b>/products</b> or simply explore available stock.`,
     '',
