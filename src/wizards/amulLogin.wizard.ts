@@ -144,7 +144,6 @@ amulLoginWizard.use((ctx, next) => {
 
 amulLoginWizard.command('cancel', async (ctx) => {
   await ctx.reply('Login cancelled.')
-  await ctx.answerCbQuery() // Acknowledge the callback query to remove loading state
   await ctx.scene.leave()
   return autoOrderCommand(ctx, () => Promise.resolve()) // to refresh auto-order overview
 })

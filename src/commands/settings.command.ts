@@ -61,7 +61,7 @@ export const settingsCommand: MiddlewareFn<
         reply_markup: buttons.reply_markup
       }
     )
-    await ctx.answerCbQuery()
+    await ctx.answerCbQuery('')
   } else {
     await ctx.reply(description, {
       parse_mode: 'HTML',
