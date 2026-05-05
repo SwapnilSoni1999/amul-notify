@@ -16,7 +16,13 @@ export const adminSeeder = async () => {
         trackingStyle: 'once',
         maxNotifyCount: 1
       },
-      favSkus: []
+      favSkus: [],
+      cookies: [] as any,
+      orderSettings: {
+        enabled: false,
+        permitted: true,
+        skus: []
+      }
     }
   ]
 
