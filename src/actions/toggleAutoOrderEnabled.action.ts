@@ -31,12 +31,13 @@ export const toggleAutoOrderEnabledAction: MiddlewareFn<ActionContext> = async (
           createAutoBookingPaymentLink(ctx.user, plan)
         )
       )
-      const keyboard = inlineKeyboard([
+      const keyboard = inlineKeyboard(
         AUTO_BOOKING_PAYMENT_PLANS.map((plan, index) => ({
           text: plan.label,
           url: payments[index].shortUrl
-        }))
-      ])
+        })),
+        { columns: 1 }
+      )
 
       await ctx.answerCbQuery('Payment required')
       await ctx.reply(
