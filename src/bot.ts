@@ -35,6 +35,7 @@ import { setAddressAction } from './actions/setAddress.action'
 import { amulAddressSetWizard } from './wizards/amulAddressSet.wizard'
 import { amulLoginAction } from './actions/amulLogin.action'
 import { amulLogoutAction } from './actions/amulLogout.action'
+import { homeAction } from './actions/home.action'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -98,6 +99,8 @@ bot.action(
   ACTIONS.settings.trackingStyle.changeMaxNotifyCount,
   withCatchAsync(changeMaxNotifyCount)
 )
+
+bot.action(ACTIONS.home, withCatchAsync(homeAction))
 
 bot.action(
   ACTIONS.settings.autoOrder.toggleEnabled,
