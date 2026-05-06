@@ -1,7 +1,8 @@
 import {
-  AUTO_BOOKING_PAYMENT_AMOUNT,
   AUTO_BOOKING_PAYMENT_CURRENCY,
-  AUTO_BOOKING_PAYMENT_VALID_DAYS
+  AUTO_BOOKING_PAYMENT_PLANS,
+  AutoBookingPaymentPlan,
+  DEFAULT_AUTO_BOOKING_PAYMENT_PLAN
 } from '@/config'
 import env from '@/env'
 import PaymentModel, { HydratedPayment } from '@/models/payment.model'
@@ -21,6 +22,13 @@ const addDays = (date: Date, days: number): Date => {
 
 const buildReferenceId = (user: HydratedUser): string => {
   return `ab_${user._id.toString()}_${Date.now().toString(36)}`
+}
+
+const findAutoBookingPaymentPlan = (amount: number) => {
+  return (
+    AUTO_BOOKING_PAYMENT_PLANS.find((plan) => plan.amount === amount) ||
+    DEFAULT_AUTO_BOOKING_PAYMENT_PLAN
+  )
 }
 
 export const hasValidAutoBookingPayment = async (
@@ -61,7 +69,8 @@ export const clearUserAutoBookingAccess = async (
 }
 
 export const createAutoBookingPaymentLink = async (
-  user: HydratedUser
+  user: HydratedUser,
+  plan: AutoBookingPaymentPlan = DEFAULT_AUTO_BOOKING_PAYMENT_PLAN
 ): Promise<HydratedPayment> => {
   const redirectUrl = env.RAZORPAY_REDIRECT_URL?.trim()
   if (!redirectUrl) {
@@ -74,7 +83,7 @@ export const createAutoBookingPaymentLink = async (
   const referenceId = buildReferenceId(user)
 
   const paymentLink = await createPaymentLink({
-    amount: AUTO_BOOKING_PAYMENT_AMOUNT,
+    amount: plan.amount,
     currency: AUTO_BOOKING_PAYMENT_CURRENCY,
     description: 'Auto Booking Service',
     reference_id: referenceId,
@@ -95,6 +104,8 @@ export const createAutoBookingPaymentLink = async (
     },
     notes: {
       source: 'auto_booking',
+      plan_id: plan.id,
+      validity_days: String(plan.validityInDays),
       user_id: user._id.toString(),
       tg_id: user.tgId ? String(user.tgId) : '',
       tg_username: user.tgUsername || ''
@@ -152,10 +163,10 @@ export const recordAutoBookingPaymentCallback = async (
 
   if (status === 'paid') {
     const now = new Date()
+    const plan = findAutoBookingPaymentPlan(payment.amount)
     payment.razorpayPaymentId = callback.payment_id
     payment.paidAt = payment.paidAt || now
-    payment.validUntil =
-      payment.validUntil || addDays(now, AUTO_BOOKING_PAYMENT_VALID_DAYS)
+    payment.validUntil = payment.validUntil || addDays(now, plan.validityInDays)
   }
 
   await payment.save()

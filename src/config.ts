@@ -25,10 +25,29 @@ export const adminCommands: readonly BotCommand[] = [
 ]
 
 export const TIMEZONE = 'Asia/Kolkata'
-export const AUTO_BOOKING_PAYMENT_VALID_DAYS = 30
-export const AUTO_BOOKING_PAYMENT_AMOUNT = 1900
 export const AUTO_BOOKING_PAYMENT_CURRENCY = 'INR'
-export const AUTO_BOOKING_PAYMENT_LABEL = '19 INR'
+export const AUTO_BOOKING_PAYMENT_PLANS = [
+  {
+    id: '30d',
+    amount: 1900,
+    validityInDays: 30,
+    label: '30 days | 19 INR'
+  },
+  {
+    id: '12d',
+    amount: 900,
+    validityInDays: 12,
+    label: '12 days | 9 INR'
+  },
+  {
+    id: '3d',
+    amount: 500,
+    validityInDays: 3,
+    label: '3 days | 5 INR'
+  }
+] as const
+export type AutoBookingPaymentPlan = (typeof AUTO_BOOKING_PAYMENT_PLANS)[number]
+export const DEFAULT_AUTO_BOOKING_PAYMENT_PLAN = AUTO_BOOKING_PAYMENT_PLANS[0]
 
 export const ACTIONS = {
   home: 'home',

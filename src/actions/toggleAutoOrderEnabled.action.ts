@@ -1,8 +1,5 @@
 import { autoOrderCommand } from '@/commands/autoorder.command'
-import {
-  AUTO_BOOKING_PAYMENT_LABEL,
-  AUTO_BOOKING_PAYMENT_VALID_DAYS
-} from '@/config'
+import { AUTO_BOOKING_PAYMENT_PLANS } from '@/config'
 import {
   createAutoBookingPaymentLink,
   hasValidAutoBookingPayment
@@ -29,22 +26,27 @@ export const toggleAutoOrderEnabledAction: MiddlewareFn<ActionContext> = async (
     const hasValidPayment = await hasValidAutoBookingPayment(ctx.user._id)
 
     if (!hasValidPayment) {
-      const payment = await createAutoBookingPaymentLink(ctx.user)
+      const payments = await Promise.all(
+        AUTO_BOOKING_PAYMENT_PLANS.map((plan) =>
+          createAutoBookingPaymentLink(ctx.user, plan)
+        )
+      )
       const keyboard = inlineKeyboard([
-        [
-          {
-            text: `Pay ${AUTO_BOOKING_PAYMENT_LABEL}`,
-            url: payment.shortUrl
-          }
-        ]
+        AUTO_BOOKING_PAYMENT_PLANS.map((plan, index) => ({
+          text: plan.label,
+          url: payments[index].shortUrl
+        }))
       ])
 
       await ctx.answerCbQuery('Payment required')
       await ctx.reply(
         [
           `${emojis.info} <b>Payment required</b>`,
-          `Auto-booking access is valid for ${AUTO_BOOKING_PAYMENT_VALID_DAYS} days after payment.`,
-          `Please complete the ${AUTO_BOOKING_PAYMENT_LABEL} payment to enable auto-booking.`
+          `Choose one plan below to enable auto-booking.`,
+          ``,
+          `<b>Terms and Conditions</b>`,
+          `- This payment is non-refundable.`,
+          `- If you have any issues, contact the developer using /support.`
         ].join('\n'),
         {
           parse_mode: 'HTML',

@@ -11,6 +11,7 @@ import {
   buildAutoOrderOverviewMessage
 } from './utils/autoOrder.util'
 import { emojis } from './utils/emoji.util'
+import { DEFAULT_AUTO_BOOKING_PAYMENT_PLAN } from './config'
 
 const app = express()
 
@@ -221,7 +222,7 @@ app.get('/payment/success', async (req, res) => {
         result.user.tgId,
         [
           `${emojis.checkMark} <b>Payment received</b>`,
-          `Auto-booking is now enabled for 30 days.`,
+          `Auto-booking is now enabled for ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days.`,
           ``,
           buildAutoOrderOverviewMessage(result.user, result.payment)
         ].join('\n'),
