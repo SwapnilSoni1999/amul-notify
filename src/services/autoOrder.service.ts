@@ -1,3 +1,4 @@
+import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { MyContext } from '@/types/context.types'
 import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
@@ -41,6 +42,27 @@ export const toggleAutoOrder = async (
   }
 
   if (action === 'add') {
+    if (!ctx.user.orderSettings.enabled) {
+      return ctx.reply(
+        [
+          `${emojis.warning} Auto-ordering is not enabled.`,
+          `Please send /autoorder and enable auto-booking payment before adding products to auto-order.`
+        ].join('\n'),
+        { parse_mode: 'HTML' }
+      )
+    }
+
+    const hasValidPayment = await hasValidAutoBookingPayment(ctx.user._id)
+    if (!hasValidPayment) {
+      return ctx.reply(
+        [
+          `${emojis.warning} Auto-booking payment is required.`,
+          `Please send /autoorder and enable auto-booking payment before adding products to auto-order.`
+        ].join('\n'),
+        { parse_mode: 'HTML' }
+      )
+    }
+
     const loggedIn = isLoggedIn(ctx.user)
 
     if (!loggedIn) {
