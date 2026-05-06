@@ -1,7 +1,10 @@
 import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
-import { getAutoOrderButton } from '@/utils/autoOrder.util'
+import {
+  canAddAutoOrderProducts,
+  getAutoOrderButton
+} from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
@@ -19,6 +22,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
   }
 
   const products = await ctx.amul.getProteinProducts()
+  const canAddAutoOrder = await canAddAutoOrderProducts(ctx.user)
 
   const message: string = [
     `<b>Tracked Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
@@ -52,7 +56,11 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
         const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
         console.log('isTracked:', isTracked)
 
-        const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
+        const autoOrderBtn = await getAutoOrderButton(
+          ctx.user,
+          product.sku,
+          canAddAutoOrder
+        )
 
         const lastSeen = await getLastInStockAt(
           product.sku,

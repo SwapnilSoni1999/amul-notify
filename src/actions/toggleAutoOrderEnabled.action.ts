@@ -47,7 +47,8 @@ export const toggleAutoOrderEnabledAction: MiddlewareFn<ActionContext> = async (
           ``,
           `<b>Terms and Conditions</b>`,
           `- This payment is non-refundable.`,
-          `- If you have any issues, contact the developer using /support.`
+          `- If you have any issues, contact the developer using /support.`,
+          `- Please wait until your payment finishes and redirects you to the confirmation page.`
         ].join('\n'),
         {
           parse_mode: 'HTML',

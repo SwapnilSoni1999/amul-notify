@@ -2,6 +2,7 @@ import { HydratedUser, IUser } from '@/models/user.model'
 import env from '@/env'
 import dayjs from '@/libs/dayjs.lib'
 import { HydratedPayment } from '@/models/payment.model'
+import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { startCommandLink } from './telegram.util'
 import { createLink } from './bot.utils'
 import { inlineKeyboard } from 'telegraf/markup'
@@ -55,7 +56,24 @@ export const isAutoOrderConfigured = (): boolean => {
   return getMissingAutoOrderConfig().length === 0
 }
 
-export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
+export const canAddAutoOrderProducts = async (
+  user: HydratedUser
+): Promise<boolean> => {
+  return Boolean(
+    isAutoOrderConfigured() &&
+      user.orderSettings.permitted &&
+      user.orderSettings.enabled &&
+      user.address?.amulId &&
+      isLoggedIn(user) &&
+      (await hasValidAutoBookingPayment(user._id))
+  )
+}
+
+export const getAutoOrderButton = async (
+  user: HydratedUser,
+  sku: string,
+  canAddAutoOrder?: boolean
+) => {
   if (!isAutoOrderConfigured()) {
     return ''
   }
@@ -71,6 +89,12 @@ export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
       await startCommandLink(`removeautoorder_${sku}`),
       '[Remove Auto Order]'
     )
+  }
+
+  const canAdd = canAddAutoOrder ?? (await canAddAutoOrderProducts(user))
+
+  if (!canAdd) {
+    return ''
   }
 
   return createLink(

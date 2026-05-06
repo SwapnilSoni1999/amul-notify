@@ -63,6 +63,16 @@ export const toggleAutoOrder = async (
       )
     }
 
+    if (!ctx.user.address?.amulId) {
+      return ctx.reply(
+        [
+          `${emojis.warning} Auto-order address is not set.`,
+          `Please send /autoorder and set your address before adding products to auto-order.`
+        ].join('\n'),
+        { parse_mode: 'HTML' }
+      )
+    }
+
     const loggedIn = isLoggedIn(ctx.user)
 
     if (!loggedIn) {

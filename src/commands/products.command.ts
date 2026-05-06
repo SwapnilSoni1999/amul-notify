@@ -1,7 +1,10 @@
 import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
-import { getAutoOrderButton } from '@/utils/autoOrder.util'
+import {
+  canAddAutoOrderProducts,
+  getAutoOrderButton
+} from '@/utils/autoOrder.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
@@ -22,6 +25,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   const title = `<b>Amul Protein Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
 
   const messages: string[][] = []
+  const canAddAutoOrder = await canAddAutoOrderProducts(ctx.user)
 
   const productMessageBlocks = await Promise.all(
     products.map(async (product, index) => {
@@ -45,7 +49,11 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
 
       const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
 
-      const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
+      const autoOrderBtn = await getAutoOrderButton(
+        ctx.user,
+        product.sku,
+        canAddAutoOrder
+      )
 
       console.log('Auto Order Button:', autoOrderBtn)
 
