@@ -26,6 +26,7 @@ export const adminCommands: readonly BotCommand[] = [
 
 export const TIMEZONE = 'Asia/Kolkata'
 export const AUTO_BOOKING_PAYMENT_CURRENCY = 'INR'
+// Amounts are in paise (1 INR = 100 paise)
 export const AUTO_BOOKING_PAYMENT_PLANS = [
   {
     id: '30d',
