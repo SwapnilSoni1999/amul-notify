@@ -25,6 +25,10 @@ export const adminCommands: readonly BotCommand[] = [
 ]
 
 export const TIMEZONE = 'Asia/Kolkata'
+export const AUTO_BOOKING_PAYMENT_VALID_DAYS = 30
+export const AUTO_BOOKING_PAYMENT_AMOUNT = 1900
+export const AUTO_BOOKING_PAYMENT_CURRENCY = 'INR'
+export const AUTO_BOOKING_PAYMENT_LABEL = '19 INR'
 
 export const ACTIONS = {
   home: 'home',

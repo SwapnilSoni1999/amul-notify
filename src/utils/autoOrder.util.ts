@@ -1,9 +1,11 @@
 import { HydratedUser, IUser } from '@/models/user.model'
 import env from '@/env'
+import dayjs from '@/libs/dayjs.lib'
+import { HydratedPayment } from '@/models/payment.model'
 import { startCommandLink } from './telegram.util'
 import { createLink } from './bot.utils'
 import { inlineKeyboard } from 'telegraf/markup'
-import { ACTIONS } from '@/config'
+import { ACTIONS, TIMEZONE } from '@/config'
 import { Markup } from 'telegraf'
 
 export const isAutoOrderConfigured = (): boolean => {
@@ -96,18 +98,23 @@ export const buildAutoOrderKeyboard = (user: HydratedUser) => {
   return keyboard
 }
 
-export const buildAutoOrderOverviewMessage = (user: HydratedUser): string => {
+export const buildAutoOrderOverviewMessage = (
+  user: HydratedUser,
+  payment?: HydratedPayment | null
+): string => {
   if (!isAutoOrderConfigured()) {
     return `Auto-ordering is not configured for this bot.`
   }
 
   const loggedIn = isLoggedIn(user)
   const isPermitted = user.orderSettings.permitted
+  const subscriptionDetails = getAutoBookingSubscriptionDetails(payment)
 
   const message = isPermitted
     ? [
         `Your current auto-order settings:`,
         `- <b>Auto-ordering</b>: ${user.orderSettings.enabled ? 'Enabled' : 'Disabled'}`,
+        `- <b>Subscription</b>: ${subscriptionDetails}`,
         `- <b>Address</b>: ${
           user.address
             ? [
@@ -125,4 +132,27 @@ export const buildAutoOrderOverviewMessage = (user: HydratedUser): string => {
         `Sorry, you are not permitted to use auto-ordering. Please contact /support.`
       ]
   return message.join('\n')
+}
+
+const getAutoBookingSubscriptionDetails = (
+  payment?: HydratedPayment | null
+): string => {
+  if (!payment?.validUntil) {
+    return 'Not active'
+  }
+
+  const validUntil = dayjs(payment.validUntil).tz(TIMEZONE)
+  const now = dayjs().tz(TIMEZONE)
+
+  if (payment.status !== 'paid' || !validUntil.isAfter(now)) {
+    return `Expired on ${validUntil.format('DD MMM YYYY, hh:mm A')}`
+  }
+
+  const daysRemaining = Math.max(validUntil.diff(now, 'day'), 0)
+
+  return [
+    `Active`,
+    `expires ${validUntil.format('DD MMM YYYY, hh:mm A')}`,
+    `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`
+  ].join(' | ')
 }

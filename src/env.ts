@@ -28,7 +28,12 @@ const envSchema = z.object({
 
   // Order server api
   ORDER_SERVER_API_URL: z.string().optional(),
-  ORDER_SERVER_API_KEY: z.string().optional()
+  ORDER_SERVER_API_KEY: z.string().optional(),
+
+  // Razorpay
+  RAZORPAY_API_KEY: z.string().optional(),
+  RAZORPAY_API_SECRET: z.string().optional(),
+  RAZORPAY_REDIRECT_URL: z.string().optional()
 })
 
 export type Env = z.infer<typeof envSchema>

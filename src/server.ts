@@ -6,6 +6,7 @@ import { stockCheckerJob } from './jobs/checker.job'
 import { initiateAmulSessions } from './services/amul.service'
 import app from '@/app'
 import { activityNotifierJob } from './jobs/activityReport.job'
+import { paymentExpiryJob } from './jobs/paymentExpiry.job'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -62,6 +63,10 @@ mongoose
     app.listen(env.PORT, () => {
       console.log(`Server is running on port ${env.PORT}`)
     })
+
+    console.log('Starting payment expiry job...')
+    paymentExpiryJob.start()
+    console.log('Payment expiry job started')
 
     // Start job
     if (env.TRACKER_ENABLED) {
