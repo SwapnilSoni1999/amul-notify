@@ -7,6 +7,10 @@ import { initiateAmulSessions } from './services/amul.service'
 import app from '@/app'
 import { activityNotifierJob } from './jobs/activityReport.job'
 import { paymentExpiryJob } from './jobs/paymentExpiry.job'
+import {
+  getMissingAutoOrderConfig,
+  isAutoOrderConfigured
+} from './utils/autoOrder.util'
 
 redis.on('connect', () => {
   console.log('Connected to Redis successfully')
@@ -63,6 +67,16 @@ mongoose
     app.listen(env.PORT, () => {
       console.log(`Server is running on port ${env.PORT}`)
     })
+
+    if (isAutoOrderConfigured()) {
+      console.log('Auto-ordering is configured.')
+    } else {
+      console.log(
+        `Auto-ordering is disabled. Missing config: ${getMissingAutoOrderConfig().join(
+          ', '
+        )}`
+      )
+    }
 
     console.log('Starting payment expiry job...')
     paymentExpiryJob.start()

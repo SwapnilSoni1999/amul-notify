@@ -8,10 +8,51 @@ import { inlineKeyboard } from 'telegraf/markup'
 import { ACTIONS, TIMEZONE } from '@/config'
 import { Markup } from 'telegraf'
 
+const hasValue = (value?: string): boolean => {
+  return Boolean(value?.trim())
+}
+
+const isValidUrl = (value?: string): boolean => {
+  if (!hasValue(value)) {
+    return false
+  }
+
+  try {
+    new URL(value!)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export const getMissingAutoOrderConfig = (): string[] => {
+  const missingConfig: string[] = []
+
+  if (!hasValue(env.ORDER_SERVER_API_URL)) {
+    missingConfig.push('ORDER_SERVER_API_URL')
+  }
+
+  if (!hasValue(env.ORDER_SERVER_API_KEY)) {
+    missingConfig.push('ORDER_SERVER_API_KEY')
+  }
+
+  if (!hasValue(env.RAZORPAY_API_KEY)) {
+    missingConfig.push('RAZORPAY_API_KEY')
+  }
+
+  if (!hasValue(env.RAZORPAY_API_SECRET)) {
+    missingConfig.push('RAZORPAY_API_SECRET')
+  }
+
+  if (!isValidUrl(env.RAZORPAY_REDIRECT_URL)) {
+    missingConfig.push('RAZORPAY_REDIRECT_URL')
+  }
+
+  return missingConfig
+}
+
 export const isAutoOrderConfigured = (): boolean => {
-  return Boolean(
-    env.ORDER_SERVER_API_URL?.trim() && env.ORDER_SERVER_API_KEY?.trim()
-  )
+  return getMissingAutoOrderConfig().length === 0
 }
 
 export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {

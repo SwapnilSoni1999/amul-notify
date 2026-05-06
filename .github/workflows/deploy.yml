@@ -28,8 +28,12 @@ jobs:
 
           echo "TRACKER_ENABLED=${{ vars.PROD_TRACKER_ENABLED }}" >> .env.prod
           echo "BOT_WEBHOOK_URL=${{ vars.PROD_BOT_WEBHOOK_URL}}" >> .env.prod
+
           echo "ORDER_SERVER_API_URL=${{ vars.PROD_ORDER_SERVER_API_URL }}" >> .env.prod
           echo "ORDER_SERVER_API_KEY=${{ secrets.PROD_ORDER_SERVER_API_KEY }}" >> .env.prod
+          echo "RAZORPAY_API_KEY=${{ secrets.PROD_RAZORPAY_API_KEY }}" >> .env.prod
+          echo "RAZORPAY_API_SECRET=${{ secrets.PROD_RAZORPAY_API_SECRET }}" >> .env.prod
+          echo "RAZORPAY_REDIRECT_URL=${{ vars.PROD_RAZORPAY_REDIRECT_URL }}" >> .env.prod
 
       - name: Build Docker image
         run: |

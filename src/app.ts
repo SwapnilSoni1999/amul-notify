@@ -46,7 +46,7 @@ const getQueryString = (value: unknown): string => {
   return typeof value === 'string' ? value : ''
 }
 
-app.get('/payment/success', async (req, res) => {
+app.get('/api/payment/success', async (req, res) => {
   const botUrl = await getBotUrl()
   const paymentId = getQueryString(req.query.razorpay_payment_id)
   const paymentLinkId = getQueryString(req.query.razorpay_payment_link_id)
