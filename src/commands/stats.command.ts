@@ -1,4 +1,5 @@
 import { substoreSessions } from '@/libs/amulApi.lib'
+import PaymentModel from '@/models/payment.model'
 import ProductModel from '@/models/product.model'
 import UserModel from '@/models/user.model'
 import { getTodayActiveCount } from '@/services/activity.service'
@@ -20,11 +21,23 @@ export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
 
   const todayActiveUsers = await getTodayActiveCount()
   const inactiveUsers = totalUsers - todayActiveUsers
+  const totalPaidUsers = (
+    await PaymentModel.distinct('user', {
+      amount: {
+        $gt: 0
+      },
+      status: 'paid',
+      validUntil: {
+        $gt: new Date()
+      }
+    })
+  ).length
 
   await ctx.reply(
     [
       `<b>${emojis.chart} Bot Statistics</b>`,
       `Total Users: <b>${totalUsers}</b>`,
+      `Total Paid Users: <b>${totalPaidUsers}</b>`,
       `Total Tracked Products: <b>${totalTracked}</b>`,
       `Total Amul Sessions: <b>${totalAmulSessions}</b>`,
       `Total Unique Substores: <b>${distinctSubstores.length}</b>`,
