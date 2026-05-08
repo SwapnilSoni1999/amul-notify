@@ -8,6 +8,7 @@ import UserModel, { IUser } from '@/models/user.model'
 import { sendMessageQueue } from '@/queues/broadcast.queue'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
 import cacheService from '@/services/cache.service'
+import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.service'
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
@@ -261,18 +262,24 @@ const stockCheckerJob = schedule(
               ]
             ])
 
-            const getInfoMessage = () => {
+            const getInfoMessage = async () => {
+              const AUTO_BUY_BANNER = [
+                '',
+                `${emojis.star} want to auto-order this product whenever it's in stock?`,
+                `Send /autoorder to set it up now!`
+              ].join('\n')
+
               if (trackingStyle === 'once') {
-                return `<i>The product is now untracked. You can track it again using the button below.</i>`
+                return `<i>The product is now untracked. You can track it again using the button below. ${!(await hasValidAutoBookingPayment(user._id)) ? AUTO_BUY_BANNER : ''}</i>`
               } else if (
                 trackingStyle === 'always' &&
                 (dbProduct.remainingNotifyCount ?? 1) - 1 < 1
               ) {
-                return `<i>You will receive more updates when the product will be restocked.</i>`
+                return `<i>You will receive more updates when the product will be restocked. ${!(await hasValidAutoBookingPayment(user._id)) ? AUTO_BUY_BANNER : ''}</i>`
               } else {
                 return `<i>You will receive updates ${
                   dbProduct.remainingNotifyCount - 1
-                } more times for this product. Once done, You'll receive ${trackingCount} update(s) on next restock.</i>`
+                } more times for this product. Once done, You'll receive ${trackingCount} update(s) on next restock. ${!(await hasValidAutoBookingPayment(user._id)) ? AUTO_BUY_BANNER : ''}</i>`
               }
             }
 
@@ -280,7 +287,7 @@ const stockCheckerJob = schedule(
               `${emojis.fire} <b>Product Update: ${product.name}</b>`,
               formatProductDetails(product, isAvailablForPurchase, 0),
               '',
-              getInfoMessage()
+              await getInfoMessage()
               // Show untracked info
             ].join('\n')
 
