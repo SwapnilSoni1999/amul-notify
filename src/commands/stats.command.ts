@@ -33,11 +33,18 @@ export const statsCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     })
   ).length
 
+  const totalLoggedInUsers = await UserModel.countDocuments({
+    amulUserId: {
+      $ne: null
+    }
+  })
+
   await ctx.reply(
     [
       `<b>${emojis.chart} Bot Statistics</b>`,
       `Total Users: <b>${totalUsers}</b>`,
       `Total Paid Users: <b>${totalPaidUsers}</b>`,
+      `Total Logged-in Users: <b>${totalLoggedInUsers}</b>`,
       `Total Tracked Products: <b>${totalTracked}</b>`,
       `Total Amul Sessions: <b>${totalAmulSessions}</b>`,
       `Total Unique Substores: <b>${distinctSubstores.length}</b>`,

@@ -399,7 +399,7 @@ const stockCheckerJob = schedule(
                             `Failed to place order for user ${user._id}: ${err.message}`
                           )
                           logToChannel(
-                            `${emojis.crossMark} Failed to place order for user ${user._id}: ${err.message}`
+                            `${emojis.crossMark} Failed to place order for user ${user._id}: ${JSON.stringify(err)}`
                           )
                           return
                         })
