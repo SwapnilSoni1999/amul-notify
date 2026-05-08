@@ -12,7 +12,7 @@ import { logToChannel } from '@/utils/logger.util'
 import { schedule } from 'node-cron'
 
 const paymentExpiryJob = schedule(
-  '0 0 * * *',
+  '* * * * *',
   async () => {
     try {
       const now = new Date()
