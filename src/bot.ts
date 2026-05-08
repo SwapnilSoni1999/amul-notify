@@ -36,6 +36,7 @@ import { amulAddressSetWizard } from './wizards/amulAddressSet.wizard'
 import { amulLoginAction } from './actions/amulLogin.action'
 import { amulLogoutAction } from './actions/amulLogout.action'
 import { homeAction } from './actions/home.action'
+import { freeTrialCommand } from './commands/freeTrial.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -88,6 +89,11 @@ bot.command(
   'productcount',
   withCatchAsync(isAdmin),
   withCatchAsync(productCountCommand)
+)
+bot.command(
+  'freetrial',
+  withCatchAsync(isAdmin),
+  withCatchAsync(freeTrialCommand)
 )
 
 bot.action(

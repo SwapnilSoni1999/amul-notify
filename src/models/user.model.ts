@@ -132,7 +132,7 @@ const UserSchema = new Schema(
       type: OrderSettingsSchema,
       default: () => ({
         enabled: false,
-        permitted: false,
+        permitted: true,
         skus: []
       })
     },

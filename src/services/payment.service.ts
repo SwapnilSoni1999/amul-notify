@@ -24,6 +24,16 @@ const buildReferenceId = (user: HydratedUser): string => {
   return `ab_${user._id.toString()}_${Date.now().toString(36)}`
 }
 
+const buildFreeTrialReferenceId = (user: HydratedUser): string => {
+  return `ab_trial_${user._id.toString()}_${Date.now().toString(36)}`
+}
+
+interface GrantAutoBookingFreeTrialOptions {
+  grantedBy?: HydratedUser
+  referenceId?: string
+  source?: string
+}
+
 const findAutoBookingPaymentPlan = (amount: number) => {
   return (
     AUTO_BOOKING_PAYMENT_PLANS.find((plan) => plan.amount === amount) ||
@@ -133,6 +143,59 @@ export const createAutoBookingPaymentLink = async (
       setDefaultsOnInsert: true
     }
   ).orFail()
+}
+
+export const grantAutoBookingFreeTrial = async (
+  user: HydratedUser,
+  durationMs: number,
+  options: GrantAutoBookingFreeTrialOptions = {}
+): Promise<HydratedPayment> => {
+  const {
+    grantedBy,
+    referenceId = buildFreeTrialReferenceId(user),
+    source = 'free_trial'
+  } = options
+  const now = new Date()
+  const latestActivePayment = await PaymentModel.findOne({
+    user: user._id,
+    status: 'paid',
+    validUntil: {
+      $gt: now
+    }
+  }).sort({ validUntil: -1, createdAt: -1 })
+
+  const baseDate = latestActivePayment?.validUntil ?? now
+  const validUntil = new Date(baseDate.getTime() + durationMs)
+
+  const payment = await PaymentModel.create({
+    user: user._id,
+    tgId: user.tgId,
+    amount: 0,
+    currency: AUTO_BOOKING_PAYMENT_CURRENCY,
+    status: 'paid',
+    referenceId,
+    razorpayPaymentLinkId: referenceId,
+    shortUrl: `free-trial://${referenceId}`,
+    paidAt: now,
+    validUntil,
+    callbackPayload: {
+      source,
+      durationMs,
+      ...(grantedBy
+        ? {
+            grantedByUserId: grantedBy._id.toString(),
+            grantedByTgId: grantedBy.tgId,
+            grantedByTgUsername: grantedBy.tgUsername || ''
+          }
+        : {})
+    }
+  })
+
+  user.set('orderSettings.permitted', true)
+  user.set('orderSettings.enabled', true)
+  await user.save()
+
+  return payment
 }
 
 export const recordAutoBookingPaymentCallback = async (

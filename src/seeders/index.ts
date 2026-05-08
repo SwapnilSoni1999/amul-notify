@@ -1,4 +1,5 @@
 import { adminSeeder } from './admin.seeder'
+import { allUsersAutoOrderFreeTrialSeeder } from './allUsersAutoOrderFreeTrial.seeder'
 import { autoOrderPermitDeclinedSeeder } from './autoOrderPermitDeclined.seeder'
 import { autoOrderPermitGrantedSeeder } from './autoOrderPermitGranted.seeder'
 
@@ -37,6 +38,17 @@ switch (seederName) {
       })
       .catch((error) => {
         console.error('Error updating auto-order permit granted users:', error)
+        process.exit(1)
+      })
+    break
+  case 'auto-order-free-trial-all-users':
+    allUsersAutoOrderFreeTrialSeeder()
+      .then((result) => {
+        console.log('All-users auto-order free trial result:', result)
+        process.exit(0)
+      })
+      .catch((error) => {
+        console.error('Error granting all-users auto-order free trial:', error)
         process.exit(1)
       })
     break

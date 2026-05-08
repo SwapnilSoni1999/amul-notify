@@ -21,7 +21,8 @@ export const adminCommands: readonly BotCommand[] = [
   { command: 'sessions', description: 'List all Amul sessions' },
   { command: 'stats', description: 'Get bot statistics' },
   { command: 'analytics', description: 'Get analytics of products' },
-  { command: 'productcount', description: 'Get product count by SKU' }
+  { command: 'productcount', description: 'Get product count by SKU' },
+  { command: 'freetrial', description: 'Grant auto-booking free trial' }
 ]
 
 export const TIMEZONE = 'Asia/Kolkata'

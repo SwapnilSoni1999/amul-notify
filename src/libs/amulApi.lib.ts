@@ -52,14 +52,17 @@ export class AmulApi {
 
     this.jar = jar
 
-    axios.defaults.jar = jar // Set the cookie jar globally for axios
+    const axiosDefaults = axios.defaults as typeof axios.defaults & {
+      jar: CookieJar
+    }
+    axiosDefaults.jar = jar
 
     const amulApi = wrapper(
       axios.create({
         jar, // tough‐cookie jar
         withCredentials: true,
         headers: defaultHeaders
-      })
+      } as Parameters<typeof axios.create>[0] & { jar: CookieJar })
     )
 
     this.amulApi = amulApi
