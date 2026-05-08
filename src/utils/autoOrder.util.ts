@@ -215,6 +215,10 @@ const getAutoBookingSubscriptionDetails = (
 
   const daysRemaining = Math.max(validUntil.diff(now, 'day'), 0)
 
+  if (daysRemaining < 1) {
+    return `Active, expires today at ${validUntil.format('hh:mm A')}`
+  }
+
   return [
     `Active`,
     `expires ${validUntil.format('DD MMM YYYY, hh:mm A')}`,
