@@ -18,7 +18,7 @@ export const allUsersAutoOrderFreeTrialSeeder = async () => {
   const durationMs = ms(FREE_TRIAL_DURATION as ms.StringValue)
   let totalCount = 0
   let grantedCount = 0
-  let skippedCount = 0
+  let extendedCount = 0
 
   for await (const user of UserModel.find().cursor()) {
     totalCount++
@@ -26,23 +26,22 @@ export const allUsersAutoOrderFreeTrialSeeder = async () => {
     const referenceId = buildSeederReferenceId(user)
     const alreadyGranted = await PaymentModel.exists({ referenceId })
 
-    if (alreadyGranted) {
-      skippedCount++
-      continue
-    }
-
     await grantAutoBookingFreeTrial(user, durationMs, {
       referenceId,
       source: FREE_TRIAL_SOURCE
     })
 
-    grantedCount++
+    if (alreadyGranted) {
+      extendedCount++
+    } else {
+      grantedCount++
+    }
   }
 
   const result = {
     totalCount,
     grantedCount,
-    skippedCount,
+    extendedCount,
     duration: FREE_TRIAL_DURATION
   }
 

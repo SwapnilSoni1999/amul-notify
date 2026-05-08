@@ -167,29 +167,40 @@ export const grantAutoBookingFreeTrial = async (
   const baseDate = latestActivePayment?.validUntil ?? now
   const validUntil = new Date(baseDate.getTime() + durationMs)
 
-  const payment = await PaymentModel.create({
-    user: user._id,
-    tgId: user.tgId,
-    amount: 0,
-    currency: AUTO_BOOKING_PAYMENT_CURRENCY,
-    status: 'paid',
-    referenceId,
-    razorpayPaymentLinkId: referenceId,
-    shortUrl: `free-trial://${referenceId}`,
-    paidAt: now,
-    validUntil,
-    callbackPayload: {
-      source,
-      durationMs,
-      ...(grantedBy
-        ? {
-            grantedByUserId: grantedBy._id.toString(),
-            grantedByTgId: grantedBy.tgId,
-            grantedByTgUsername: grantedBy.tgUsername || ''
-          }
-        : {})
+  const payment = await PaymentModel.findOneAndUpdate(
+    {
+      referenceId
+    },
+    {
+      $set: {
+        user: user._id,
+        tgId: user.tgId,
+        amount: 0,
+        currency: AUTO_BOOKING_PAYMENT_CURRENCY,
+        status: 'paid',
+        razorpayPaymentLinkId: referenceId,
+        shortUrl: `free-trial://${referenceId}`,
+        paidAt: now,
+        validUntil,
+        callbackPayload: {
+          source,
+          durationMs,
+          ...(grantedBy
+            ? {
+                grantedByUserId: grantedBy._id.toString(),
+                grantedByTgId: grantedBy.tgId,
+                grantedByTgUsername: grantedBy.tgUsername || ''
+              }
+            : {})
+        }
+      }
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true
     }
-  })
+  ).orFail()
 
   user.set('orderSettings.permitted', true)
   user.set('orderSettings.enabled', true)
