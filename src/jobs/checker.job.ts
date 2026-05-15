@@ -399,12 +399,19 @@ const stockCheckerJob = schedule(
                             `Failed to place order for user ${user._id}: ${err.message}`
                           )
                           logToChannel(
-                            `${emojis.crossMark} Failed to place order for user ${user._id}: ${JSON.stringify(err)}`
+                            `[E453] ${emojis.crossMark} Failed to place order for user ${user._id}: ${JSON.stringify(err)}`
                           )
                           return
                         })
 
                       if (!response) {
+                        console.error(
+                          `[E454] ${emojis.crossMark} No response received when placing order for user ${user._id}.`
+                        )
+                        logToChannel(
+                          `[E454] ${emojis.crossMark} No response received when placing order for user ${user._id}.`
+                        )
+
                         await sendMessageQueue({
                           chatId: user.tgId!,
                           text: `[E454] ${emojis.crossMark} Failed to place auto-order. Please try again later.`
@@ -418,10 +425,10 @@ const stockCheckerJob = schedule(
 
                       if (!paymentUrl) {
                         console.error(
-                          `Payment URL not found in response for user ${user._id}.`
+                          `${emojis.crossMark} [E455] Payment URL not found in response for user ${user._id}.`
                         )
                         logToChannel(
-                          `${emojis.crossMark} Payment URL not found in response for user ${user._id}.`
+                          `${emojis.crossMark} [E455] Payment URL not found in response for user ${user._id}.`
                         )
                         await sendMessageQueue({
                           chatId: user.tgId!,
@@ -457,13 +464,13 @@ const stockCheckerJob = schedule(
                         }`
                       )
                       logToChannel(
-                        `${emojis.crossMark} Failed to place auto-order for user ${user._id}: ${
+                        `[E466] ${emojis.crossMark} Failed to place auto-order for user ${user._id}: ${
                           err instanceof Error ? err.message : String(err)
                         }`
                       )
                       await sendMessageQueue({
                         chatId: user.tgId!,
-                        text: `[E453] ${emojis.crossMark} Failed to place auto-order. Please try again later.`
+                        text: `[E466] ${emojis.crossMark} Failed to place auto-order. Please try again later.`
                       })
                       return
                     }
