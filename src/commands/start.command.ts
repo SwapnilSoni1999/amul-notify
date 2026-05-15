@@ -10,7 +10,7 @@ import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
-  const payload = ctx.payload
+  const payload = ctx.payload || ''
   if (payload.startsWith('track_')) {
     await ctx.deleteMessage()
     const [, ...sku] = payload.split('_')

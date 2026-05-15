@@ -86,8 +86,18 @@ export const toggleAutoOrder = async (
 
     ctx.user.orderSettings.skus.push(sku)
     await ctx.user.save()
+
+    const currentStyle = ctx.user?.settings?.trackingStyle || 'once'
+    const additionalInfo = [
+      `Current tracking style is set to once. It is recommended to change it to 'always' for better auto-ordering experience.`,
+      `You can change it in /settings > Tracking Style.`
+    ].join('\n')
+
     return ctx.reply(
-      `${emojis.checkMark} <b>Added to auto order:</b> ${product.name}`,
+      [
+        `${emojis.checkMark} <b>Added to auto order:</b> ${product.name}`,
+        currentStyle === 'once' ? additionalInfo : ''
+      ].join('\n'),
       {
         parse_mode: 'HTML'
       }
