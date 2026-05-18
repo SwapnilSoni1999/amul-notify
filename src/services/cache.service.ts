@@ -22,6 +22,9 @@ const products = {
     const key = `amul:products:${keyData.substore}`
     const cachedData = await redis.get(key)
     return cachedData ? JSON.parse(cachedData) : null
+  },
+  delete: async (keyData: ProductsCacheKeyData) => {
+    await redis.del(`amul:products:${keyData.substore}`)
   }
 }
 
