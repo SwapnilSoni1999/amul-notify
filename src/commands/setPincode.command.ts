@@ -1,4 +1,5 @@
 import { AmulApi, getOrCreateAmulApi } from '@/libs/amulApi.lib'
+import cacheService from '@/services/cache.service'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import { MiddlewareFn } from 'telegraf'
@@ -45,14 +46,30 @@ export const setPincodeCommand: MiddlewareFn<CommandContext> = async (
   // console.log('Amul API instance:', amulApi)
 
   if (amulApi instanceof AmulApi) {
+    const previousSubstore = ctx.user.substore
+    const nextSubstore = amulApi.getSubstore()
+
     console.log(
       `Setting pincode for user ${
         ctx.user.tgId
-      } to ${pincode} with substore: ${amulApi.getSubstore()}`
+      } to ${pincode} with substore: ${nextSubstore}`
     )
     ctx.user.set('pincode', pincode)
-    ctx.user.set('substore', amulApi.getSubstore())
+    ctx.user.set('substore', nextSubstore)
     await ctx.user.save()
+
+    const substoresToClear = new Set(
+      [previousSubstore, nextSubstore].filter((substore): substore is string =>
+        Boolean(substore)
+      )
+    )
+
+    await Promise.all(
+      [...substoresToClear].map((substore) =>
+        cacheService.products.delete({ substore })
+      )
+    )
+
     return ctx.reply(
       `${emojis.checkMark} Pincode set successfully to ${ctx.user.pincode}.\n` +
         `Substore: ${ctx.user.substore}\n` +
