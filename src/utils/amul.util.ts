@@ -8,11 +8,20 @@ import { AmulProduct } from '@/types/amul.types'
  *
  */
 export const isAvailableToPurchase = (product: AmulProduct): boolean => {
-  if ((product.inventory_allow_out_of_stock || '0') !== '0') {
+  if (
+    'inventory_allow_out_of_stock' in product &&
+    product.inventory_allow_out_of_stock !== '0'
+  ) {
     return true
   }
 
   if (product.available <= 0) {
+    return false
+  }
+
+  const availableQuantity = getInventoryQuantity(product)
+
+  if (availableQuantity <= 0) {
     return false
   }
 
@@ -27,7 +36,8 @@ export const isAvailableToPurchase = (product: AmulProduct): boolean => {
 export const getInventoryQuantity = (product: AmulProduct): number => {
   if (
     product.inventory_low_stock_quantity > product.inventory_quantity &&
-    (product.inventory_allow_out_of_stock || '0') === '0'
+    (!('inventory_allow_out_of_stock' in product) ||
+      product.inventory_allow_out_of_stock === '0')
   ) {
     return 0
   }
