@@ -35,6 +35,25 @@ jobs:
           echo "RAZORPAY_API_SECRET=${{ secrets.PROD_RAZORPAY_API_SECRET }}" >> .env.prod
           echo "RAZORPAY_REDIRECT_URL=${{ vars.PROD_RAZORPAY_REDIRECT_URL }}" >> .env.prod
 
+      - name: Backup MongoDB database
+        env:
+          MONGO_URI: ${{ secrets.PROD_MONGO_URI }}
+        run: |
+          BACKUP_DIR="$HOME/amul-bot-db-backup"
+          TIMESTAMP="$(date +'%Y%m%d-%H%M%S')"
+          BACKUP_FILE="$BACKUP_DIR/amul-notify-$TIMESTAMP.archive.gz"
+
+          mkdir -p "$BACKUP_DIR"
+
+          mongodump --uri="$MONGO_URI" --archive="$BACKUP_FILE" --gzip
+
+          find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.archive.gz' \
+            -printf '%T@ %p\n' \
+            | sort -rn \
+            | tail -n +6 \
+            | cut -d' ' -f2- \
+            | xargs -r rm -f
+
       - name: Build Docker image
         run: |
           docker build --network=host -t amul-notify-bot .
