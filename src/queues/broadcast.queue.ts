@@ -7,6 +7,7 @@ import { TelegramError } from 'telegraf'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 import { setServers, getServers } from 'dns'
 import ProductModel from '@/models/product.model'
+import { logToChannel } from '@/utils/logger.util'
 
 setServers(['8.8.8.8', '1.1.1.1'] as const)
 console.log(`Using DNS servers: ${getServers()}`)
@@ -117,18 +118,24 @@ broadcastQueue.process(5, async (job) => {
       console.log(
         `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
       )
-      const deleteResponse = await UserModel.findOneAndDelete({
-        tgId: Number(chatId)
-      })
-      if (deleteResponse?._id) {
-        await ProductModel.deleteMany({ trackedBy: deleteResponse._id })
+
+      if (error.code === 403) {
+        const deleteResponse = await UserModel.findOneAndDelete({
+          tgId: Number(chatId)
+        })
+        if (deleteResponse?._id) {
+          await ProductModel.deleteMany({ trackedBy: deleteResponse._id })
+        }
+        console.log(
+          `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
+            deleteResponse
+          )}` // Log the number of deleted users
+        )
       }
-      console.log(
-        `User ${chatId} removed from database. Deleted count: ${JSON.stringify(
-          deleteResponse
-        )}` // Log the number of deleted users
-      )
       console.error(
+        `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
+      )
+      logToChannel(
         `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
       )
     }
