@@ -69,14 +69,10 @@ const productFields = [
 ]
 
 const getProductListHeaders = () => {
-  const headers: Record<string, string> = {
+  return {
     ...defaultHeaders,
-    backend: '1',
     referer: 'https://shop.amul.com/en/browse/protein'
   }
-
-  delete headers.frontend
-  return headers
 }
 
 const getProteinProductsUrl = (substoreId?: string) => {
@@ -90,10 +86,6 @@ const getProteinProductsUrl = (substoreId?: string) => {
   params.append('filters[0][value][0]', 'protein')
   params.append('filters[0][operator]', 'in')
   params.append('filters[0][original]', '1')
-  // params.append('filters[1][field]', 'publish')
-  // params.append('filters[1][value]', '1')
-  // params.append('filters[1][operator]', 'in')
-  // params.append('filters[1][original]', '1')
   params.append('facets', 'true')
   params.append('facetgroup', 'default_category_facet')
   params.append('limit', '32')
@@ -106,7 +98,10 @@ const getProteinProductsUrl = (substoreId?: string) => {
     params.append('substore', substoreId)
   }
 
-  return `https://shop.amul.com/api/1/entity/ms.products?${params.toString()}`
+  // StoreHippo serves different inventory when nested query brackets are encoded.
+  const query = params.toString().replace(/%5B/g, '[').replace(/%5D/g, ']')
+
+  return `https://shop.amul.com/api/1/entity/ms.products?${query}`
 }
 
 export class AmulApi {
@@ -321,7 +316,7 @@ export class AmulApi {
     //   cookie: await this.jar.getCookieString('https://shop.amul.com')
     //   // tid: await this.calculateTidHeader()
     // })
-    const response = await axios.get<AmulProductsResponse>(
+    const response = await this.amulApi.get<AmulProductsResponse>(
       getProteinProductsUrl(substoreId),
       {
         headers: {
