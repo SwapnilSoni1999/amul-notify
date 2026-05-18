@@ -133,10 +133,10 @@ broadcastQueue.process(5, async (job) => {
         )
       }
       console.error(
-        `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
+        `[tgError][${error.name}] ${chatId}: ${error.message} - ${error.description}`
       )
       logToChannel(
-        `[tgError][${error.name}] ${chatId}: ${error.message} -> ${error.description}`
+        `[tgError][${error.name}] ${chatId}: ${error.message} - ${error.description}`
       )
     }
     console.error(
