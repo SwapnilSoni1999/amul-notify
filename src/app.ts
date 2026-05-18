@@ -12,6 +12,7 @@ import {
 } from './utils/autoOrder.util'
 import { emojis } from './utils/emoji.util'
 import { DEFAULT_AUTO_BOOKING_PAYMENT_PLAN } from './config'
+import { logToChannel } from './utils/logger.util'
 
 const app = express()
 
@@ -232,6 +233,20 @@ app.get('/api/payment/success', async (req, res) => {
         }
       )
     }
+
+    logToChannel(
+      [
+        `New auto-booking payment received!`,
+        `User: ${result.user.tgUsername ?? result.user.firstName} (${result.user.tgId})`,
+        `Plan: ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days`,
+        `Payment ID: ${paymentId}`,
+        `Reference ID: ${referenceId}`,
+        `Status: ${paymentStatus}`
+      ].join('\n'),
+      () => {
+        console.log('Logged auto-booking payment to channel')
+      }
+    )
 
     return renderPaymentPage({
       title: 'Payment Successful',
