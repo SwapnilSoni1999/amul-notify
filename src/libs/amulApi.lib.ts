@@ -40,6 +40,75 @@ export const defaultHeaders = {
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
 }
 
+const productFields = [
+  'name',
+  'brand',
+  'categories',
+  'collections',
+  'alias',
+  'sku',
+  'price',
+  'compare_price',
+  'original_price',
+  'images',
+  'metafields',
+  'discounts',
+  'catalog_only',
+  'is_catalog',
+  'seller',
+  'available',
+  'inventory_quantity',
+  'net_quantity',
+  'num_reviews',
+  'avg_rating',
+  'inventory_low_stock_quantity',
+  'inventory_allow_out_of_stock',
+  'default_variant',
+  'variants',
+  'lp_seller_ids'
+]
+
+const getProductListHeaders = () => {
+  const headers: Record<string, string> = {
+    ...defaultHeaders,
+    backend: '1',
+    referer: 'https://shop.amul.com/en/browse/protein'
+  }
+
+  delete headers.frontend
+  return headers
+}
+
+const getProteinProductsUrl = (substoreId?: string) => {
+  const params = new URLSearchParams()
+
+  for (const field of productFields) {
+    params.append(`fields[${field}]`, '1')
+  }
+
+  params.append('filters[0][field]', 'categories')
+  params.append('filters[0][value][0]', 'protein')
+  params.append('filters[0][operator]', 'in')
+  params.append('filters[0][original]', '1')
+  params.append('filters[1][field]', 'publish')
+  params.append('filters[1][value]', '1')
+  params.append('filters[1][operator]', 'eq')
+  params.append('filters[1][original]', '1')
+  params.append('facets', 'true')
+  params.append('facetgroup', 'default_category_facet')
+  params.append('limit', '32')
+  params.append('total', '1')
+  params.append('start', '0')
+  params.append('cdc', '1m')
+  params.append('device_type', 'other')
+
+  if (substoreId) {
+    params.append('substore', substoreId)
+  }
+
+  return `https://shop.amul.com/api/1/entity/ms.products?${params.toString()}`
+}
+
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
   public amulApi: ReturnType<typeof wrapper>
@@ -239,7 +308,8 @@ export class AmulApi {
       return cachedProducts.data
     }
 
-    console.log(`SubstoreId:`, this.getSubstoreId())
+    const substoreId = this.getSubstoreId()
+    console.log(`SubstoreId:`, substoreId)
 
     // console.log(
     //   `Cookies:`,
@@ -252,10 +322,10 @@ export class AmulApi {
     //   // tid: await this.calculateTidHeader()
     // })
     const response = await axios.get<AmulProductsResponse>(
-      `https://shop.amul.com/api/1/entity/ms.products?fields[name]=1&fields[brand]=1&fields[categories]=1&fields[collections]=1&fields[alias]=1&fields[sku]=1&fields[price]=1&fields[compare_price]=1&fields[original_price]=1&fields[images]=1&fields[metafields]=1&fields[discounts]=1&fields[catalog_only]=1&fields[is_catalog]=1&fields[seller]=1&fields[available]=1&fields[inventory_quantity]=1&fields[net_quantity]=1&fields[num_reviews]=1&fields[avg_rating]=1&fields[inventory_low_stock_quantity]=1&fields[inventory_allow_out_of_stock]=1&fields[default_variant]=1&fields[variants]=1&fields[lp_seller_ids]=1&filters[0][field]=categories&filters[0][value][0]=protein&filters[0][operator]=in&filters[0][original]=1&facets=true&facetgroup=default_category_facet&limit=32&total=1&start=0&substore=${this.getSubstoreId()}`,
+      getProteinProductsUrl(substoreId),
       {
         headers: {
-          ...defaultHeaders,
+          ...getProductListHeaders(),
           cookie: await this.jar.getCookieString('https://shop.amul.com'),
           tid: await this.calculateTidHeader()
         }
