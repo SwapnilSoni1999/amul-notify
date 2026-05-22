@@ -1,5 +1,16 @@
 export const substoreList = [
   {
+    _id: '6707977fec74db0032682974',
+    alias: 'testing',
+    metafields: {},
+    settings: {
+      contact_phone: '',
+      description: ''
+    },
+    name: 'Testing',
+    sort_order: 0
+  },
+  {
     _id: '66506005147d6c73c1110115',
     name: 'Goa',
     alias: 'goa',
