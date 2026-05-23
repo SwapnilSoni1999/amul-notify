@@ -52,6 +52,7 @@ export function withCatchAsync<T extends MyContext>(
                 ].join('\n')
               }
             )
+            return // Don't propagate further
           } catch (e) {
             console.log('[IGNORE] Failed to send pincode error reply:', e)
             // fail silently if reply itself fails
