@@ -37,6 +37,7 @@ import { amulLoginAction } from './actions/amulLogin.action'
 import { amulLogoutAction } from './actions/amulLogout.action'
 import { homeAction } from './actions/home.action'
 import { freeTrialCommand } from './commands/freeTrial.command'
+import { autoOrderHowItWorksAction } from './actions/autoOrderHowItWorks.action'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -111,6 +112,10 @@ bot.action(ACTIONS.home, withCatchAsync(homeAction))
 bot.action(
   ACTIONS.settings.autoOrder.toggleEnabled,
   withCatchAsync(toggleAutoOrderEnabledAction)
+)
+bot.action(
+  ACTIONS.settings.autoOrder.howItWorks,
+  withCatchAsync(autoOrderHowItWorksAction)
 )
 bot.action(ACTIONS.settings.autoOrder.login, withCatchAsync(amulLoginAction))
 bot.action(ACTIONS.settings.autoOrder.logout, withCatchAsync(amulLogoutAction))

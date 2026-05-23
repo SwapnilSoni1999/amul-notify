@@ -60,6 +60,7 @@ export const ACTIONS = {
     },
     autoOrder: {
       toggleEnabled: 'autoOrder:toggleEnabled',
+      howItWorks: 'autoOrder:howItWorks',
       login: 'autoOrder:login',
       logout: 'autoOrder:logout',
       setAddress: 'autoOrder:setAddress'

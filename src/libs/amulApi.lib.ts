@@ -12,6 +12,7 @@ import { substoreList } from '@/utils/substores'
 import axios from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
+import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 
 // interface AmulSessionKey {
 //   pincode: string
@@ -381,7 +382,10 @@ const createAmulApi = async (pincode: string) => {
   const records = await amulApi.searchPincode(pincode)
   // console.log(`Found records for pincode ${pincode}:`, records)
   if (!records.length) {
-    throw new Error(`No pincode found for ${pincode}`)
+    throw new AmulError(
+      `No pincode found for ${pincode}`,
+      AMUL_ERROR_CODE.PINCODE_NOT_FOUND
+    )
   }
   console.log(`Setting pincode for AmulApi instance:`, records[0])
   const record = records[0]

@@ -135,6 +135,12 @@ export const buildAutoOrderKeyboard = (user: HydratedUser) => {
             ACTIONS.settings.autoOrder.toggleEnabled
           )
         : null,
+      isConfigured
+        ? Markup.button.callback(
+            'How it works',
+            ACTIONS.settings.autoOrder.howItWorks
+          )
+        : null,
       isConfigured && !loggedIn && isEnabled
         ? Markup.button.callback(
             'Login to Amul',
