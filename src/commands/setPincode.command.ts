@@ -1,4 +1,5 @@
 import { AmulApi, getOrCreateAmulApi } from '@/libs/amulApi.lib'
+import { AmulError } from '@/libs/amulError.lib'
 import cacheService from '@/services/cache.service'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
@@ -33,6 +34,11 @@ export const setPincodeCommand: MiddlewareFn<CommandContext> = async (
 
   const amulApi = await getOrCreateAmulApi(pincode).catch((err) => {
     console.error('Error creating Amul API instance:', err)
+
+    if (err instanceof AmulError) {
+      throw err // Let the global error handler deal with AmulErrors
+    }
+
     return ctx.reply(
       `${emojis.exclamation} Failed to set pincode. Please try again later or contact /support.\n` +
         `Error: ${err.message}` // Provide error details for debugging
