@@ -11,6 +11,10 @@ const envSchema = z.object({
   // Bot Configuration
   BOT_TOKEN: z.string().min(1, { message: 'BOT_TOKEN is required' }),
   BOT_WEBHOOK_URL: z.string().optional(),
+  BOT_FORCE_POLLING: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((val) => val === 'true'),
 
   // Redis
   REDIS_HOST: z.string().default('localhost'),

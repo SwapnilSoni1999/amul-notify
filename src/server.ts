@@ -26,7 +26,7 @@ mongoose
 
     initiateAmulSessions()
 
-    if (env.BOT_WEBHOOK_URL) {
+    if (env.BOT_WEBHOOK_URL && !env.BOT_FORCE_POLLING) {
       const botSecret = `amul_${bot.secretPathComponent()}`
       console.log(`Setting webhook to: ${env.BOT_WEBHOOK_URL}`)
       await bot.telegram.setWebhook(env.BOT_WEBHOOK_URL, {
