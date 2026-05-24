@@ -69,11 +69,7 @@ export const canAddAutoOrderProducts = async (
   )
 }
 
-export const getAutoOrderButton = async (
-  user: HydratedUser,
-  sku: string,
-  canAddAutoOrder?: boolean
-) => {
+export const getAutoOrderButton = async (user: HydratedUser, sku: string) => {
   if (!isAutoOrderConfigured()) {
     return ''
   }
@@ -89,12 +85,6 @@ export const getAutoOrderButton = async (
       await startCommandLink(`removeautoorder_${sku}`),
       '[Remove Auto Order]'
     )
-  }
-
-  const canAdd = canAddAutoOrder ?? (await canAddAutoOrderProducts(user))
-
-  if (!canAdd) {
-    return ''
   }
 
   return createLink(
