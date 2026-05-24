@@ -30,7 +30,8 @@ mongoose
       const botSecret = `amul_${bot.secretPathComponent()}`
       console.log(`Setting webhook to: ${env.BOT_WEBHOOK_URL}`)
       await bot.telegram.setWebhook(env.BOT_WEBHOOK_URL, {
-        secret_token: botSecret
+        secret_token: botSecret,
+        drop_pending_updates: true // !Temp: Drop pending updates on startup to avoid processing old messages after a restart. Remove this in production if you want to handle pending updates.
       })
 
       const url = new URL(env.BOT_WEBHOOK_URL)
