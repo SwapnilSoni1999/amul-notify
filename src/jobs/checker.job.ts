@@ -177,7 +177,7 @@ const stockCheckerJob = schedule(
           await cacheService.jobData.set({ substore }, freshProducts) // Update cache with fresh products
 
           if (!changedProducts.length) {
-            console.log('No stock changes detected.')
+            console.log(`[${substore}] No stock changes detected.`)
 
             continue
           }
