@@ -1,7 +1,12 @@
 import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { MyContext } from '@/types/context.types'
-import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
+import {
+  canAddAutoOrderProducts,
+  isAutoOrderConfigured,
+  isLoggedIn
+} from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
+import { trackProduct } from './track.service'
 
 export const toggleAutoOrder = async (
   ctx: MyContext,
@@ -27,18 +32,6 @@ export const toggleAutoOrder = async (
     return ctx.reply(`${emojis.crossMark} Product not found: <b>${sku}</b>`, {
       parse_mode: 'HTML'
     })
-  }
-
-  const existingProduct = ctx.trackedProducts.find((p) => p.sku === sku)
-
-  if (!existingProduct) {
-    return ctx.reply(
-      [
-        `${emojis.crossMark} You are not tracking the product: <b>${product.name}</b>`,
-        'Please track the product before adding it to auto order.'
-      ].join('\n'),
-      { parse_mode: 'HTML' }
-    )
   }
 
   if (action === 'add') {
@@ -82,6 +75,23 @@ export const toggleAutoOrder = async (
         ].join('\n'),
         { parse_mode: 'HTML' }
       )
+    }
+
+    const existingProduct = ctx.trackedProducts.find((p) => p.sku === sku)
+
+    if (!existingProduct) {
+      const alreadyConfiguredEverything = await canAddAutoOrderProducts(
+        ctx.user
+      )
+
+      // If user has already configured everything, we can directly add the product to auto order without asking them to track it first
+      if (alreadyConfiguredEverything) {
+        await trackProduct(ctx, sku)
+        return ctx.reply(
+          `${emojis.checkMark} Product <b>${product.name}</b> is now being tracked and added to auto order.`,
+          { parse_mode: 'HTML' }
+        )
+      }
     }
 
     ctx.user.orderSettings.skus.push(sku)
