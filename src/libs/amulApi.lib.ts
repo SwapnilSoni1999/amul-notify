@@ -9,7 +9,7 @@ import {
 } from '@/types/amul.types'
 import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
-import axios from 'axios'
+import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
@@ -128,7 +128,7 @@ export class AmulApi {
         jar, // tough‐cookie jar
         withCredentials: true,
         headers: defaultHeaders
-      } as Parameters<typeof axios.create>[0] & { jar: CookieJar })
+      } as CreateAxiosDefaults) as ReturnType<typeof wrapper>
     )
 
     this.amulApi = amulApi
