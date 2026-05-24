@@ -192,7 +192,7 @@ export class AmulApi {
     ) as AmulSessionInfo
 
     this.tid = sessionObj.tid
-    console.log('TID:', this.tid)
+    // console.log('TID:', this.tid)
   }
 
   get session_tid() {
