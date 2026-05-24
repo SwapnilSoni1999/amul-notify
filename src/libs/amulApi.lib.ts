@@ -306,7 +306,7 @@ export class AmulApi {
     }
 
     const substoreId = this.getSubstoreId()
-    console.log(`SubstoreId:`, substoreId)
+    // console.log(`SubstoreId:`, substoreId)
 
     // console.log(
     //   `Cookies:`,
@@ -373,11 +373,11 @@ export class AmulApi {
 }
 
 const createAmulApi = async (pincode: string) => {
-  console.log(`Creating new AmulApi instance for pincode: ${pincode}`)
+  // console.log(`Creating new AmulApi instance for pincode: ${pincode}`)
   const amulApi = new AmulApi()
-  console.log('Initialized AmulApi instance')
+  // console.log('Initialized AmulApi instance')
   await amulApi.initCookies()
-  console.log('Cookies initialized for AmulApi instance')
+  // console.log('Cookies initialized for AmulApi instance')
 
   const records = await amulApi.searchPincode(pincode)
   // console.log(`Found records for pincode ${pincode}:`, records)
@@ -387,15 +387,15 @@ const createAmulApi = async (pincode: string) => {
       AMUL_ERROR_CODE.PINCODE_NOT_FOUND
     )
   }
-  console.log(`Setting pincode for AmulApi instance:`, records[0])
+  // console.log(`Setting pincode for AmulApi instance:`, records[0])
   const record = records[0]
-  console.log(
-    `Setting pincode: ${record.pincode}, substore: ${record.substore}`
-  )
+  // console.log(
+  //   `Setting pincode: ${record.pincode}, substore: ${record.substore}`
+  // )
   await amulApi.setPincode(record)
-  console.log(
-    `Pincode set successfully for AmulApi instance: ${record.pincode}, substore: ${record.substore}`
-  )
+  // console.log(
+  //   `Pincode set successfully for AmulApi instance: ${record.pincode}, substore: ${record.substore}`
+  // )
   return amulApi
 }
 
