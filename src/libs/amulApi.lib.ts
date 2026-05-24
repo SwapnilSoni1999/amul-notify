@@ -285,7 +285,7 @@ export class AmulApi {
     const hash = Array.from(new Uint8Array(data))
       .map((e) => e.toString(16).padStart(2, '0'))
       .join('')
-    console.log(`Calculated TID: ${timestamp}:${rand}:${hash}`)
+    // console.log(`Calculated TID: ${timestamp}:${rand}:${hash}`)
     return `${timestamp}:${rand}:${hash}`
   }
 

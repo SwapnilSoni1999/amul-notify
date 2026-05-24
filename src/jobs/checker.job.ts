@@ -98,11 +98,11 @@ const stockCheckerJob = schedule(
             continue
           }
 
-          console.log(`Fetched fresh products:`, freshProducts.length)
+          // console.log(`Fetched fresh products:`, freshProducts.length)
           const cachedProducts = await cacheService.jobData.get({
             substore
           })
-          console.log(`Fetched cached products:`, cachedProducts?.length)
+          // console.log(`Fetched cached products:`, cachedProducts?.length)
           if (!cachedProducts?.length) {
             console.log(`Setting fresh products:`, freshProducts.length)
             const resp = await cacheService.jobData.set(
