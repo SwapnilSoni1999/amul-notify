@@ -9,14 +9,28 @@ import { setServers, getServers } from 'dns'
 import ProductModel from '@/models/product.model'
 import { logToChannel } from '@/utils/logger.util'
 
-setServers(['8.8.8.8', '1.1.1.1'] as const)
-console.log(`Using DNS servers: ${getServers()}`)
-
-const broadcastQueue = new Bull<{
+interface BroadcastJobData {
   chatId: string | number
   text: string
   extra?: ExtraReplyMessage
-}>('broadcast', {
+}
+
+interface SendMessageQueuePayload extends BroadcastJobData {
+  chatId: number
+  onComplete?: (error?: Error | TelegramError) => void | Promise<void>
+}
+
+interface PendingJobHandler {
+  resolve: () => void
+  onComplete?: SendMessageQueuePayload['onComplete']
+}
+
+setServers(['8.8.8.8', '1.1.1.1'] as const)
+console.log(`Using DNS servers: ${getServers()}`)
+
+const pendingJobHandlers = new Map<string, PendingJobHandler[]>()
+
+const broadcastQueue = new Bull<BroadcastJobData>('broadcast', {
   // 30 messages per second
   defaultJobOptions: {
     attempts: 1, // Retry once if it fails
@@ -32,6 +46,78 @@ const broadcastQueue = new Bull<{
     port: env.REDIS_PORT,
     db: env.REDIS_DATABASE_INDEX
   }
+})
+
+const getJobHandlerKey = (jobId: Bull.JobId): string => {
+  return String(jobId)
+}
+
+const addPendingJobHandler = (
+  jobId: Bull.JobId,
+  handler: PendingJobHandler
+): void => {
+  const key = getJobHandlerKey(jobId)
+  const handlers = pendingJobHandlers.get(key) ?? []
+  handlers.push(handler)
+  pendingJobHandlers.set(key, handlers)
+}
+
+const removePendingJobHandler = (
+  jobId: Bull.JobId,
+  handler: PendingJobHandler
+): void => {
+  const key = getJobHandlerKey(jobId)
+  const handlers = pendingJobHandlers.get(key)
+  if (!handlers) {
+    return
+  }
+
+  const remainingHandlers = handlers.filter((item) => item !== handler)
+  if (remainingHandlers.length) {
+    pendingJobHandlers.set(key, remainingHandlers)
+  } else {
+    pendingJobHandlers.delete(key)
+  }
+}
+
+const runCompletionCallback = (
+  handler: PendingJobHandler,
+  error?: Error | TelegramError
+): void => {
+  try {
+    Promise.resolve(handler.onComplete?.(error)).catch((err) => {
+      console.error('Error in send-message completion callback:', err)
+    })
+  } catch (err) {
+    console.error('Error in send-message completion callback:', err)
+  }
+}
+
+const settlePendingJob = (
+  jobId: Bull.JobId,
+  error?: Error | TelegramError
+): void => {
+  const key = getJobHandlerKey(jobId)
+  const handlers = pendingJobHandlers.get(key)
+  if (!handlers) {
+    return
+  }
+
+  pendingJobHandlers.delete(key)
+
+  for (const handler of handlers) {
+    runCompletionCallback(handler, error)
+    handler.resolve()
+  }
+}
+
+broadcastQueue.on('completed', (job) => {
+  settlePendingJob(job.id)
+})
+
+broadcastQueue.on('failed', (job, error) => {
+  console.error(`Job ${job.id} failed:`, error)
+  settlePendingJob(job.id, error)
 })
 
 broadcastQueue.process(5, async (job) => {
@@ -146,29 +232,37 @@ broadcastQueue.process(5, async (job) => {
   }
 })
 
-export const sendMessageQueue = async (payload: {
-  chatId: number
-  text: string
-  extra?: ExtraReplyMessage
-  onComplete?: (error?: Error | TelegramError) => void
-}) => {
+export const sendMessageQueue = async (
+  payload: SendMessageQueuePayload
+): Promise<void> => {
   // console.log('Args:', payload, onComplete)
-  const job = await broadcastQueue.add(
-    {
-      chatId: payload.chatId,
-      text: payload.text,
-      extra: payload.extra
-    },
-    {
-      jobId: String(payload.chatId) // Use chatId as job ID to avoid duplicates
-    }
-  )
+  const jobId = String(payload.chatId)
 
-  try {
-    await job.finished()
-    payload.onComplete?.()
-  } catch (err) {
-    console.error(`Job failed:`, err)
-    payload.onComplete?.(err as Error | TelegramError)
-  }
+  return new Promise<void>((resolve, reject) => {
+    const handler: PendingJobHandler = {
+      resolve,
+      onComplete: payload.onComplete
+    }
+
+    addPendingJobHandler(jobId, handler)
+
+    broadcastQueue
+      .add(
+        {
+          chatId: payload.chatId,
+          text: payload.text,
+          extra: payload.extra
+        },
+        {
+          jobId // Use chatId as job ID to avoid duplicates
+        }
+      )
+      .catch((err) => {
+        const error = err instanceof Error ? err : new Error(String(err))
+        removePendingJobHandler(jobId, handler)
+        console.error(`Failed to add broadcast job:`, error)
+        runCompletionCallback(handler, error)
+        reject(error)
+      })
+  })
 }

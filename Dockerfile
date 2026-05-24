@@ -1,4 +1,4 @@
-# Use official Node.js 22 LTS image
+# Use official Bun image
 FROM oven/bun:1 AS base
 
 # Create app directory
