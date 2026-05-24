@@ -115,11 +115,10 @@ broadcastQueue.process(5, async (job) => {
   } catch (error: any) {
     console.error(`Failed to send message to ${chatId}:`, error)
     if (error instanceof TelegramError) {
-      console.log(
-        `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
-      )
-
       if (error.code === 403) {
+        console.log(
+          `[catch](broadcast.queue): Removing user ${chatId} from database due to TelegramError`
+        )
         const deleteResponse = await UserModel.findOneAndDelete({
           tgId: Number(chatId)
         })
