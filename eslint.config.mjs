@@ -5,6 +5,15 @@ import tseslint from 'typescript-eslint'
 import prettier from 'eslint-plugin-prettier/recommended'
 
 export default tseslint.config(
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/build/**',
+      '**/out/**'
+    ]
+  },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   prettier,
@@ -14,13 +23,6 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-useless-escape': 'off'
-    },
-    ignores: [
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/coverage/**',
-      '**/build/**',
-      '**/out/**'
-    ]
+    }
   }
 )

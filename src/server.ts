@@ -45,10 +45,12 @@ mongoose
           return res.status(403).end()
         }
 
-        bot.handleUpdate(req.body, res).catch((err) => {
-          console.error('Error in bot.handleUpdate:', err)
-          // Still respond 200 so Telegram won’t retry endlessly
-          res.status(200).end()
+        res.status(200).end()
+
+        setImmediate(() => {
+          bot.handleUpdate(req.body).catch((err) => {
+            console.error('Error in bot.handleUpdate:', err)
+          })
         })
       })
 
