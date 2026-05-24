@@ -38,6 +38,7 @@ import { amulLogoutAction } from './actions/amulLogout.action'
 import { homeAction } from './actions/home.action'
 import { freeTrialCommand } from './commands/freeTrial.command'
 import { autoOrderHowItWorksAction } from './actions/autoOrderHowItWorks.action'
+import { expirePaymentCommand } from './commands/expirePayment.command'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -95,6 +96,11 @@ bot.command(
   'freetrial',
   withCatchAsync(isAdmin),
   withCatchAsync(freeTrialCommand)
+)
+bot.command(
+  'expirepayment',
+  withCatchAsync(isAdmin),
+  withCatchAsync(expirePaymentCommand)
 )
 
 bot.action(

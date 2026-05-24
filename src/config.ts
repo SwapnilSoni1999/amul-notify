@@ -22,7 +22,8 @@ export const adminCommands: readonly BotCommand[] = [
   { command: 'stats', description: 'Get bot statistics' },
   { command: 'analytics', description: 'Get analytics of products' },
   { command: 'productcount', description: 'Get product count by SKU' },
-  { command: 'freetrial', description: 'Grant auto-booking free trial' }
+  { command: 'freetrial', description: 'Grant auto-booking free trial' },
+  { command: 'expirepayment', description: 'Expire auto-booking payment' }
 ]
 
 export const TIMEZONE = 'Asia/Kolkata'

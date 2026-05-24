@@ -262,3 +262,23 @@ export const expirePayment = async (
   payment.expiredNotifiedAt = new Date()
   await payment.save()
 }
+
+export const expireActiveAutoBookingPayments = async (
+  user: HydratedUser
+): Promise<HydratedPayment[]> => {
+  const payments = await PaymentModel.find({
+    user: user._id,
+    status: 'paid',
+    validUntil: {
+      $gt: new Date()
+    }
+  })
+
+  for (const payment of payments) {
+    await expirePayment(payment)
+  }
+
+  await clearUserAutoBookingAccess(user)
+
+  return payments
+}
