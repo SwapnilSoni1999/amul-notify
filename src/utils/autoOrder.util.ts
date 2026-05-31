@@ -49,6 +49,10 @@ export const getMissingAutoOrderConfig = (): string[] => {
     missingConfig.push('RAZORPAY_REDIRECT_URL')
   }
 
+  if (!hasValue(env.RAZORPAY_WEBHOOK_SECRET)) {
+    missingConfig.push('RAZORPAY_WEBHOOK_SECRET')
+  }
+
   return missingConfig
 }
 

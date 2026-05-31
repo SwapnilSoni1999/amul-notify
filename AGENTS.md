@@ -261,8 +261,8 @@ Amul, Razorpay, Redis, or Telegram low-level details into command files.
 Auto-order details:
 
 - Feature availability is controlled by `isAutoOrderConfigured()`.
-- Required env includes order server URL/key, Razorpay key/secret, and a valid
-  Razorpay redirect URL.
+- Required env includes order server URL/key, Razorpay key/secret, a valid
+  Razorpay redirect URL, and Razorpay webhook secret.
 - User access depends on `orderSettings.permitted`, `orderSettings.enabled`,
   valid payment, login cookies, Amul user/cart ids, and address.
 - Use helpers in `src/utils/autoOrder.util.ts` to build keyboards, check login,
@@ -326,6 +326,7 @@ Current env keys:
 - `RAZORPAY_API_KEY`
 - `RAZORPAY_API_SECRET`
 - `RAZORPAY_REDIRECT_URL`
+- `RAZORPAY_WEBHOOK_SECRET`
 
 ## Jobs and Queues
 

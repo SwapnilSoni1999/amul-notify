@@ -9,7 +9,10 @@ import PaymentModel, { HydratedPayment } from '@/models/payment.model'
 import UserModel, { HydratedUser } from '@/models/user.model'
 import {
   RazorpayPaymentLinkCallback,
+  RazorpayPaymentLinkUpdate,
+  RazorpayWebhookEvent,
   createPaymentLink,
+  getPaymentLinkUpdateFromWebhook,
   verifyPaymentLinkSignature
 } from '@/services/razorpay.service'
 import { Types } from 'mongoose'
@@ -32,6 +35,14 @@ interface GrantAutoBookingFreeTrialOptions {
   grantedBy?: HydratedUser
   referenceId?: string
   source?: string
+}
+
+export interface RecordAutoBookingPaymentResult {
+  payment: HydratedPayment
+  user: HydratedUser
+  paid: boolean
+  activated: boolean
+  verified: boolean
 }
 
 const findAutoBookingPaymentPlan = (amount: number) => {
@@ -209,21 +220,11 @@ export const grantAutoBookingFreeTrial = async (
   return payment
 }
 
-export const recordAutoBookingPaymentCallback = async (
-  callback: RazorpayPaymentLinkCallback,
-  signature: string,
-  rawPayload: Record<string, string>
-): Promise<{
-  payment: HydratedPayment
-  user: HydratedUser
-  paid: boolean
+const recordAutoBookingPaymentUpdate = async (
+  callback: RazorpayPaymentLinkUpdate,
+  rawPayload: Record<string, unknown>,
   verified: boolean
-}> => {
-  const verified = verifyPaymentLinkSignature(callback, signature)
-  if (!verified) {
-    return Promise.reject(new Error('Invalid Razorpay payment signature'))
-  }
-
+): Promise<RecordAutoBookingPaymentResult> => {
   const payment = await PaymentModel.findOne({
     $or: [
       { razorpayPaymentLinkId: callback.payment_link_id },
@@ -232,15 +233,22 @@ export const recordAutoBookingPaymentCallback = async (
   }).orFail()
 
   const status = callback.payment_link_status
+  const hadRecordedPaidAccess = Boolean(
+    payment.razorpayPaymentId || payment.paidAt || payment.validUntil
+  )
   payment.status = status as HydratedPayment['status']
   payment.callbackPayload = rawPayload
+  let activated = false
 
   if (status === 'paid') {
     const now = new Date()
     const plan = findAutoBookingPaymentPlan(payment.amount)
-    payment.razorpayPaymentId = callback.payment_id
+    if (callback.payment_id) {
+      payment.razorpayPaymentId = callback.payment_id
+    }
     payment.paidAt = payment.paidAt || now
     payment.validUntil = payment.validUntil || addDays(now, plan.validityInDays)
+    activated = !hadRecordedPaidAccess
   }
 
   await payment.save()
@@ -251,8 +259,33 @@ export const recordAutoBookingPaymentCallback = async (
     payment,
     user,
     paid: status === 'paid',
+    activated,
     verified
   }
+}
+
+export const recordAutoBookingPaymentCallback = async (
+  callback: RazorpayPaymentLinkCallback,
+  signature: string,
+  rawPayload: Record<string, unknown>
+): Promise<RecordAutoBookingPaymentResult> => {
+  const verified = verifyPaymentLinkSignature(callback, signature)
+  if (!verified) {
+    return Promise.reject(new Error('Invalid Razorpay payment signature'))
+  }
+
+  return recordAutoBookingPaymentUpdate(callback, rawPayload, verified)
+}
+
+export const recordAutoBookingPaymentWebhook = async (
+  webhook: RazorpayWebhookEvent
+): Promise<RecordAutoBookingPaymentResult | null> => {
+  const update = getPaymentLinkUpdateFromWebhook(webhook)
+  if (!update) {
+    return null
+  }
+
+  return recordAutoBookingPaymentUpdate(update, webhook, true)
 }
 
 export const expirePayment = async (

@@ -5,7 +5,15 @@ import env from './env'
 import UserModel from './models/user.model'
 import BoundaryModel from './models/boundary.model'
 import bot from './bot'
-import { recordAutoBookingPaymentCallback } from './services/payment.service'
+import {
+  recordAutoBookingPaymentCallback,
+  recordAutoBookingPaymentWebhook,
+  type RecordAutoBookingPaymentResult
+} from './services/payment.service'
+import {
+  parseRazorpayWebhookBody,
+  verifyWebhookSignature
+} from './services/razorpay.service'
 import {
   buildAutoOrderKeyboard,
   buildAutoOrderOverviewMessage
@@ -17,8 +25,6 @@ import { logToChannel } from './utils/logger.util'
 const app = express()
 
 app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
 app.use(morgan(env.NODE_ENV !== 'production' ? 'dev' : 'combined'))
 
 if (env.NODE_ENV === 'production') {
@@ -46,6 +52,120 @@ const getQueryString = (value: unknown): string => {
 
   return typeof value === 'string' ? value : ''
 }
+
+const notifyAutoBookingPaymentReceived = async (
+  result: RecordAutoBookingPaymentResult,
+  source: 'redirect' | 'webhook'
+): Promise<void> => {
+  if (!result.paid || !result.activated) {
+    return
+  }
+
+  result.user.set('orderSettings.enabled', true)
+  await result.user.save()
+
+  if (result.user.tgId) {
+    await bot.telegram.sendMessage(
+      result.user.tgId,
+      [
+        `${emojis.checkMark} <b>Payment received</b>`,
+        `Auto-booking is now enabled for ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days.`,
+        ``,
+        buildAutoOrderOverviewMessage(result.user, result.payment)
+      ].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: buildAutoOrderKeyboard(result.user).reply_markup
+      }
+    )
+  }
+
+  await logToChannel(
+    [
+      `New auto-booking payment received!`,
+      `User: ${result.user.tgUsername ?? result.user.firstName} (${result.user.tgId})`,
+      `Plan: ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days`,
+      `Payment ID: ${result.payment.razorpayPaymentId || 'N/A'}`,
+      `Reference ID: ${result.payment.referenceId}`,
+      `Status: ${result.payment.status}`,
+      `Source: ${source}`
+    ].join('\n'),
+    () => {
+      console.log('Logged auto-booking payment to channel')
+    }
+  )
+}
+
+app.post(
+  '/api/payment/webhook',
+  express.raw({ type: 'application/json', limit: '1mb' }),
+  async (req, res) => {
+    const signature = req.get('X-Razorpay-Signature')?.trim()
+
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing Razorpay signature' })
+    }
+
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+      return res.status(400).json({ error: 'Missing Razorpay payload' })
+    }
+
+    let verified = false
+    try {
+      verified = verifyWebhookSignature(req.body, signature)
+    } catch (err) {
+      console.error('Failed to verify Razorpay payment webhook:', err)
+      return res
+        .status(503)
+        .json({ error: 'Razorpay webhook verification is not configured' })
+    }
+
+    if (!verified) {
+      return res.status(400).json({ error: 'Invalid Razorpay signature' })
+    }
+
+    let webhook: ReturnType<typeof parseRazorpayWebhookBody>
+    try {
+      webhook = parseRazorpayWebhookBody(req.body)
+    } catch (err) {
+      return res.status(400).json({
+        error:
+          err instanceof Error
+            ? err.message
+            : 'Invalid Razorpay webhook payload'
+      })
+    }
+
+    try {
+      const result = await recordAutoBookingPaymentWebhook(webhook)
+      if (!result) {
+        return res.status(202).json({
+          ok: true,
+          processed: false,
+          event: webhook.event
+        })
+      }
+
+      await notifyAutoBookingPaymentReceived(result, 'webhook')
+
+      return res.status(200).json({
+        ok: true,
+        processed: true,
+        event: webhook.event,
+        paymentStatus: result.payment.status,
+        activated: result.activated
+      })
+    } catch (err) {
+      console.error('Failed to process Razorpay payment webhook:', err)
+      return res
+        .status(500)
+        .json({ error: 'Failed to process Razorpay payment webhook' })
+    }
+  }
+)
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 app.get('/api/payment/success', async (req, res) => {
   const botUrl = await getBotUrl()
@@ -215,38 +335,7 @@ app.get('/api/payment/success', async (req, res) => {
       })
     }
 
-    result.user.set('orderSettings.enabled', true)
-    await result.user.save()
-
-    if (result.user.tgId) {
-      await bot.telegram.sendMessage(
-        result.user.tgId,
-        [
-          `${emojis.checkMark} <b>Payment received</b>`,
-          `Auto-booking is now enabled for ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days.`,
-          ``,
-          buildAutoOrderOverviewMessage(result.user, result.payment)
-        ].join('\n'),
-        {
-          parse_mode: 'HTML',
-          reply_markup: buildAutoOrderKeyboard(result.user).reply_markup
-        }
-      )
-    }
-
-    logToChannel(
-      [
-        `New auto-booking payment received!`,
-        `User: ${result.user.tgUsername ?? result.user.firstName} (${result.user.tgId})`,
-        `Plan: ${DEFAULT_AUTO_BOOKING_PAYMENT_PLAN.validityInDays} days`,
-        `Payment ID: ${paymentId}`,
-        `Reference ID: ${referenceId}`,
-        `Status: ${paymentStatus}`
-      ].join('\n'),
-      () => {
-        console.log('Logged auto-booking payment to channel')
-      }
-    )
+    await notifyAutoBookingPaymentReceived(result, 'redirect')
 
     return renderPaymentPage({
       title: 'Payment Successful',

@@ -80,6 +80,8 @@ export interface RazorpayPaymentLink {
   user_id: string
 }
 
+type UnknownRecord = Record<string, unknown>
+
 interface RazorpayErrorResponse {
   error?: {
     code?: string
@@ -90,11 +92,21 @@ interface RazorpayErrorResponse {
   }
 }
 
-export interface RazorpayPaymentLinkCallback {
-  payment_id: string
+export interface RazorpayPaymentLinkUpdate {
+  payment_id?: string
   payment_link_id: string
   payment_link_reference_id: string
   payment_link_status: string
+}
+
+export interface RazorpayPaymentLinkCallback extends RazorpayPaymentLinkUpdate {
+  payment_id: string
+}
+
+export interface RazorpayWebhookEvent {
+  event: string
+  payload?: UnknownRecord
+  [key: string]: unknown
 }
 
 const getRazorpayClient = (): AxiosInstance => {
@@ -217,6 +229,27 @@ const getRazorpayErrorMessage = (err: unknown): string => {
   return err instanceof Error ? err.message : String(err)
 }
 
+const isRecord = (value: unknown): value is UnknownRecord => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const getString = (value: unknown): string => {
+  return typeof value === 'string' ? value : ''
+}
+
+const getWebhookEntity = (
+  webhook: RazorpayWebhookEvent,
+  key: string
+): UnknownRecord | null => {
+  const wrapper = webhook.payload?.[key]
+  if (!isRecord(wrapper)) {
+    return null
+  }
+
+  const entity = wrapper.entity
+  return isRecord(entity) ? entity : null
+}
+
 export const verifyPaymentLinkSignature = (
   callback: RazorpayPaymentLinkCallback,
   signature: string
@@ -244,6 +277,85 @@ export const verifyPaymentLinkSignature = (
   )
 }
 
+export const verifyWebhookSignature = (
+  rawBody: Buffer,
+  signature: string
+): boolean => {
+  const webhookSecret = env.RAZORPAY_WEBHOOK_SECRET?.trim()
+  if (!webhookSecret) {
+    throw new Error(
+      'RAZORPAY_WEBHOOK_SECRET is required to verify Razorpay webhooks'
+    )
+  }
+
+  const expectedSignature = createHmac('sha256', webhookSecret)
+    .update(rawBody)
+    .digest('hex')
+  const expectedSignatureBuffer = Buffer.from(expectedSignature)
+  const signatureBuffer = Buffer.from(signature)
+
+  return (
+    expectedSignatureBuffer.length === signatureBuffer.length &&
+    timingSafeEqual(expectedSignatureBuffer, signatureBuffer)
+  )
+}
+
+export const parseRazorpayWebhookBody = (
+  rawBody: Buffer
+): RazorpayWebhookEvent => {
+  let parsed: unknown
+
+  try {
+    parsed = JSON.parse(rawBody.toString('utf-8')) as unknown
+  } catch {
+    throw new Error('Invalid Razorpay webhook JSON payload')
+  }
+
+  if (!isRecord(parsed) || typeof parsed.event !== 'string') {
+    throw new Error('Invalid Razorpay webhook payload')
+  }
+
+  if (parsed.payload !== undefined && !isRecord(parsed.payload)) {
+    throw new Error('Invalid Razorpay webhook payload')
+  }
+
+  return parsed as RazorpayWebhookEvent
+}
+
+export const getPaymentLinkUpdateFromWebhook = (
+  webhook: RazorpayWebhookEvent
+): RazorpayPaymentLinkUpdate | null => {
+  if (!webhook.event.startsWith('payment_link.')) {
+    return null
+  }
+
+  const paymentLink = getWebhookEntity(webhook, 'payment_link')
+  const payment = getWebhookEntity(webhook, 'payment')
+
+  if (!paymentLink) {
+    throw new Error('Razorpay payment link webhook is missing payment_link')
+  }
+
+  const paymentLinkId = getString(paymentLink.id)
+  const referenceId = getString(paymentLink.reference_id)
+  const status =
+    getString(paymentLink.status) || webhook.event.replace('payment_link.', '')
+  const paymentId = payment ? getString(payment.id) : ''
+
+  if (!paymentLinkId || !referenceId || !status) {
+    throw new Error(
+      'Razorpay payment link webhook is missing required payment details'
+    )
+  }
+
+  return {
+    payment_link_id: paymentLinkId,
+    payment_link_reference_id: referenceId,
+    payment_link_status: status,
+    ...(paymentId ? { payment_id: paymentId } : {})
+  }
+}
+
 export const createPaymentLink = async (
   input: CreatePaymentLinkInput
 ): Promise<RazorpayPaymentLink> => {
@@ -267,5 +379,6 @@ export const createPaymentLink = async (
 
 export default {
   createPaymentLink,
-  verifyPaymentLinkSignature
+  verifyPaymentLinkSignature,
+  verifyWebhookSignature
 }

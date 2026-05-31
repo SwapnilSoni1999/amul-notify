@@ -5,9 +5,9 @@ name: Amul Notify Bot
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 env:
   BASH_ENV: /home/sonisins/.bashrc
@@ -35,6 +35,7 @@ jobs:
           echo "RAZORPAY_API_KEY=${{ secrets.PROD_RAZORPAY_API_KEY }}" >> .env.prod
           echo "RAZORPAY_API_SECRET=${{ secrets.PROD_RAZORPAY_API_SECRET }}" >> .env.prod
           echo "RAZORPAY_REDIRECT_URL=${{ vars.PROD_RAZORPAY_REDIRECT_URL }}" >> .env.prod
+          echo "RAZORPAY_WEBHOOK_SECRET=${{ secrets.PROD_RAZORPAY_WEBHOOK_SECRET }}" >> .env.prod
 
       - name: Backup MongoDB database
         env:

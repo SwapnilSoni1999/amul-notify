@@ -37,7 +37,8 @@ const envSchema = z.object({
   // Razorpay
   RAZORPAY_API_KEY: z.string().optional(),
   RAZORPAY_API_SECRET: z.string().optional(),
-  RAZORPAY_REDIRECT_URL: z.string().optional()
+  RAZORPAY_REDIRECT_URL: z.string().optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional()
 })
 
 export type Env = z.infer<typeof envSchema>
