@@ -93,7 +93,7 @@ const getProteinProductsUrl = (substoreId?: string) => {
   params.append('total', '1')
   params.append('start', '0')
   params.append('cdc', '1m')
-  params.append('v', '1')
+  params.append('v', '2')
   params.append('device_type', 'other')
 
   if (substoreId) {
