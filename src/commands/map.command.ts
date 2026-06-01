@@ -15,6 +15,8 @@ export const mapCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     `- Enter the pincode you want to check.`,
     `- Click on the highlighted area to see the number of users from that pincode.`,
     '',
+    `<i>Map boundaries and labels come from map providers and public datasets for approximate pincode visualization only. This project does not claim, endorse, or dispute any territorial boundary.</i>`,
+    '',
     `If the button doesn't work, you can open the map directly from the link below:`,
     `<a href="${mapUrl}">${mapUrl}</a>`
   ].join('\n')

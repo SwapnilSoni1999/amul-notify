@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -36,6 +36,43 @@
       cursor: pointer;
       text-rendering: optimizeSpeed;
     }
+
+    .map-disclaimer {
+      position: absolute;
+      left: 1rem;
+      bottom: 1.5rem;
+      z-index: 1000;
+      max-width: min(28rem, calc(100vw - 2rem));
+      padding: 0.75rem 0.875rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.5rem;
+      background: rgba(255, 255, 255, 0.94);
+      color: #334155;
+      font:
+        0.8125rem/1.4 system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+    }
+
+    .map-disclaimer strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .controls {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+      }
+
+      .map-disclaimer {
+        bottom: 1rem;
+      }
+    }
   </style>
   <body>
     <link
@@ -57,12 +94,19 @@
         Highlight
       </button>
     </form>
+    <div class="map-disclaimer" role="note">
+      <strong>Map notice:</strong> Boundaries and labels shown come from map
+      providers and public datasets for approximate pincode visualization only.
+      This project does not claim, endorse, or dispute any territorial boundary.
+    </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       const API = 'https://amul.10xdev.me/api' // change if needed
 
       const map = L.map('map').setView([22.9734, 78.6569], 5)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map)
 
