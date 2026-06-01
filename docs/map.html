@@ -95,13 +95,15 @@
       </button>
     </form>
     <div class="map-disclaimer" role="note">
-      <strong>Map notice:</strong> Boundaries and labels shown come from map
-      providers and public datasets for approximate pincode visualization only.
-      This project does not claim, endorse, or dispute any territorial boundary.
+      <strong>Map notice:</strong> Boundaries, labels, and the coverage outline
+      shown come from map providers and public datasets for approximate pincode
+      visualization only. This project does not claim, endorse, or dispute any
+      territorial boundary.
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       const API = 'https://amul.10xdev.me/api' // change if needed
+      const INDIA_COVERAGE_URL = 'india-service-coverage.geojson'
 
       const map = L.map('map').setView([22.9734, 78.6569], 5)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -123,7 +125,69 @@
         fillOpacity: 0.45
       }
 
+      const worldRing = [
+        [-90, -180],
+        [-90, 180],
+        [90, 180],
+        [90, -180]
+      ]
+
+      const lngLatToLatLng = ([lng, lat]) => [lat, lng]
+
+      function getOuterRings(geometry) {
+        if (!geometry) return []
+
+        if (geometry.type === 'Polygon') {
+          return geometry.coordinates.length ? [geometry.coordinates[0]] : []
+        }
+
+        if (geometry.type === 'MultiPolygon') {
+          return geometry.coordinates
+            .map((polygon) => polygon[0])
+            .filter(Boolean)
+        }
+
+        return []
+      }
+
+      async function addIndiaCoverageMask() {
+        const r = await fetch(INDIA_COVERAGE_URL)
+        if (!r.ok) throw new Error('Failed to load India coverage outline')
+
+        const coverage = await r.json()
+        const features =
+          coverage.type === 'FeatureCollection'
+            ? coverage.features
+            : [{ type: 'Feature', geometry: coverage }]
+
+        const holes = features
+          .flatMap((feature) => getOuterRings(feature.geometry))
+          .map((ring) => ring.map(lngLatToLatLng))
+
+        L.polygon([worldRing, ...holes], {
+          stroke: false,
+          fillColor: '#f8fafc',
+          fillOpacity: 0.58,
+          fillRule: 'evenodd',
+          interactive: false
+        }).addTo(map)
+
+        L.geoJSON(coverage, {
+          style: {
+            color: '#0f172a',
+            weight: 2,
+            opacity: 0.75,
+            fillOpacity: 0
+          },
+          interactive: false
+        }).addTo(map)
+      }
+
       let hiLayer
+
+      addIndiaCoverageMask().catch((err) => {
+        console.error(err)
+      })
 
       async function highlightPin(pin) {
         const r = await fetch(`${API}/pincode/${pin}`)
