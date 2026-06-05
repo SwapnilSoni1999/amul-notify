@@ -69,49 +69,13 @@ const productFields = [
   'lp_seller_ids'
 ]
 
-const getProductListHeaders = () => {
-  return {
-    ...defaultHeaders,
-    referer: 'https://shop.amul.com/en/browse/protein'
-  }
-}
-
-const getProteinProductsUrl = (substoreId?: string) => {
-  const params = new URLSearchParams()
-
-  for (const field of productFields) {
-    params.append(`fields[${field}]`, '1')
-  }
-
-  params.append('filters[0][field]', 'categories')
-  params.append('filters[0][value][0]', 'protein')
-  params.append('filters[0][operator]', 'in')
-  params.append('filters[0][original]', '1')
-  params.append('facets', 'true')
-  params.append('facetgroup', 'default_category_facet')
-  params.append('limit', '32')
-  params.append('total', '1')
-  params.append('start', '0')
-  params.append('cdc', '1m')
-  params.append('v', '2')
-  params.append('device_type', 'other')
-
-  if (substoreId) {
-    params.append('substore', substoreId)
-  }
-
-  // StoreHippo serves different inventory when nested query brackets are encoded.
-  const query = params.toString().replace(/%5B/g, '[').replace(/%5D/g, ']')
-
-  return `https://shop.amul.com/api/1/entity/ms.products?${query}`
-}
-
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
   public amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
   public instanceInitializedAt: Date = new Date()
+  private storeVersion = 0
 
   constructor() {
     const jar = new CookieJar()
@@ -132,6 +96,34 @@ export class AmulApi {
     )
 
     this.amulApi = amulApi
+  }
+
+  private async ensureStoreVersion() {
+    if (this.storeVersion) return
+
+    try {
+      const response = await this.amulApi.get(
+        'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js'
+      )
+      const versionMatcher = /req\.query\.v\s*=\s*['"]?([^'";\s]+)['"]?/
+      const match = response.data.match(versionMatcher)
+      if (match && match[1]) {
+        this.storeVersion = match[1]
+        console.log(`Fetched store version: ${this.storeVersion}`)
+      } else {
+        console.warn('Store version not found in response, defaulting to 4')
+        logToChannel(
+          `${new Date().toISOString()} - Store version not found in response, defaulting to 4`
+        )
+        this.storeVersion = 4
+      }
+    } catch (error) {
+      console.error('Error fetching store version:', error)
+      logToChannel(
+        `${new Date().toISOString()} - Error fetching store version: ${error}`
+      )
+      this.storeVersion = 0
+    }
   }
 
   public injectCookies(cookies: IUser['cookies']) {
@@ -289,40 +281,66 @@ export class AmulApi {
     return `${timestamp}:${rand}:${hash}`
   }
 
+  private getProductListHeaders() {
+    return {
+      ...defaultHeaders,
+      referer: 'https://shop.amul.com/en/browse/protein'
+    }
+  }
+
+  private getProteinProductsUrl(substoreId?: string) {
+    const params = new URLSearchParams()
+
+    for (const field of productFields) {
+      params.append(`fields[${field}]`, '1')
+    }
+
+    params.append('filters[0][field]', 'categories')
+    params.append('filters[0][value][0]', 'protein')
+    params.append('filters[0][operator]', 'in')
+    params.append('filters[0][original]', '1')
+    params.append('facets', 'true')
+    params.append('facetgroup', 'default_category_facet')
+    params.append('limit', '32')
+    params.append('total', '1')
+    params.append('start', '0')
+    params.append('cdc', '5s') // cache duration hint, not a real cache control
+    params.append('v', this.storeVersion.toString() || '4')
+    params.append('device_type', 'other')
+
+    if (substoreId) {
+      params.append('substore', substoreId)
+    }
+
+    // StoreHippo serves different inventory when nested query brackets are encoded.
+    const query = params.toString().replace(/%5B/g, '[').replace(/%5D/g, ']')
+
+    return `https://shop.amul.com/api/1/entity/ms.products?${query}`
+  }
+
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
     search?: string
   }): Promise<AmulProduct[]> {
+    const ensureVersionPromise = this.ensureStoreVersion()
     const { bypassCache = true } = opts || {}
 
     const cachedProducts = await cacheService.products.get({
       substore: this.pincodeRecord.substore
     })
 
-    // console.log(`Cached Products:`, cachedProducts)
-
     if (cachedProducts && !bypassCache) {
       return cachedProducts.data
     }
 
     const substoreId = this.getSubstoreId()
-    // console.log(`SubstoreId:`, substoreId)
 
-    // console.log(
-    //   `Cookies:`,
-    //   await this.jar.getCookieString('https://shop.amul.com')
-    // )
-
-    // console.log(`Headers:`, {
-    //   ...defaultHeaders,
-    //   cookie: await this.jar.getCookieString('https://shop.amul.com')
-    //   // tid: await this.calculateTidHeader()
-    // })
+    await ensureVersionPromise
     const response = await this.amulApi.get<AmulProductsResponse>(
-      getProteinProductsUrl(substoreId),
+      this.getProteinProductsUrl(substoreId),
       {
         headers: {
-          ...getProductListHeaders(),
+          ...this.getProductListHeaders(),
           cookie: await this.jar.getCookieString('https://shop.amul.com'),
           tid: await this.calculateTidHeader()
         }
