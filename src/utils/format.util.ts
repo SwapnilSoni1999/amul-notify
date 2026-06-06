@@ -4,6 +4,8 @@ import { getInventoryQuantity, getProductUrl } from './amul.util'
 import dayjs from '@/libs/dayjs.lib'
 import { TIMEZONE } from '@/config'
 
+type Nullish<T> = T | undefined | null
+
 export const emptySpace = (count: number): string => {
   return ' '.repeat(count)
 }
@@ -13,7 +15,9 @@ export const formatProductDetails = (
   isAvlblToPurchase: boolean,
   index: number,
   lastSeenInStockAt?: Date,
-  remainingNotifyCount?: number
+  remainingNotifyCount?: number,
+  pincode?: Nullish<string>,
+  substore?: Nullish<string>
 ) => {
   const proteinRegex =
     /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
@@ -55,7 +59,9 @@ export const formatProductDetails = (
       : null,
     `${emptySpace(5)}Available Quantity: <b>${getInventoryQuantity(
       product
-    )}</b>`
+    )}</b>`,
+    pincode ? `${emptySpace(5)}Pincode: <b>${pincode}</b>` : null,
+    substore ? `${emptySpace(5)}Substore: <b>${pincode}</b>` : null
   ]
     .filter(Boolean)
     .join('\n')
