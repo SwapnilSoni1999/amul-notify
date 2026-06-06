@@ -304,7 +304,7 @@ export class AmulApi {
     params.append('limit', '32')
     params.append('total', '1')
     params.append('start', '0')
-    params.append('cdc', '5s') // cache duration hint, not a real cache control
+    params.append('cdc', '1m')
     params.append('v', this.storeVersion.toString() || '4')
     params.append('device_type', 'other')
 
