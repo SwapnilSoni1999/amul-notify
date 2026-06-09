@@ -4,7 +4,7 @@ import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
 import { AmulApi, getOrCreateAmulApi } from '@/libs/amulApi.lib'
-import { isLoggedIn } from '@/utils/autoOrder.util'
+// import { isLoggedIn } from '@/utils/autoOrder.util'
 
 export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
   if (!ctx.from) {
