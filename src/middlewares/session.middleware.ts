@@ -57,10 +57,10 @@ export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
       )) ?? ({} as AmulApi) // Note: pincode should be set before this middleware is called (exception for /setpincode)
   })
 
-  const loggedIn = isLoggedIn(user)
-  if (loggedIn) {
-    ctx.amul.injectCookies(user.cookies)
-  }
+  // const loggedIn = isLoggedIn(user)
+  // if (loggedIn) {
+  //   ctx.amul.injectCookies(user.cookies)
+  // }
 
   return next()
 }
