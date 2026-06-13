@@ -13,6 +13,7 @@ import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
+import { sleep } from '@/utils'
 
 // interface AmulSessionKey {
 //   pincode: string
@@ -321,9 +322,10 @@ export class AmulApi {
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
     search?: string
+    retryCount?: number
   }): Promise<AmulProduct[]> {
     const ensureVersionPromise = this.ensureStoreVersion()
-    const { bypassCache = true } = opts || {}
+    const { bypassCache = true, retryCount = 0 } = opts || {}
 
     const cachedProducts = await cacheService.products.get({
       substore: this.pincodeRecord.substore
@@ -351,8 +353,22 @@ export class AmulApi {
       console.warn(
         `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
       )
+
+      const maxRetries = 3
+      if (retryCount < maxRetries) {
+        console.log(
+          `Retrying getProteinProducts (attempt ${retryCount + 1}/${maxRetries})...`
+        )
+        await sleep(500)
+        return this.getProteinProducts({
+          bypassCache: true,
+          search: opts?.search,
+          retryCount: retryCount + 1
+        })
+      }
+
       logToChannel(
-        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
+        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}, after ${maxRetries} attempts: ${this.getProteinProductsUrl(substoreId)}`
       )
       return []
     }
