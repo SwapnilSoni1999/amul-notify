@@ -111,11 +111,11 @@ export class AmulApi {
         this.storeVersion = match[1]
         console.log(`Fetched store version: ${this.storeVersion}`)
       } else {
-        console.warn('Store version not found in response, defaulting to 4')
+        console.warn('Store version not found in response, defaulting to 5')
         logToChannel(
-          `${new Date().toISOString()} - Store version not found in response, defaulting to 4`
+          `${new Date().toISOString()} - Store version not found in response, defaulting to 5`
         )
-        this.storeVersion = 4
+        this.storeVersion = 5
       }
     } catch (error) {
       console.error('Error fetching store version:', error)
@@ -305,7 +305,7 @@ export class AmulApi {
     params.append('total', '1')
     params.append('start', '0')
     params.append('cdc', '1m')
-    params.append('v', this.storeVersion.toString() || '4')
+    params.append('v', this.storeVersion.toString() || '5')
     params.append('device_type', 'other')
 
     if (substoreId) {
