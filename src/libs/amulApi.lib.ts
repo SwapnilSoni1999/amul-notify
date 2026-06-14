@@ -305,7 +305,7 @@ export class AmulApi {
     params.append('limit', '32')
     params.append('total', '1')
     params.append('start', '0')
-    params.append('cdc', '1m')
+    // params.append('cdc', '1m')
     params.append('v', this.storeVersion.toString() || '5')
     params.append('device_type', 'other')
 
