@@ -1,268 +1,252 @@
-# 🥛 Amul Stock Notification Bot
+# Amul Notify
 
 [![Telegram](https://img.shields.io/badge/Chat-Telegram-blue?logo=telegram)](https://t.me/AmulOSSBot)
 [![GitHub stars](https://img.shields.io/github/stars/SwapnilSoni1999/amul-notify?style=social)](https://github.com/SwapnilSoni1999/amul-notify)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](package.json)
 ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fbots.10xdev.me%2Famul-bot%2Fbadge)
 
-A powerful Telegram bot that helps you track the availability of Amul's protein-rich products including protein shakes, lassi, whey protein, paneer, and more. Get real-time notifications when your favorite products are back in stock in your local area!
+Amul Notify is a Telegram bot that watches Amul product availability by
+pincode/substore, lets users track products, and sends notifications when stock
+changes. The bot also includes optional paid auto-ordering, admin analytics,
+stock history, and an interactive map.
 
-<div align="center">
+Links: [Try the bot](https://t.me/AmulOSSBot) |
+[GitHub repository](https://github.com/SwapnilSoni1999/amul-notify) |
+[Contact developer](https://t.me/SoniSins)
 
-**[🤖 Try the Bot Now](https://t.me/AmulOSSBot)** • **[⭐ Star on GitHub](https://github.com/SwapnilSoni1999/amul-notify)** • **[📞 Contact Developer](https://t.me/SoniSins)**
+## Features
 
-</div>
+- Product browsing for Amul protein products by local pincode/substore.
+- Stock tracking with per-minute background checks when tracking is enabled.
+- Telegram notifications for tracked products and configurable tracking style.
+- Favourites, tracked product views, and user settings.
+- Optional auto-ordering with Amul login, address capture, Razorpay payment,
+  payment expiry handling, and order-server integration.
+- Admin tools for broadcast delivery, usage stats, product analytics, session
+  inspection, product counts, free trials, and payment expiry.
+- Express routes for Telegram webhooks and Razorpay payment callbacks.
+- Redis-backed caching and Bull queue delivery for broadcast/send-message work.
+- Static docs/map assets for location and boundary views.
 
----
+## Bot Commands
 
-## ✨ Features
+### User Commands
 
-- 🔍 **Browse Products**: View all Amul protein products with real-time availability
-- 📍 **Location-Based**: Set your pincode to get local stock updates
-- � **Smart Notifications**: Get notified instantly when tracked products are back in stock
-- � **Stock Tracking**: Monitor inventory levels and stock changes
-- ⚡ **Real-Time Updates**: Automated checks every 3 minutes
-- 📱 **User-Friendly**: Simple Telegram interface with inline buttons
-- 🎯 **Selective Tracking**: Track only the products you care about
-- 📈 **Analytics**: View bot statistics and usage data
+| Command       | Description                                |
+| ------------- | ------------------------------------------ |
+| `/start`      | Start the bot and initialize the user flow |
+| `/setpincode` | Set or change delivery pincode             |
+| `/pincode`    | Show the current pincode/substore setting  |
+| `/products`   | List Amul protein products                 |
+| `/autoorder`  | View or configure auto-ordering            |
+| `/settings`   | View or update notification settings       |
+| `/tracked`    | List tracked products                      |
+| `/favourites` | List favourite products                    |
+| `/support`    | Show support information                   |
+| `/map`        | Open the interactive map                   |
 
----
+### Admin Commands
 
-## 🚀 Quick Start
+| Command          | Description                        |
+| ---------------- | ---------------------------------- |
+| `/broadcast`     | Send a message to bot users        |
+| `/sessions`      | List active Amul API sessions      |
+| `/stats`         | Show bot usage statistics          |
+| `/analytics`     | Show product analytics             |
+| `/productcount`  | Show product count by SKU          |
+| `/freetrial`     | Grant auto-booking free trial      |
+| `/expirepayment` | Expire auto-booking payment access |
 
-### For Users
+Admin access is controlled by user records in MongoDB and seeded through the
+project seeders.
 
-1. **Start the Bot**: [Click here to open @AmulOSSBot](https://t.me/AmulOSSBot)
-2. **Set Your Location**: Use `/setpincode YOUR_PINCODE` to set your area
-3. **Browse Products**: Use `/products` to see all available items
-4. **Track Items**: Click the "Track" button next to products you want to monitor
-5. **Get Notified**: Receive instant notifications when items are back in stock
+## Tech Stack
 
-### Example Usage
+- Runtime: Bun scripts with TypeScript source.
+- Package manager metadata: `pnpm@10.12.1`.
+- Bot framework: Telegraf.
+- HTTP server: Express.
+- Database: MongoDB with Mongoose.
+- Cache and queueing: Redis, ioredis, Bull.
+- Scheduling: node-cron.
+- Validation: Zod environment schema.
+- Quality: ESLint, Prettier, TypeScript strict mode, `tsc-alias`.
 
-```
-/start                    # Welcome message and setup
-/setpincode 400001        # Set your pincode (Mumbai in this example)
-/products                 # Browse all protein products
-/tracked                  # View your tracked items
-/support                  # Get help and contact info
-```
+## Project Layout
 
----
+| Path              | Purpose                                       |
+| ----------------- | --------------------------------------------- |
+| `src/server.ts`   | Process startup, Mongo/Redis, bot mode, jobs  |
+| `src/app.ts`      | Express app, payment routes, map/docs access  |
+| `src/bot.ts`      | Telegraf middleware, scenes, commands/actions |
+| `src/config.ts`   | Commands, callback constants, shared config   |
+| `src/env.ts`      | Zod env schema and runtime validation         |
+| `src/commands`    | Telegram slash command handlers               |
+| `src/actions`     | Inline keyboard callback handlers             |
+| `src/wizards`     | Multi-step Telegraf scenes                    |
+| `src/middlewares` | Session, guards, analytics, logging           |
+| `src/services`    | Business workflows and persistence logic      |
+| `src/libs`        | External API wrappers                         |
+| `src/models`      | Mongoose schemas and hydrated model types     |
+| `src/jobs`        | Stock checker, payment expiry, reports        |
+| `src/queues`      | Bull queues for Telegram message delivery     |
+| `src/utils`       | Formatting, Telegram, cookies, stock helpers  |
+| `assets` / `docs` | Boundary data and static documentation pages  |
 
-## 🤖 Bot Commands
+The `@/*` import alias maps to `src/*`.
 
-| Command       | Description                              | Example              |
-| ------------- | ---------------------------------------- | -------------------- |
-| `/start`      | Initialize bot and show welcome message  | `/start`             |
-| `/setpincode` | Set your delivery pincode                | `/setpincode 400001` |
-| `/products`   | List all available Amul protein products | `/products`          |
-| `/tracked`    | Show products you're currently tracking  | `/tracked`           |
-| `/pincode`    | View your current pincode setting        | `/pincode`           |
-| `/support`    | Get support and contact information      | `/support`           |
-
-### Admin Commands (Bot Owner Only)
-
-| Command      | Description                   |
-| ------------ | ----------------------------- |
-| `/broadcast` | Send message to all bot users |
-| `/stats`     | View bot usage statistics     |
-| `/sessions`  | View active Amul API sessions |
-
----
-
-## 🏗️ Tech Stack
-
-- **Runtime**: Node.js 18+ with TypeScript
-- **Bot Framework**: [Telegraf.js](https://telegraf.js.org/) - Modern Telegram bot framework
-- **Database**: MongoDB with Mongoose ODM
-- **HTTP Client**: Axios for API requests
-- **Caching**: Redis for performance optimization
-- **Scheduling**: node-cron for automated stock checks
-- **Process Management**: PM2 for production deployment
-- **Code Quality**: ESLint + Prettier for code formatting
-
----
-
-## 🛠️ Development Setup
+## Development
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
-- MongoDB database
-- Redis server (optional, for caching)
-- Telegram Bot Token (from [@BotFather](https://t.me/botfather))
+- Bun available on the machine.
+- pnpm available for dependency installation and script entrypoints.
+- MongoDB database.
+- Redis server.
+- Telegram bot token from [BotFather](https://t.me/botfather).
 
-### Installation
+### Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/SwapnilSoni1999/amul-notify.git
 cd amul-notify
-
-# Install dependencies
 pnpm install
-
-# Setup environment variables
 cp .env.example .env.dev
-# Edit .env.dev with your configuration
+```
 
-# Run in development mode
+Edit `.env.dev`, then run:
+
+```bash
 pnpm run dev
-
-# Or build and run in production
-pnpm run build
-pnpm start
 ```
 
-### Environment Variables
+The development script loads `.env.dev` and runs `src/server.ts` in Bun watch
+mode.
 
-Create `.env.dev` for development or `.env.prod` for production:
+### Scripts
 
-```env
-# Bot Configuration
-BOT_TOKEN=your_telegram_bot_token
-BOT_USERNAME=YourBotUsername
+| Command                  | Description                                  |
+| ------------------------ | -------------------------------------------- |
+| `pnpm install`           | Install dependencies                         |
+| `pnpm run dev`           | Load `.env.dev` and run the Bun watch server |
+| `pnpm run build`         | Run lint, TypeScript build, then `tsc-alias` |
+| `pnpm start`             | Load `.env.prod` and run `dist/server.js`    |
+| `pnpm run lint`          | Run ESLint for TypeScript files              |
+| `pnpm run prettier`      | Format the repository with Prettier          |
+| `pnpm run seed:dev`      | Run seeders with `.env.dev`                  |
+| `pnpm run seed:prod`     | Run compiled seeders with `.env.prod`        |
+| `pnpm exec tsc --noEmit` | Type-check without writing build output      |
 
-# Database
-MONGODB_URI=mongodb://localhost:27017/amul-notify
+There is no dedicated test script at the moment. For documentation-only changes,
+format/lint/typecheck are usually enough depending on the files touched.
 
-# Redis (Optional)
-REDIS_URL=redis://localhost:6379
+## Environment
 
-# Bot Settings
-TRACKER_ENABLED=true
-LOG_CHANNEL_ID=your_log_channel_id
-ADMIN_USER_IDS=123456789,987654321
+Create `.env.dev` for local development and `.env.prod` for production. Do not
+commit real env files.
 
-# Environment
-NODE_ENV=development
-```
+| Variable                  | Required | Default                       | Notes                                       |
+| ------------------------- | -------- | ----------------------------- | ------------------------------------------- |
+| `NODE_ENV`                | No       | `local`                       | `local`, `production`, `staging`, or `test` |
+| `PORT`                    | No       | `5999`                        | Express server port                         |
+| `MONGO_URI`               | Yes      |                               | MongoDB connection string                   |
+| `BOT_TOKEN`               | Yes      |                               | Telegram bot token                          |
+| `BOT_WEBHOOK_URL`         | No       |                               | Enables webhook mode when set               |
+| `BOT_FORCE_POLLING`       | No       | `false`                       | Forces polling even with webhook URL        |
+| `REDIS_HOST`              | No       | `localhost`                   | Redis host                                  |
+| `REDIS_PORT`              | No       | `6379`                        | Redis port                                  |
+| `REDIS_DATABASE_INDEX`    | No       | `0`                           | Redis database index                        |
+| `TRACKER_ENABLED`         | No       | `true`                        | Starts stock/activity jobs when true        |
+| `PAY_URL`                 | No       | `https://razorpay.me/@10xdev` | Public payment URL fallback                 |
+| `ORDER_SERVER_API_URL`    | No       |                               | Required only for auto-ordering             |
+| `ORDER_SERVER_API_KEY`    | No       |                               | Required only for auto-ordering             |
+| `RAZORPAY_API_KEY`        | No       |                               | Required only for auto-ordering payments    |
+| `RAZORPAY_API_SECRET`     | No       |                               | Required only for payment verification      |
+| `RAZORPAY_REDIRECT_URL`   | No       |                               | Required only for payment links             |
+| `RAZORPAY_WEBHOOK_SECRET` | No       |                               | Required only for Razorpay webhooks         |
 
-### Available Scripts
+Auto-ordering is enabled only when all required order-server and Razorpay
+settings are configured. Otherwise the bot logs the missing config and continues
+without that feature.
+
+## Runtime Behavior
+
+Startup begins in `src/server.ts`:
+
+1. Connect Redis and MongoDB.
+2. Initialize Amul API sessions for known pincodes.
+3. Start Telegraf in webhook mode when `BOT_WEBHOOK_URL` is present, unless
+   `BOT_FORCE_POLLING=true`.
+4. Start polling mode when no webhook is configured.
+5. Start Express on `PORT`.
+6. Start payment expiry checks.
+7. Start stock checking and activity reports when `TRACKER_ENABLED=true`.
+
+Scheduled jobs use the `Asia/Kolkata` timezone. The stock checker and payment
+expiry job run every minute; the activity report runs daily at 23:59 IST.
+
+## Deployment
+
+### Docker
+
+The Dockerfile uses the official Bun image, installs dependencies, builds the
+project, and starts the compiled app.
 
 ```bash
-pnpm run dev         # Start development server with hot reload
-pnpm run build       # Build the project
-pnpm start           # Start production server
-pnpm run lint        # Run ESLint
-pnpm run prettier    # Format code with Prettier
-pnpm run seed:dev    # Seed database with admin users (development)
-pnpm run seed:prod   # Seed database with admin users (production)
-```
-
----
-
-## 🚀 Deployment
-
-### Using PM2
-
-```bash
-# Install PM2 globally
-npm install -g pm2
-
-# Build the project
-pnpm run build
-
-# Start with PM2
-pm2 start dist/server.js --name "amul-notify"
-
-# Monitor
-pm2 status
-pm2 logs amul-notify
-```
-
-### Using Docker (Recommended)
-
-```bash
-# Build Docker image
 docker build -t amul-notify .
-
-# Run container
-docker run -d \
-  --name amul-notify \
-  --env-file .env.prod \
-  -p 3000:3000 \
-  amul-notify
+docker run -d --name amul-notify --env-file .env.prod -p 5999:5999 amul-notify
 ```
 
----
+The current Dockerfile copies `.env.prod` during image build, so create it
+locally before building or adjust the Dockerfile if you want runtime-only env
+injection. Keep production env files out of source control.
 
-## � Contributing
+### GitHub Actions
 
-Contributions are welcome! Here's how you can help:
+`.github/workflows/deploy.yml` runs on `main` pushes and pull requests using a
+self-hosted `amul-notify-runner`. It writes `.env.prod` from repository
+secrets/variables, backs up MongoDB, builds a Docker image, and restarts the
+container.
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add some amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+## AI-Assisted Development
 
-### Development Guidelines
+This repository is set up for structure-aware AI coding agents.
 
-- Follow the existing code style and conventions
-- Add tests for new features
-- Update documentation as needed
-- Use conventional commit messages
-- Ensure all emojis use the centralized `emoji.util.ts`
+- `AGENTS.md` is the canonical operating guide for automated agents.
+- `.github/copilot-instructions.md` points GitHub Copilot to the same rules.
+- `.cursor/rules/amul-notify.mdc` points Cursor to the same rules.
+- `CLAUDE.md` points Claude-style agents to the same rules.
+- `docs/ai-development.md` gives human-facing prompt patterns and validation
+  guidance for AI-assisted work.
 
----
+When using an AI assistant, ask it to read `AGENTS.md` first, keep edits in
+`src` rather than `dist`, preserve callback strings, update registration/config
+files with new commands or actions, and run the smallest useful validation
+command before handing work back.
 
-## 📊 Features in Detail
+## Security and Privacy
 
-### Smart Stock Tracking
+- Never commit `.env.dev`, `.env.prod`, tokens, API keys, cookies, payment
+  secrets, phone numbers, addresses, or user exports.
+- Treat Telegram IDs, Amul cookies, payment references, and addresses as
+  sensitive data.
+- Preserve Telegram webhook secret-token checks.
+- Preserve Razorpay signature verification.
+- Escape dynamic text rendered in Express HTML responses.
+- Avoid logging full cookies or secrets.
 
-- Monitors product availability every 5 minutes
-- Tracks inventory changes across different locations
-- Sends instant notifications when products come back in stock
+This project is unofficial and is not affiliated with or endorsed by Amul.
 
-### Location-Based Filtering
+## Contributing
 
-- Uses Indian pincode system for location detection
-- Shows only products available in your delivery area
-- Supports multiple substores and distribution centers
+1. Create a focused branch.
+2. Read the nearest existing implementation before adding a new pattern.
+3. Update command/action config and registration when changing bot behavior.
+4. Update env docs/examples when adding configuration.
+5. Run `pnpm exec tsc --noEmit`, `pnpm run lint`, or `pnpm run build`
+   depending on the risk of the change.
+6. Open a pull request with the behavior change and validation result.
 
-### User Management
+## License
 
-- Automatic user registration on first interaction
-- Tracks user preferences and pincode settings
-- Rate limiting to prevent spam
-
-### Admin Features
-
-- Broadcast messages to all users
-- View comprehensive bot statistics
-- Monitor API sessions and performance
-
----
-
-## 🛡️ Privacy & Disclaimer
-
-- **Privacy**: This bot only stores your Telegram user ID and chosen pincode for functionality
-- **Data Source**: All product data is fetched from the official Amul store (shop.amul.com)
-- **Unofficial**: This project is not affiliated with or endorsed by Amul
-- **Purpose**: Educational and utility project to help users track product availability
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## � Acknowledgments
-
-- [Amul](https://amul.com) for providing the product data through their public API
-- [Telegraf.js](https://telegraf.js.org/) for the excellent Telegram bot framework
-- All contributors and users who help improve this bot
-
----
-
-<div align="center">
-
-**Made with ❤️ by [Swapnil Soni](https://github.com/SwapnilSoni1999)**
-
-[🤖 Try the Bot](https://t.me/AmulOSSBot) • [⭐ Star on GitHub](https://github.com/SwapnilSoni1999/amul-notify) • [📞 Contact](https://t.me/SoniSins)
-
-</div>
+This project is licensed as ISC in `package.json`.

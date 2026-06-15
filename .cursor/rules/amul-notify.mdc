@@ -1,0 +1,20 @@
+---
+description: Amul Notify structure-aware development rules
+globs:
+  - '**/*'
+alwaysApply: true
+---
+
+Read `AGENTS.md` first. It is the canonical guide for this repository.
+
+Use the existing project layers:
+
+- Commands in `src/commands`, actions in `src/actions`, wizards in
+  `src/wizards`, and registration in `src/bot.ts`.
+- Business logic in `src/services`, external clients in `src/libs`, models in
+  `src/models`, and small helpers in `src/utils`.
+- Runtime env belongs in `src/env.ts` and `.env.example`.
+
+Do not edit generated `dist` output. Preserve callback payload stability,
+strict TypeScript guards, secret handling, and the Telegraf middleware ordering
+documented in `AGENTS.md`.

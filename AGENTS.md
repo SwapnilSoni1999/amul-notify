@@ -316,6 +316,7 @@ Current env keys:
 - `MONGO_URI`
 - `BOT_TOKEN`
 - `BOT_WEBHOOK_URL`
+- `BOT_FORCE_POLLING`
 - `REDIS_HOST`
 - `REDIS_PORT`
 - `REDIS_DATABASE_INDEX`
@@ -468,6 +469,16 @@ Validation expectations:
 - The stock checker relies on Redis cache and MongoDB state; local validation
   may not exercise its runtime behavior.
 - Docker uses Bun directly even though package metadata references pnpm.
+
+## AI Tool Bridge Files
+
+`AGENTS.md` is the canonical agent guide. Keep bridge files short and route
+them back here instead of duplicating the full instructions.
+
+- `.github/copilot-instructions.md`: GitHub Copilot workspace instructions.
+- `.cursor/rules/amul-notify.mdc`: Cursor project rule.
+- `CLAUDE.md`: Claude-style agent entrypoint.
+- `docs/ai-development.md`: Human-facing AI-assisted workflow guide.
 
 ## Reusable Structure-Aware Agent Protocol
 
