@@ -11,10 +11,6 @@ import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
-import initCycleTLS, {
-  type CycleTLSClient,
-  type CycleTLSRequestOptions
-} from 'cycletls'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
@@ -74,66 +70,11 @@ const productFields = [
   'lp_seller_ids'
 ]
 
-type ProductListFingerprint = Pick<
-  CycleTLSRequestOptions,
-  'ja3' | 'ja4r' | 'http2Fingerprint'
-> & {
-  name: string
-  userAgent: string
-  headers?: Record<string, string | undefined>
-}
-
-const chrome138UserAgent =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const chrome101UserAgent =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36'
-const firefox141UserAgent =
-  'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0'
-
-const productListFingerprints: ProductListFingerprint[] = [
-  {
-    name: 'chrome-138-ja4r',
-    userAgent: chrome138UserAgent,
-    ja4r: 't13d1516h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0000,0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,fe0d,ff01_0403,0804,0401,0503,0805,0501,0806,0601',
-    http2Fingerprint: '1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p',
-    headers: {
-      'sec-ch-ua':
-        '"Google Chrome";v="138", "Chromium";v="138", "Not/A)Brand";v="24"',
-      'user-agent': chrome138UserAgent
-    }
-  },
-  {
-    name: 'chrome-101-ja3',
-    userAgent: chrome101UserAgent,
-    ja3: '771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513,29-23-24,0',
-    http2Fingerprint: '1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p',
-    headers: {
-      'sec-ch-ua':
-        '"Google Chrome";v="101", "Chromium";v="101", ";Not A Brand";v="99"',
-      'user-agent': chrome101UserAgent
-    }
-  },
-  {
-    name: 'firefox-141-ja3',
-    userAgent: firefox141UserAgent,
-    ja3: '771,4865-4867-4866-49195-49199-52393-52392-49196-49200-49162-49161-49171-49172-51-57-47-53-10,0-23-65281-10-11-35-16-5-51-43-13-45-28-21,29-23-24-25-256-257,0',
-    http2Fingerprint: '1:65536;2:0;4:131072;5:16384|12517377|0|m,p,a,s',
-    headers: {
-      'sec-ch-ua': undefined,
-      'sec-ch-ua-mobile': undefined,
-      'sec-ch-ua-platform': undefined,
-      'user-agent': firefox141UserAgent
-    }
-  }
-]
-
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
   public amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
-  private cycleTLS: CycleTLSClient | undefined
-  private cycleTLSPromise: Promise<CycleTLSClient> | undefined
   public instanceInitializedAt: Date = new Date()
   private storeVersion = 0
 
@@ -341,28 +282,11 @@ export class AmulApi {
     return `${timestamp}:${rand}:${hash}`
   }
 
-  private getProductListHeaders(fingerprint?: ProductListFingerprint) {
-    const headers: Record<string, string> = {
+  private getProductListHeaders() {
+    return {
       ...defaultHeaders,
       referer: 'https://shop.amul.com/en/browse/protein'
     }
-
-    if (!fingerprint) {
-      return headers
-    }
-
-    headers['user-agent'] = fingerprint.userAgent
-
-    for (const [key, value] of Object.entries(fingerprint.headers ?? {})) {
-      if (value === undefined) {
-        delete headers[key]
-        continue
-      }
-
-      headers[key] = value
-    }
-
-    return headers
   }
 
   private getProteinProductsUrl(substoreId?: string) {
@@ -395,98 +319,6 @@ export class AmulApi {
     return `https://shop.amul.com/api/1/entity/ms.products?${query}`
   }
 
-  private async getCycleTLS() {
-    if (!this.cycleTLSPromise) {
-      this.cycleTLSPromise = initCycleTLS({
-        timeout: 30_000
-      })
-    }
-
-    try {
-      this.cycleTLS = await this.cycleTLSPromise
-      return this.cycleTLS
-    } catch (error) {
-      this.cycleTLSPromise = undefined
-      throw error
-    }
-  }
-
-  private getCycleTLSFingerprint(retryCount: number) {
-    const fingerprintIndex =
-      Math.max(retryCount - 2, 0) % productListFingerprints.length
-
-    return productListFingerprints[fingerprintIndex]
-  }
-
-  private parseProductsResponse(data: unknown): AmulProductsResponse {
-    const parsedData = typeof data === 'string' ? JSON.parse(data) : data
-
-    if (
-      typeof parsedData === 'object' &&
-      parsedData !== null &&
-      Array.isArray((parsedData as { data?: unknown }).data)
-    ) {
-      return parsedData as AmulProductsResponse
-    }
-
-    throw new Error('Invalid Amul products response')
-  }
-
-  private async requestProteinProducts(opts: {
-    retryCount: number
-    substoreId?: string
-  }): Promise<AmulProductsResponse> {
-    const { retryCount, substoreId } = opts
-    const url = this.getProteinProductsUrl(substoreId)
-    const cookie = await this.jar.getCookieString('https://shop.amul.com')
-    const tid = await this.calculateTidHeader()
-
-    if (retryCount <= 1) {
-      const response = await this.amulApi.get<AmulProductsResponse>(url, {
-        headers: {
-          ...this.getProductListHeaders(),
-          cookie,
-          tid
-        }
-      })
-
-      return response.data
-    }
-
-    const fingerprint = this.getCycleTLSFingerprint(retryCount)
-    const headers = {
-      ...this.getProductListHeaders(fingerprint),
-      cookie,
-      tid
-    }
-
-    console.log(
-      `Using CycleTLS fingerprint ${fingerprint.name} for getProteinProducts retry ${retryCount}`
-    )
-
-    const cycleTLS = await this.getCycleTLS()
-    const response = await cycleTLS.get(url, {
-      headers,
-      headerOrder: Object.keys(headers),
-      http2Fingerprint: fingerprint.http2Fingerprint,
-      ja3: fingerprint.ja3,
-      ja4r: fingerprint.ja4r,
-      orderAsProvided: true,
-      responseType: 'json',
-      serverName: 'shop.amul.com',
-      timeout: 15,
-      userAgent: fingerprint.userAgent
-    })
-
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(
-        `CycleTLS getProteinProducts failed with status ${response.status}: ${await response.text()}`
-      )
-    }
-
-    return this.parseProductsResponse(response.data)
-  }
-
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
     search?: string
@@ -506,12 +338,18 @@ export class AmulApi {
     const substoreId = this.getSubstoreId()
 
     await ensureVersionPromise
-    const productsResponse = await this.requestProteinProducts({
-      retryCount,
-      substoreId
-    })
+    const response = await this.amulApi.get<AmulProductsResponse>(
+      this.getProteinProductsUrl(substoreId),
+      {
+        headers: {
+          ...this.getProductListHeaders(),
+          cookie: await this.jar.getCookieString('https://shop.amul.com'),
+          tid: await this.calculateTidHeader()
+        }
+      }
+    )
 
-    if (!productsResponse.data.length) {
+    if (!response.data.data.length) {
       console.warn(
         `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
       )
@@ -541,7 +379,7 @@ export class AmulApi {
       {
         substore: this.pincodeRecord.substore
       },
-      productsResponse
+      response.data
     )
 
     if (opts?.search?.length) {
@@ -550,7 +388,7 @@ export class AmulApi {
         `${opts.search.split('').join('.*?')}`,
         'i'
       )
-      const filteredProducts = productsResponse.data.filter(
+      const filteredProducts = response.data.data.filter(
         (product) =>
           fuzzySearchRegex.test(product.name) ||
           fuzzySearchRegex.test(product.sku) ||
@@ -560,18 +398,11 @@ export class AmulApi {
       return filteredProducts
     }
 
-    return productsResponse.data
+    return response.data.data
   }
 
   public close() {
     substoreSessions.delete(this.pincodeRecord.substore)
-    if (this.cycleTLS) {
-      this.cycleTLS.exit().catch((error) => {
-        console.error('Error closing CycleTLS client:', error)
-      })
-      this.cycleTLS = undefined
-      this.cycleTLSPromise = undefined
-    }
   }
 }
 
