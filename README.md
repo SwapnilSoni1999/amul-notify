@@ -5,6 +5,7 @@
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](package.json)
 ![Endpoint Badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fbots.10xdev.me%2Famul-bot%2Fbadge)
 
+
 Amul Notify is a Telegram bot that watches Amul product availability by
 pincode/substore, lets users track products, and sends notifications when stock
 changes. The bot also includes optional paid auto-ordering, admin analytics,
