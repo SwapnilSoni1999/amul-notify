@@ -1,3 +1,4 @@
+import env from '@/env'
 import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import {
@@ -11,6 +12,10 @@ import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
+import { execFile } from 'node:child_process'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
@@ -69,6 +74,136 @@ const productFields = [
   'variants',
   'lp_seller_ids'
 ]
+
+const SHOP_URL = 'https://shop.amul.com'
+const PRODUCT_FETCH_TIMEOUT_MS = 30_000
+
+type ProductCurlResult = {
+  data: AmulProductsResponse
+  setCookies: string[]
+}
+
+const normalizeSetCookieHeader = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string')
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return [value]
+  }
+
+  return []
+}
+
+const extractSetCookies = (rawHeaders: string): string[] => {
+  return rawHeaders
+    .split(/\r?\n/)
+    .flatMap((line) =>
+      line.toLowerCase().startsWith('set-cookie:')
+        ? [line.slice(line.indexOf(':') + 1).trim()]
+        : []
+    )
+}
+
+const shorten = (text: string, maxLength = 240): string => {
+  if (text.length <= maxLength) {
+    return text
+  }
+
+  return `${text.slice(0, maxLength - 3)}...`
+}
+
+const applySetCookies = async (
+  jar: CookieJar,
+  setCookies: string[],
+  requestUrl: string
+) => {
+  const requestHost = new URL(requestUrl).hostname
+
+  for (const cookieString of setCookies) {
+    const cookie = parseCookie(cookieString, { loose: true })
+    if (!cookie || !cookie.key) continue
+
+    cookie.domain = requestHost
+    await jar.setCookie(cookie.toString(), requestUrl)
+  }
+}
+
+const runProductCurlRequest = async (
+  url: string,
+  headers: Record<string, string>,
+  cookieString?: string
+): Promise<ProductCurlResult> => {
+  const startedAt = Date.now()
+  const tempDir = await mkdtemp(join(tmpdir(), 'amul-products-'))
+  const headersPath = join(tempDir, 'headers.txt')
+  const bodyPath = join(tempDir, 'body.txt')
+
+  const args = [url, '-X', 'GET']
+  for (const [key, value] of Object.entries(headers)) {
+    args.push('-H', `${key}: ${value}`)
+  }
+  if (cookieString) {
+    args.push('-b', cookieString)
+  }
+
+  args.push(
+    '-D',
+    headersPath,
+    '-o',
+    bodyPath,
+    '--http2',
+    '--compressed',
+    '--no-progress-meter',
+    '--silent',
+    '--show-error'
+  )
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      execFile(
+        env.CURL_BIN,
+        args,
+        {
+          timeout: PRODUCT_FETCH_TIMEOUT_MS,
+          maxBuffer: 1024 * 1024
+        },
+        (error, _stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr || `${env.CURL_BIN}: ${error.message}`))
+            return
+          }
+
+          resolve()
+        }
+      )
+    })
+
+    const rawHeaders = await readFile(headersPath, 'utf8').catch(() => '')
+    const rawBody = await readFile(bodyPath, 'utf8').catch(() => '')
+
+    if (
+      /<!DOCTYPE html>/i.test(rawBody) ||
+      rawBody.includes('cf-error-details')
+    ) {
+      throw new Error(`Cloudflare or HTML block detected: ${shorten(rawBody)}`)
+    }
+
+    const data = JSON.parse(rawBody) as AmulProductsResponse
+    const setCookies = extractSetCookies(rawHeaders)
+
+    console.log(
+      `curl product fetch finished in ${Date.now() - startedAt}ms with ${data.data.length} products`
+    )
+
+    return {
+      data,
+      setCookies
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+}
 
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
@@ -319,6 +454,33 @@ export class AmulApi {
     return `https://shop.amul.com/api/1/entity/ms.products?${query}`
   }
 
+  private async fetchProteinProducts(
+    url: string,
+    headers: Record<string, string>
+  ): Promise<AmulProductsResponse> {
+    try {
+      const { cookie, ...curlHeaders } = headers
+      const response = await runProductCurlRequest(url, curlHeaders, cookie)
+      await applySetCookies(this.jar, response.setCookies, SHOP_URL)
+      return response.data
+    } catch (error) {
+      console.warn('curl product fetch failed, falling back to Axios:', error)
+      logToChannel(
+        `${new Date().toISOString()} - curl product fetch failed, falling back to Axios: ${error}`
+      )
+    }
+
+    const response = await this.amulApi.get<AmulProductsResponse>(url, {
+      headers
+    })
+    await applySetCookies(
+      this.jar,
+      normalizeSetCookieHeader(response.headers['set-cookie']),
+      url
+    )
+    return response.data
+  }
+
   public async getProteinProducts(opts?: {
     bypassCache?: boolean
     search?: string
@@ -338,18 +500,14 @@ export class AmulApi {
     const substoreId = this.getSubstoreId()
 
     await ensureVersionPromise
-    const response = await this.amulApi.get<AmulProductsResponse>(
-      this.getProteinProductsUrl(substoreId),
-      {
-        headers: {
-          ...this.getProductListHeaders(),
-          cookie: await this.jar.getCookieString('https://shop.amul.com'),
-          tid: await this.calculateTidHeader()
-        }
-      }
-    )
+    const productsUrl = this.getProteinProductsUrl(substoreId)
+    const response = await this.fetchProteinProducts(productsUrl, {
+      ...this.getProductListHeaders(),
+      cookie: await this.jar.getCookieString(SHOP_URL),
+      tid: await this.calculateTidHeader()
+    })
 
-    if (!response.data.data.length) {
+    if (!response.data.length) {
       console.warn(
         `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
       )
@@ -379,7 +537,7 @@ export class AmulApi {
       {
         substore: this.pincodeRecord.substore
       },
-      response.data
+      response
     )
 
     if (opts?.search?.length) {
@@ -388,7 +546,7 @@ export class AmulApi {
         `${opts.search.split('').join('.*?')}`,
         'i'
       )
-      const filteredProducts = response.data.data.filter(
+      const filteredProducts = response.data.filter(
         (product) =>
           fuzzySearchRegex.test(product.name) ||
           fuzzySearchRegex.test(product.sku) ||
@@ -398,7 +556,7 @@ export class AmulApi {
       return filteredProducts
     }
 
-    return response.data.data
+    return response.data
   }
 
   public close() {

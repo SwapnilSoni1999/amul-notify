@@ -29,6 +29,7 @@ jobs:
           echo "TRACKER_ENABLED=${{ vars.PROD_TRACKER_ENABLED }}" >> .env.prod
           echo "BOT_WEBHOOK_URL=${{ vars.PROD_BOT_WEBHOOK_URL}}" >> .env.prod
           echo "BOT_FORCE_POLLING=${{ vars.PROD_BOT_FORCE_POLLING }}" >> .env.prod
+          echo "CURL_BIN=${{ vars.PROD_CURL_BIN }}" >> .env.prod
 
           echo "ORDER_SERVER_API_URL=${{ vars.PROD_ORDER_SERVER_API_URL }}" >> .env.prod
           echo "ORDER_SERVER_API_KEY=${{ secrets.PROD_ORDER_SERVER_API_KEY }}" >> .env.prod
