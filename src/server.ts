@@ -30,7 +30,8 @@ mongoose
       const botSecret = `amul_${bot.secretPathComponent()}`
       console.log(`Setting webhook to: ${env.BOT_WEBHOOK_URL}`)
       await bot.telegram.setWebhook(env.BOT_WEBHOOK_URL, {
-        secret_token: botSecret
+        secret_token: botSecret,
+        drop_pending_updates: true
       })
 
       const url = new URL(env.BOT_WEBHOOK_URL)
@@ -58,9 +59,14 @@ mongoose
       console.log(await bot.telegram.getWebhookInfo())
     } else {
       bot
-        .launch(() => {
-          console.log('Bot is running...')
-        })
+        .launch(
+          {
+            dropPendingUpdates: true
+          },
+          () => {
+            console.log('Bot is running...')
+          }
+        )
         .catch((err) => {
           console.error('Failed to launch bot:', err)
         })
