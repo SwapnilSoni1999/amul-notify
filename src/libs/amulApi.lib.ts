@@ -148,6 +148,7 @@ const runProductCurlRequest = async (
   }
 
   args.push(
+    '--globoff',
     '-D',
     headersPath,
     '-o',
