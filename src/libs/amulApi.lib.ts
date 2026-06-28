@@ -28,15 +28,15 @@ export const substoreSessions: Map<string, AmulApi> = new Map()
 
 export const defaultHeaders = {
   accept: 'application/json, text/plain, */*',
-  'accept-language': 'en-US,en;q=0.9',
+  'accept-language': 'en-US,en;q=0.9,hi;q=0.8,gu;q=0.7',
   base_url: 'https://shop.amul.com/en/browse/protein',
   'cache-control': 'no-cache',
   frontend: '1',
   pragma: 'no-cache',
   priority: 'u=1, i',
-  referer: 'https://shop.amul.com/',
+  referer: 'https://shop.amul.com/en/browse/protein',
   'sec-ch-ua':
-    '"Google Chrome";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+    '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
   'sec-ch-ua-mobile': '?0',
   'sec-ch-ua-platform': '"Linux"',
   'sec-fetch-dest': 'empty',
@@ -44,7 +44,7 @@ export const defaultHeaders = {
   'sec-fetch-site': 'same-origin',
   'sec-gpc': '1',
   'user-agent':
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36'
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36'
 }
 
 const productFields = [
@@ -76,6 +76,7 @@ const productFields = [
 ]
 
 const SHOP_URL = 'https://shop.amul.com'
+const DEFAULT_STORE_VERSION = 5
 const PRODUCT_FETCH_TIMEOUT_MS = 30_000
 
 type ProductCurlResult = {
@@ -155,12 +156,16 @@ const runProductCurlRequest = async (
     bodyPath,
     '--http2',
     '--compressed',
+    '--location',
     '--no-progress-meter',
     '--silent',
-    '--show-error'
+    '--show-error',
+    '--write-out',
+    '%{http_code}'
   )
 
   try {
+    let statusCode = 0
     await new Promise<void>((resolve, reject) => {
       execFile(
         env.CURL_BIN,
@@ -169,12 +174,13 @@ const runProductCurlRequest = async (
           timeout: PRODUCT_FETCH_TIMEOUT_MS,
           maxBuffer: 1024 * 1024
         },
-        (error, _stdout, stderr) => {
+        (error, stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || `${env.CURL_BIN}: ${error.message}`))
             return
           }
 
+          statusCode = Number(stdout.trim())
           resolve()
         }
       )
@@ -183,6 +189,12 @@ const runProductCurlRequest = async (
     const rawHeaders = await readFile(headersPath, 'utf8').catch(() => '')
     const rawBody = await readFile(bodyPath, 'utf8').catch(() => '')
 
+    if (statusCode >= 400) {
+      throw new Error(
+        `Amul products request failed with HTTP ${statusCode}: ${shorten(rawBody)}`
+      )
+    }
+
     if (
       /<!DOCTYPE html>/i.test(rawBody) ||
       rawBody.includes('cf-error-details')
@@ -190,7 +202,21 @@ const runProductCurlRequest = async (
       throw new Error(`Cloudflare or HTML block detected: ${shorten(rawBody)}`)
     }
 
-    const data = JSON.parse(rawBody) as AmulProductsResponse
+    let data: AmulProductsResponse
+    try {
+      data = JSON.parse(rawBody) as AmulProductsResponse
+    } catch (error) {
+      throw new Error(
+        `Amul products response was not JSON: ${shorten(rawBody)} (${error})`
+      )
+    }
+
+    if (!Array.isArray(data.data)) {
+      throw new Error(
+        `Amul products response did not include a data array: ${shorten(rawBody)}`
+      )
+    }
+
     const setCookies = extractSetCookies(rawHeaders)
 
     console.log(
@@ -252,14 +278,14 @@ export class AmulApi {
         logToChannel(
           `${new Date().toISOString()} - Store version not found in response, defaulting to 5`
         )
-        this.storeVersion = 5
+        this.storeVersion = DEFAULT_STORE_VERSION
       }
     } catch (error) {
       console.error('Error fetching store version:', error)
       logToChannel(
         `${new Date().toISOString()} - Error fetching store version: ${error}`
       )
-      this.storeVersion = 0
+      this.storeVersion = DEFAULT_STORE_VERSION
     }
   }
 
@@ -335,14 +361,7 @@ export class AmulApi {
     return this.pincodeRecord
   }
 
-  public async setPincode(record: PincodeRecord) {
-    // await setPincodeQueue({
-    //   tid: await this.calculateTidHeader(),
-    //   cookieStr: await this.jar.getCookieString('https://shop.amul.com'),
-    //   record,
-    //   amulApi: this.amulApi
-    // })
-
+  private async setStorePreference(record: PincodeRecord) {
     const tid = await this.calculateTidHeader()
     const cookieStr = await this.jar.getCookieString('https://shop.amul.com')
 
@@ -361,7 +380,26 @@ export class AmulApi {
         }
       }
     )
-    console.log('Set Pincode Response:', response.data)
+
+    await applySetCookies(
+      this.jar,
+      normalizeSetCookieHeader(response.headers['set-cookie']),
+      SHOP_URL
+    )
+
+    return response.data
+  }
+
+  public async setPincode(record: PincodeRecord) {
+    // await setPincodeQueue({
+    //   tid: await this.calculateTidHeader(),
+    //   cookieStr: await this.jar.getCookieString('https://shop.amul.com'),
+    //   record,
+    //   amulApi: this.amulApi
+    // })
+
+    const response = await this.setStorePreference(record)
+    console.log('Set Pincode Response:', response)
     this.pincodeRecord = record
 
     const existingSubstore: AmulApi | undefined = substoreSessions.get(
@@ -442,7 +480,7 @@ export class AmulApi {
     params.append('total', '1')
     params.append('start', '0')
     // params.append('cdc', '1m')
-    params.append('v', this.storeVersion.toString() || '5')
+    params.append('v', (this.storeVersion || DEFAULT_STORE_VERSION).toString())
     params.append('device_type', 'other')
 
     if (substoreId) {
@@ -462,7 +500,7 @@ export class AmulApi {
     try {
       const { cookie, ...curlHeaders } = headers
       const response = await runProductCurlRequest(url, curlHeaders, cookie)
-      await applySetCookies(this.jar, response.setCookies, SHOP_URL)
+      await applySetCookies(this.jar, response.setCookies, url)
       return response.data
     } catch (error) {
       console.warn('curl product fetch failed, falling back to Axios:', error)
@@ -515,6 +553,16 @@ export class AmulApi {
 
       const maxRetries = 3
       if (retryCount < maxRetries) {
+        await this.setStorePreference(this.pincodeRecord).catch((error) => {
+          console.warn(
+            `Failed to refresh Amul store preference for ${this.getSubstore()}:`,
+            error
+          )
+          logToChannel(
+            `${new Date().toISOString()} - Failed to refresh Amul store preference for ${this.getSubstore()}: ${error}`
+          )
+        })
+
         console.log(
           `Retrying getProteinProducts (attempt ${retryCount + 1}/${maxRetries})...`
         )
