@@ -7,6 +7,7 @@
     "env:dev": "dotenv -e .env.dev --",
     "env:prod": "dotenv -e .env.prod --",
     "build": "bun run lint && tsc && tsc-alias",
+    "test": "tsx --test tests/**/*.test.ts",
     "start": "bun run env:prod bun run dist/server.js",
     "dev": "bun run env:dev bun run --watch src/server.ts",
     "lint": "eslint . --ext .ts",
