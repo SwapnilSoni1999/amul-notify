@@ -8,15 +8,24 @@ import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 import { setServers, getServers } from 'dns'
 import ProductModel from '@/models/product.model'
 import { logToChannel } from '@/utils/logger.util'
+import {
+  createSendMessageOperationId,
+  getSendMessageJobId
+} from './broadcastJobId.util'
 
 interface BroadcastJobData {
   chatId: string | number
   text: string
   extra?: ExtraReplyMessage
+  operationId: string
 }
 
-interface SendMessageQueuePayload extends BroadcastJobData {
+interface SendMessageQueuePayload extends Omit<
+  BroadcastJobData,
+  'operationId'
+> {
   chatId: number
+  operationId?: string
   onComplete?: (error?: Error | TelegramError) => void | Promise<void>
 }
 
@@ -236,7 +245,9 @@ export const sendMessageQueue = async (
   payload: SendMessageQueuePayload
 ): Promise<void> => {
   // console.log('Args:', payload, onComplete)
-  const jobId = String(payload.chatId)
+  const operationId = payload.operationId ?? createSendMessageOperationId()
+  // Keep completion handlers scoped to a specific send operation, not just the target chat.
+  const jobId = getSendMessageJobId(payload.chatId, operationId)
 
   return new Promise<void>((resolve, reject) => {
     const handler: PendingJobHandler = {
@@ -251,10 +262,11 @@ export const sendMessageQueue = async (
         {
           chatId: payload.chatId,
           text: payload.text,
-          extra: payload.extra
+          extra: payload.extra,
+          operationId
         },
         {
-          jobId // Use chatId as job ID to avoid duplicates
+          jobId
         }
       )
       .catch((err) => {

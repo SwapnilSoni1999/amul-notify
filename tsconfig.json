@@ -116,6 +116,7 @@
   },
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "tests"
   ] /* Specify files or folders to exclude from the program. */
 }
