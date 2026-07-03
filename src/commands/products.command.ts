@@ -1,11 +1,8 @@
 import { ACTIONS, AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
-import { getLastInStockAt } from '@/services/amul.service'
 import { ActionContext, CommandContext } from '@/types/context.types'
-import { isAvailableToPurchase } from '@/utils/amul.util'
-import { getAutoOrderButton } from '@/utils/autoOrder.util'
-import { formatProductDetails } from '@/utils/format.util'
 import { escapeHtml } from '@/utils/html.util'
-import { startCommandLink } from '@/utils/telegram.util'
+import { renderProductListItem } from '@/utils/productMessage.util'
+import { chunkTextBlocks, safeDeleteMessage } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 import { inlineKeyboard } from 'telegraf/markup'
 
@@ -82,78 +79,18 @@ export const replyWithAmulProducts = async (
       : 'Amul Products'
   }</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
 
-  const messages: string[][] = []
-
   const productMessageBlocks = await Promise.all(
-    products.map(async (product, index) => {
-      const isAvlblToPurchase = isAvailableToPurchase(product)
-
-      // const trackBtn = link('[Track]', getProductUrl(product))
-
-      const trackBtn = `<b><a href="${await startCommandLink(
-        `track_${product.sku}`
-      )}">[Track]</a></b>`
-
-      const untrackBtn = `<b><a href="${await startCommandLink(
-        `untrack_${product.sku}`
-      )}">[Untrack]</a></b>`
-
-      const isFav = ctx.user.favSkus.includes(product.sku)
-
-      const favBtn = `<b><a href="${await startCommandLink(
-        `fav_${product.sku}`
-      )}">${isFav ? '[Unfavourite]' : '[Favourite]'}</a></b>`
-
-      const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
-
-      const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
-
-      console.log('Auto Order Button:', autoOrderBtn)
-
-      const lastSeen = await getLastInStockAt(
-        product.sku,
-        ctx.amul.getSubstore()!
-      )
-
-      const productMessage = [
-        formatProductDetails(product, isAvlblToPurchase, index, {
-          lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
-          showProtein: category?.id === 'protein'
-        }),
-        `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
-        autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
-      ]
-        .filter(Boolean)
-        .join('\n')
-
-      return productMessage
-    })
+    products.map((product, index) =>
+      renderProductListItem(ctx, product, {
+        index,
+        showProtein: category?.id === 'protein'
+      })
+    )
   )
 
-  // console.log('Product Message Blocks:', productMessageBlocks)
+  await safeDeleteMessage(ctx, waitMsg.message_id)
 
-  let currentChunk: string[] = []
-  for (const block of productMessageBlocks) {
-    if (currentChunk.join('\n\n').length + block.length > 4096) {
-      messages.push(currentChunk)
-      currentChunk = []
-    }
-
-    currentChunk.push(block)
-  }
-
-  if (currentChunk.length > 0) {
-    // console.log('Pushing last chunk:', currentChunk.length)
-    messages.push(currentChunk)
-  }
-
-  // console.log('Messages:', messages)
-
-  await ctx.deleteMessage(waitMsg.message_id).catch(() => {
-    // ignore if message is not found
-  })
-
-  if (!messages.length) {
+  if (!productMessageBlocks.length) {
     await ctx.reply(
       [
         title,
@@ -169,27 +106,16 @@ export const replyWithAmulProducts = async (
     return
   }
 
-  for (let i = 0; i < messages.length; i++) {
-    const chunk = messages[i]
-    if (i === 0) {
-      // attach title only to the first message
-      chunk.unshift(title)
-    }
+  const messages = chunkTextBlocks([title, ...productMessageBlocks])
 
-    await ctx.reply(chunk.join('\n\n'), {
+  for (let i = 0; i < messages.length; i++) {
+    await ctx.reply(messages[i], {
       parse_mode: 'HTML',
       link_preview_options: {
         is_disabled: true
       }
     })
   }
-
-  // await ctx.reply(message, {
-  //   parse_mode: 'HTML',
-  //   link_preview_options: {
-  //     is_disabled: true
-  //   }
-  // })
 }
 
 export const productsCommand: MiddlewareFn<CommandContext> = async (

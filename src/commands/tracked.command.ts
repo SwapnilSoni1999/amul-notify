@@ -1,11 +1,7 @@
-import { getLastInStockAt } from '@/services/amul.service'
 import { CommandContext } from '@/types/context.types'
-import { isAvailableToPurchase } from '@/utils/amul.util'
-import { getAutoOrderButton } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
-import { formatProductDetails } from '@/utils/format.util'
 import { logToChannel } from '@/utils/logger.util'
-import { startCommandLink } from '@/utils/telegram.util'
+import { renderProductListItem } from '@/utils/productMessage.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const trackedCommand: MiddlewareFn<CommandContext> = async (
@@ -33,45 +29,13 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
           return `${emojis.crossMark} Product with SKU ${trackedProduct.sku} not found.`
         }
 
-        const isAvlblToPurchase = isAvailableToPurchase(product)
-
-        const trackBtn = `<b><a href="${await startCommandLink(
-          `track_${product.sku}`
-        )}">[Track]</a></b>`
-
-        const untrackBtn = `<b><a href="${await startCommandLink(
-          `untrack_${product.sku}`
-        )}">[Untrack]</a></b>`
-
-        const isFav = ctx.user.favSkus.includes(product.sku)
-
-        const favBtn = `<b><a href="${await startCommandLink(
-          `fav_${product.sku}`
-        )}">${isFav ? '[Unfavourite]' : '[Favourite]'}</a></b>`
-
-        const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
-        console.log('isTracked:', isTracked)
-
-        const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
-
-        const lastSeen = await getLastInStockAt(
-          product.sku,
-          ctx.amul.getSubstore()!
-        )
-
-        return [
-          formatProductDetails(product, isAvlblToPurchase, index, {
-            lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
-            remainingNotifyCount:
-              ctx.user.settings?.trackingStyle === 'always'
-                ? trackedProduct.remainingNotifyCount
-                : undefined
-          }),
-          `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
-          autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
-        ]
-          .filter(Boolean)
-          .join('\n')
+        return renderProductListItem(ctx, product, {
+          index,
+          remainingNotifyCount:
+            ctx.user.settings?.trackingStyle === 'always'
+              ? trackedProduct.remainingNotifyCount
+              : undefined
+        })
       })
     ))
   ].join('\n\n')
@@ -83,5 +47,5 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
     }
   })
 
-  next()
+  return next()
 }

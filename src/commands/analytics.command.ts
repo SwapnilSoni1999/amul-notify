@@ -2,6 +2,7 @@ import { getAmulApiFromSubstore } from '@/services/amul.service'
 import { getSkusWithSubstoresCountSorted } from '@/services/analytics.service'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
+import { chunkTextBlocks } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 
 export const analyticsCommand: MiddlewareFn<CommandContext> = async (
@@ -35,21 +36,8 @@ export const analyticsCommand: MiddlewareFn<CommandContext> = async (
   })
 
   const messages = await Promise.all(mappedMessage)
+  const chunks = chunkTextBlocks(messages)
 
-  // split messages into chunks of 4096 characters
-  const chunks: string[] = []
-  let currentChunk = ''
-  for (const message of messages) {
-    if (currentChunk.length + message.length > 4096) {
-      chunks.push(currentChunk)
-      currentChunk = ''
-    }
-    currentChunk += message + '\n\n'
-  }
-  if (currentChunk) {
-    chunks.push(currentChunk)
-  }
-  // send each chunk
   for (const chunk of chunks) {
     await ctx.replyWithHTML(chunk, {
       link_preview_options: {

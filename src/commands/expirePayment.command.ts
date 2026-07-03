@@ -1,30 +1,15 @@
 import { TIMEZONE } from '@/config'
 import dayjs from '@/libs/dayjs.lib'
-import UserModel, { HydratedUser } from '@/models/user.model'
 import { expireActiveAutoBookingPayments } from '@/services/payment.service'
 import { CommandContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
+import {
+  formatUserLabel,
+  lookupUserByTelegramIdentifier
+} from '@/utils/userLookup.util'
 import { MiddlewareFn } from 'telegraf'
 
 const USAGE = `${emojis.info} Usage: /expirepayment <@username_or_tgId>`
-const TELEGRAM_ID_REGEX = /^\d+$/
-const TELEGRAM_USERNAME_REGEX = /^[a-zA-Z0-9_]{5,32}$/
-
-const escapeRegExp = (value: string): string => {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-const formatUserLabel = (user: HydratedUser, fallback: string): string => {
-  if (user.tgUsername) {
-    return `@${user.tgUsername}`
-  }
-
-  if (user.tgId) {
-    return String(user.tgId)
-  }
-
-  return fallback
-}
 
 export const expirePaymentCommand: MiddlewareFn<CommandContext> = async (
   ctx,
@@ -38,49 +23,27 @@ export const expirePaymentCommand: MiddlewareFn<CommandContext> = async (
     return next()
   }
 
-  const identifier = identifierArg.trim().replace(/^@/, '')
-  const isTgId = TELEGRAM_ID_REGEX.test(identifier)
-  let user: HydratedUser | null
-  let targetLabel: string
-  let notFoundLabel: string
-
-  if (isTgId) {
-    const tgId = Number(identifier)
-
-    if (!Number.isSafeInteger(tgId) || tgId <= 0) {
+  const lookupResult = await lookupUserByTelegramIdentifier(identifierArg)
+  if (lookupResult.status !== 'found') {
+    if (lookupResult.status === 'invalid_tg_id') {
       await ctx.reply(`${emojis.warning} Invalid Telegram ID. ${USAGE}`)
       return next()
     }
 
-    user = await UserModel.findOne({
-      tgId
-    })
-    targetLabel = String(tgId)
-    notFoundLabel = `with Telegram ID ${tgId}`
-  } else {
-    const username = identifier
-
-    if (!TELEGRAM_USERNAME_REGEX.test(username)) {
+    if (lookupResult.status === 'invalid_identifier') {
       await ctx.reply(
         `${emojis.warning} Invalid Telegram username or ID. ${USAGE}`
       )
       return next()
     }
 
-    user = await UserModel.findOne({
-      tgUsername: {
-        $regex: new RegExp(`^${escapeRegExp(username)}$`, 'i')
-      }
-    })
-    targetLabel = `@${username}`
-    notFoundLabel = targetLabel
-  }
-
-  if (!user) {
-    await ctx.reply(`${emojis.crossMark} User ${notFoundLabel} was not found.`)
+    await ctx.reply(
+      `${emojis.crossMark} User ${lookupResult.notFoundLabel} was not found.`
+    )
     return next()
   }
 
+  const { user, targetLabel } = lookupResult
   const expiredPayments = await expireActiveAutoBookingPayments(user)
   const expiredAt = dayjs().tz(TIMEZONE).format('DD MMM YYYY, hh:mm A')
   let notified = false

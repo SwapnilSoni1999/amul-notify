@@ -1,6 +1,7 @@
 import { replyWithAmulProducts } from '@/commands/products.command'
 import { AMUL_PRODUCT_CATEGORIES } from '@/config'
 import { ActionContext } from '@/types/context.types'
+import { safeDeleteMessage } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 
 const getCategoryMenuMessageId = (ctx: ActionContext) => {
@@ -37,9 +38,7 @@ export const selectProductCategoryAction: MiddlewareFn<ActionContext> = async (
     delete ctx.session.productSearchQueries[menuMessageId]
   }
 
-  await ctx.deleteMessage().catch(() => {
-    // ignore if the menu message cannot be deleted
-  })
+  await safeDeleteMessage(ctx)
 
   await replyWithAmulProducts(ctx, {
     category,
