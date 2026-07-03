@@ -1,4 +1,3 @@
-import env from '@/env'
 import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import {
@@ -12,10 +11,6 @@ import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
-import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
@@ -77,12 +72,6 @@ const productFields = [
 
 const SHOP_URL = 'https://shop.amul.com'
 const DEFAULT_STORE_VERSION = 5
-const PRODUCT_FETCH_TIMEOUT_MS = 30_000
-
-type ProductCurlResult = {
-  data: AmulProductsResponse
-  setCookies: string[]
-}
 
 const normalizeSetCookieHeader = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -94,24 +83,6 @@ const normalizeSetCookieHeader = (value: unknown): string[] => {
   }
 
   return []
-}
-
-const extractSetCookies = (rawHeaders: string): string[] => {
-  return rawHeaders
-    .split(/\r?\n/)
-    .flatMap((line) =>
-      line.toLowerCase().startsWith('set-cookie:')
-        ? [line.slice(line.indexOf(':') + 1).trim()]
-        : []
-    )
-}
-
-const shorten = (text: string, maxLength = 240): string => {
-  if (text.length <= maxLength) {
-    return text
-  }
-
-  return `${text.slice(0, maxLength - 3)}...`
 }
 
 const applySetCookies = async (
@@ -127,108 +98,6 @@ const applySetCookies = async (
 
     cookie.domain = requestHost
     await jar.setCookie(cookie.toString(), requestUrl)
-  }
-}
-
-const runProductCurlRequest = async (
-  url: string,
-  headers: Record<string, string>,
-  cookieString?: string
-): Promise<ProductCurlResult> => {
-  const startedAt = Date.now()
-  const tempDir = await mkdtemp(join(tmpdir(), 'amul-products-'))
-  const headersPath = join(tempDir, 'headers.txt')
-  const bodyPath = join(tempDir, 'body.txt')
-
-  const args = [url, '-X', 'GET']
-  for (const [key, value] of Object.entries(headers)) {
-    args.push('-H', `${key}: ${value}`)
-  }
-  if (cookieString) {
-    args.push('-b', cookieString)
-  }
-
-  args.push(
-    '--globoff',
-    '-D',
-    headersPath,
-    '-o',
-    bodyPath,
-    '--http2',
-    '--compressed',
-    '--location',
-    '--no-progress-meter',
-    '--silent',
-    '--show-error',
-    '--write-out',
-    '%{http_code}'
-  )
-
-  try {
-    let statusCode = 0
-    await new Promise<void>((resolve, reject) => {
-      execFile(
-        env.CURL_BIN,
-        args,
-        {
-          timeout: PRODUCT_FETCH_TIMEOUT_MS,
-          maxBuffer: 1024 * 1024
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(new Error(stderr || `${env.CURL_BIN}: ${error.message}`))
-            return
-          }
-
-          statusCode = Number(stdout.trim())
-          resolve()
-        }
-      )
-    })
-
-    const rawHeaders = await readFile(headersPath, 'utf8').catch(() => '')
-    const rawBody = await readFile(bodyPath, 'utf8').catch(() => '')
-
-    if (statusCode >= 400) {
-      throw new Error(
-        `Amul products request failed with HTTP ${statusCode}: ${shorten(rawBody)}`
-      )
-    }
-
-    if (
-      /<!DOCTYPE html>/i.test(rawBody) ||
-      rawBody.includes('cf-error-details')
-    ) {
-      throw new Error(`Cloudflare or HTML block detected: ${shorten(rawBody)}`)
-    }
-
-    let data: AmulProductsResponse
-    try {
-      data = JSON.parse(rawBody) as AmulProductsResponse
-    } catch (error) {
-      throw new Error(
-        `Amul products response was not JSON: ${shorten(rawBody)} (${error})`
-      )
-    }
-
-    if (!Array.isArray(data.data)) {
-      throw new Error(
-        `Amul products response did not include a data array: ${shorten(rawBody)}`
-      )
-    }
-
-    const setCookies = extractSetCookies(rawHeaders)
-
-    console.log(
-      `curl product fetch finished in ${Date.now() - startedAt}ms with ${data.data.length} products`
-    )
-
-    return {
-      data,
-      setCookies
-    }
-  } finally {
-    await rm(tempDir, { recursive: true, force: true })
   }
 }
 
@@ -497,18 +366,6 @@ export class AmulApi {
     url: string,
     headers: Record<string, string>
   ): Promise<AmulProductsResponse> {
-    try {
-      const { cookie, ...curlHeaders } = headers
-      const response = await runProductCurlRequest(url, curlHeaders, cookie)
-      await applySetCookies(this.jar, response.setCookies, url)
-      return response.data
-    } catch (error) {
-      console.warn('curl product fetch failed, falling back to Axios:', error)
-      logToChannel(
-        `${new Date().toISOString()} - curl product fetch failed, falling back to Axios: ${error}`
-      )
-    }
-
     const response = await this.amulApi.get<AmulProductsResponse>(url, {
       headers
     })

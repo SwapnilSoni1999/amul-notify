@@ -27,12 +27,6 @@ const envSchema = z.object({
     .default('true')
     .transform((val) => val === 'true'),
 
-  // Curl impersonate
-  CURL_BIN: z
-    .string()
-    .optional()
-    .transform((val) => val?.trim() || 'curl'),
-
   // PAY URL
   PAY_URL: z.string().default('https://razorpay.me/@10xdev'),
 
