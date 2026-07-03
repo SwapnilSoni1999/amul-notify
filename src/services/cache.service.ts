@@ -1,22 +1,18 @@
 import redis from '@/redis'
 import { AmulProduct, AmulProductsResponse } from '@/types/amul.types'
 
-interface ProductsCacheKeyData {
+interface SubstoreCacheKeyData {
   substore: string
-  categories?: readonly string[]
+}
+
+interface ProductsCacheKeyData extends SubstoreCacheKeyData {
+  category: string
 }
 
 const getProductsKey = (keyData: ProductsCacheKeyData) => {
-  if (!keyData.categories?.length) {
-    return `amul:products:${keyData.substore}`
-  }
-
-  const categories = [...keyData.categories]
-    .sort()
-    .map((category) => encodeURIComponent(category))
-    .join(',')
-
-  return `amul:products:${keyData.substore}:categories:${categories}`
+  return `amul:products:${keyData.substore}:category:${encodeURIComponent(
+    keyData.category
+  )}`
 }
 
 const products = {
@@ -37,24 +33,22 @@ const products = {
     const cachedData = await redis.get(key)
     return cachedData ? JSON.parse(cachedData) : null
   },
-  delete: async (keyData: ProductsCacheKeyData) => {
-    const baseKey = getProductsKey({
-      substore: keyData.substore
-    })
+  delete: async (keyData: SubstoreCacheKeyData) => {
+    const baseKey = `amul:products:${keyData.substore}`
     const keys = [baseKey]
     let cursor = '0'
 
     do {
-      const [nextCursor, categoryKeys] = await redis.scan(
+      const [nextCursor, productKeys] = await redis.scan(
         cursor,
         'MATCH',
-        `${baseKey}:categories:*`,
+        `${baseKey}:category*`,
         'COUNT',
         100
       )
 
       cursor = nextCursor
-      keys.push(...categoryKeys)
+      keys.push(...productKeys)
     } while (cursor !== '0')
 
     await redis.del(...keys)
@@ -62,7 +56,7 @@ const products = {
 }
 
 const jobData = {
-  set: async (keyData: ProductsCacheKeyData, value: AmulProduct[]) => {
+  set: async (keyData: SubstoreCacheKeyData, value: AmulProduct[]) => {
     const key = `amul:jobdata:${keyData.substore}`
     return await redis.set(
       key,
@@ -71,12 +65,12 @@ const jobData = {
       15 * 60 // Cache for 15 minutes
     )
   },
-  get: async (keyData: ProductsCacheKeyData): Promise<AmulProduct[] | null> => {
+  get: async (keyData: SubstoreCacheKeyData): Promise<AmulProduct[] | null> => {
     const key = `amul:jobdata:${keyData.substore}`
     const cachedData = await redis.get(key)
     return cachedData ? JSON.parse(cachedData) : null
   },
-  delete: async (keyData: ProductsCacheKeyData) => {
+  delete: async (keyData: SubstoreCacheKeyData) => {
     await redis.del(`amul:jobdata:${keyData.substore}`)
   }
 }

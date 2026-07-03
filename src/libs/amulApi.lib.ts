@@ -389,6 +389,73 @@ export class AmulApi {
     return response.data
   }
 
+  private async getCachedProductsByCategory(
+    categories: readonly AmulProductCategory[]
+  ): Promise<AmulProduct[] | null> {
+    const cachedResponses = await Promise.all(
+      categories.map((category) =>
+        cacheService.products.get({
+          substore: this.pincodeRecord.substore,
+          category: category.id
+        })
+      )
+    )
+
+    if (cachedResponses.some((response) => !response)) {
+      return null
+    }
+
+    const productsBySku = new Map<string, AmulProduct>()
+    for (const response of cachedResponses) {
+      for (const product of response?.data ?? []) {
+        if (!productsBySku.has(product.sku)) {
+          productsBySku.set(product.sku, product)
+        }
+      }
+    }
+
+    return [...productsBySku.values()]
+  }
+
+  private async cacheProductsByCategory(
+    response: AmulProductsResponse,
+    categories: readonly AmulProductCategory[]
+  ) {
+    const isSingleCategoryRequest = categories.length === 1
+
+    await Promise.all(
+      categories.flatMap((category) => {
+        const products = response.data.filter((product) => {
+          if (product.categories?.includes(category.id)) {
+            return true
+          }
+
+          return isSingleCategoryRequest && !product.categories?.length
+        })
+
+        if (!products.length && !isSingleCategoryRequest) {
+          return []
+        }
+
+        const categoryResponse: AmulProductsResponse = {
+          ...response,
+          data: products,
+          total: products.length,
+          start: 0,
+          limit: products.length
+        }
+
+        return cacheService.products.set(
+          {
+            substore: this.pincodeRecord.substore,
+            category: category.id
+          },
+          categoryResponse
+        )
+      })
+    )
+  }
+
   public async getAmulProducts(opts?: {
     bypassCache?: boolean
     search?: string
@@ -402,12 +469,6 @@ export class AmulApi {
     const categories = requestedCategories?.length
       ? requestedCategories
       : AMUL_PRODUCT_CATEGORIES
-    const cacheKeyData = {
-      substore: this.pincodeRecord.substore,
-      categories: hasCategoryFilter
-        ? categories.map((category) => category.id)
-        : undefined
-    }
     const filterProducts = (products: AmulProduct[]) => {
       if (!opts?.search?.length) {
         return products
@@ -427,10 +488,12 @@ export class AmulApi {
       )
     }
 
-    const cachedProducts = await cacheService.products.get(cacheKeyData)
+    const cachedProducts = bypassCache
+      ? null
+      : await this.getCachedProductsByCategory(categories)
 
-    if (cachedProducts && !bypassCache) {
-      return filterProducts(cachedProducts.data)
+    if (cachedProducts) {
+      return filterProducts(cachedProducts)
     }
 
     const substoreId = this.getSubstoreId()
@@ -449,7 +512,7 @@ export class AmulApi {
       )
 
       if (hasCategoryFilter) {
-        await cacheService.products.set(cacheKeyData, response)
+        await this.cacheProductsByCategory(response, categories)
         return []
       }
 
@@ -485,7 +548,7 @@ export class AmulApi {
 
     // console.log('Response:', response.request)
 
-    await cacheService.products.set(cacheKeyData, response)
+    await this.cacheProductsByCategory(response, categories)
 
     return filterProducts(response.data)
   }
