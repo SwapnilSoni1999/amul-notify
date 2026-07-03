@@ -10,7 +10,36 @@ import { inlineKeyboard } from 'telegraf/markup'
 
 type ProductListContext = CommandContext | ActionContext
 
-export const replyWithProductCategoryMenu = async (ctx: ProductListContext) => {
+const escapeHtml = (value: string): string => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+const rememberProductSearchQuery = (
+  ctx: ProductListContext,
+  messageId: number,
+  search: string
+) => {
+  const productSearchQueries = {
+    ...(ctx.session.productSearchQueries ?? {}),
+    [messageId]: search
+  }
+
+  ctx.session.productSearchQueries = Object.fromEntries(
+    Object.entries(productSearchQueries).slice(-10)
+  )
+}
+
+export const replyWithProductCategoryMenu = async (
+  ctx: ProductListContext,
+  opts?: {
+    search?: string
+  }
+) => {
   const keyboard = inlineKeyboard(
     AMUL_PRODUCT_CATEGORIES.map((category) => ({
       text: `${category.emoji} ${category.label}`,
@@ -19,17 +48,23 @@ export const replyWithProductCategoryMenu = async (ctx: ProductListContext) => {
     { columns: 2 }
   )
 
-  await ctx.reply(
+  const menuMessage = await ctx.reply(
     [
       `<b>Amul Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
       ``,
-      `Select a category to view products.`
+      opts?.search
+        ? `Select a category to search for <b>${escapeHtml(opts.search)}</b>.`
+        : `Select a category to view products.`
     ].join('\n'),
     {
       parse_mode: 'HTML',
       reply_markup: keyboard.reply_markup
     }
   )
+
+  if (opts?.search) {
+    rememberProductSearchQuery(ctx, menuMessage.message_id, opts.search)
+  }
 }
 
 export const replyWithAmulProducts = async (
@@ -171,12 +206,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
 ) => {
   const query = ctx.payload?.trim()
 
-  if (!query) {
-    await replyWithProductCategoryMenu(ctx)
-    return next()
-  }
-
-  await replyWithAmulProducts(ctx, {
+  await replyWithProductCategoryMenu(ctx, {
     search: query
   })
 

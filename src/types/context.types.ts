@@ -10,11 +10,17 @@ import {
 } from 'telegraf/typings/core/types/typegram'
 import { CommandContextExtn } from 'telegraf/typings/telegram-types'
 
+export interface MySession
+  extends Scenes.WizardSession<Scenes.WizardSessionData> {
+  productSearchQueries?: Record<number, string>
+}
+
 export interface MyContext<U extends Deunionize<Update> = Update>
   extends Context<U> {
   user: HydratedUser
   amul: AmulApi
   trackedProducts: HydratedProduct[]
+  session: MySession
   scene: Scenes.SceneContextScene<MyContext, Scenes.WizardSessionData>
   // declare wizard type
   wizard: Scenes.WizardContextWizard<MyContext>
