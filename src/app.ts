@@ -21,6 +21,7 @@ import {
 import { emojis } from './utils/emoji.util'
 import { DEFAULT_AUTO_BOOKING_PAYMENT_PLAN } from './config'
 import { logToChannel } from './utils/logger.util'
+import { escapeHtml } from './utils/html.util'
 
 const app = express()
 
@@ -29,15 +30,6 @@ app.use(morgan(env.NODE_ENV !== 'production' ? 'dev' : 'combined'))
 
 if (env.NODE_ENV === 'production') {
   app.enable('trust proxy')
-}
-
-const escapeHtml = (value: string): string => {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
 }
 
 const getBotUrl = async (): Promise<string> => {

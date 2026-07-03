@@ -4,20 +4,12 @@ import { ActionContext, CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { getAutoOrderButton } from '@/utils/autoOrder.util'
 import { formatProductDetails } from '@/utils/format.util'
+import { escapeHtml } from '@/utils/html.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
 import { inlineKeyboard } from 'telegraf/markup'
 
 type ProductListContext = CommandContext | ActionContext
-
-const escapeHtml = (value: string): string => {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
 
 const rememberProductSearchQuery = (
   ctx: ProductListContext,
