@@ -53,7 +53,7 @@ export const formatProductDetails = (
       product.name
     }</a></b>`,
     showProtein ? `${emptySpace(5)}Protein: <b>${protein}</b>` : null,
-    `${emptySpace(5)}Price: <b>${product.price}</b>`,
+    `${emptySpace(5)}Price: <b>${product.price}₹</b>`,
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`
     }</b>`,
