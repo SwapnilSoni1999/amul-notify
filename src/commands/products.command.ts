@@ -1,25 +1,59 @@
+import { ACTIONS, AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
 import { getLastInStockAt } from '@/services/amul.service'
-import { CommandContext } from '@/types/context.types'
+import { ActionContext, CommandContext } from '@/types/context.types'
 import { isAvailableToPurchase } from '@/utils/amul.util'
 import { getAutoOrderButton } from '@/utils/autoOrder.util'
 import { formatProductDetails } from '@/utils/format.util'
 import { startCommandLink } from '@/utils/telegram.util'
 import { MiddlewareFn } from 'telegraf'
+import { inlineKeyboard } from 'telegraf/markup'
 
-export const productsCommand: MiddlewareFn<CommandContext> = async (
-  ctx,
-  next
+type ProductListContext = CommandContext | ActionContext
+
+export const replyWithProductCategoryMenu = async (ctx: ProductListContext) => {
+  const keyboard = inlineKeyboard(
+    AMUL_PRODUCT_CATEGORIES.map((category) => ({
+      text: `${category.emoji} ${category.label}`,
+      callback_data: `${ACTIONS.products.categoryPrefix}${category.id}`
+    })),
+    { columns: 2 }
+  )
+
+  await ctx.reply(
+    [
+      `<b>Amul Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
+      ``,
+      `Select a category to view products.`
+    ].join('\n'),
+    {
+      parse_mode: 'HTML',
+      reply_markup: keyboard.reply_markup
+    }
+  )
+}
+
+export const replyWithAmulProducts = async (
+  ctx: ProductListContext,
+  opts?: {
+    search?: string
+    category?: AmulProductCategory
+  }
 ) => {
-  const query = ctx.payload
-
   const waitMsg = await ctx.reply(`Fetching from Amul... Please wait...`)
+  const category = opts?.category
 
   const products = await ctx.amul.getAmulProducts({
-    search: query
+    bypassCache: false,
+    search: opts?.search,
+    categories: category ? [category] : undefined
   })
   //   console.log('Products:', products)
 
-  const title = `<b>Amul Protein Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
+  const title = `<b>${
+    category
+      ? `Amul ${category.emoji} ${category.label} Products`
+      : 'Amul Products'
+  }</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
 
   const messages: string[][] = []
 
@@ -55,12 +89,10 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
       )
 
       const productMessage = [
-        formatProductDetails(
-          product,
-          isAvlblToPurchase,
-          index,
-          lastSeen?.lastSeenInStockAt
-        ),
+        formatProductDetails(product, isAvlblToPurchase, index, {
+          lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
+          showProtein: category?.id === 'protein'
+        }),
         `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
         autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
       ]
@@ -94,6 +126,22 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
     // ignore if message is not found
   })
 
+  if (!messages.length) {
+    await ctx.reply(
+      [
+        title,
+        ``,
+        opts?.search
+          ? `No products found for <b>${opts.search}</b>.`
+          : `No products found.`
+      ].join('\n'),
+      {
+        parse_mode: 'HTML'
+      }
+    )
+    return
+  }
+
   for (let i = 0; i < messages.length; i++) {
     const chunk = messages[i]
     if (i === 0) {
@@ -115,6 +163,22 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
   //     is_disabled: true
   //   }
   // })
+}
 
-  next()
+export const productsCommand: MiddlewareFn<CommandContext> = async (
+  ctx,
+  next
+) => {
+  const query = ctx.payload?.trim()
+
+  if (!query) {
+    await replyWithProductCategoryMenu(ctx)
+    return next()
+  }
+
+  await replyWithAmulProducts(ctx, {
+    search: query
+  })
+
+  return next()
 }

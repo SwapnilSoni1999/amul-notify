@@ -285,15 +285,10 @@ const stockCheckerJob = schedule(
 
             const message = [
               `${emojis.fire} <b>Product Update: ${product.name}</b>`,
-              formatProductDetails(
-                product,
-                isAvailablForPurchase,
-                0,
-                undefined,
-                undefined,
-                user.pincode,
-                user.substore
-              ),
+              formatProductDetails(product, isAvailablForPurchase, 0, {
+                pincode: user.pincode,
+                substore: user.substore
+              }),
               '',
               await getInfoMessage()
               // Show untracked info

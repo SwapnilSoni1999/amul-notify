@@ -6,6 +6,14 @@ import { TIMEZONE } from '@/config'
 
 type Nullish<T> = T | undefined | null
 
+interface ProductDetailsFormatOptions {
+  lastSeenInStockAt?: Date
+  remainingNotifyCount?: number
+  pincode?: Nullish<string>
+  substore?: Nullish<string>
+  showProtein?: boolean
+}
+
 export const emptySpace = (count: number): string => {
   return ' '.repeat(count)
 }
@@ -14,11 +22,15 @@ export const formatProductDetails = (
   product: AmulProduct,
   isAvlblToPurchase: boolean,
   index: number,
-  lastSeenInStockAt?: Date,
-  remainingNotifyCount?: number,
-  pincode?: Nullish<string>,
-  substore?: Nullish<string>
+  options: ProductDetailsFormatOptions = {}
 ) => {
+  const {
+    lastSeenInStockAt,
+    remainingNotifyCount,
+    pincode,
+    substore,
+    showProtein = true
+  } = options
   const proteinRegex =
     /<li>[^<]*?(\d+(?:\.\d+)?)(?:\s*(g|kg|mg|%))?[^<]*?\b[Pp]rotein\b.*?<\/li>/g
 
@@ -40,7 +52,7 @@ export const formatProductDetails = (
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${
       product.name
     }</a></b>`,
-    `${emptySpace(5)}Protein: <b>${protein}</b>`,
+    showProtein ? `${emptySpace(5)}Protein: <b>${protein}</b>` : null,
     `${emptySpace(5)}Price: <b>${product.price}</b>`,
     `${emptySpace(5)}In Stock: <b>${
       isAvlblToPurchase ? `Yes ${emojis.greenDot}` : `No ${emojis.redDot}`

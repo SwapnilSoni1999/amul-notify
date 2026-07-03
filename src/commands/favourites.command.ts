@@ -54,12 +54,9 @@ export const favouritesCommand: MiddlewareFn<CommandContext> = async (
         const autoOrderBtn = await getAutoOrderButton(ctx.user, product.sku)
 
         return [
-          formatProductDetails(
-            product,
-            isAvlblToPurchase,
-            index,
-            lastSeen?.lastSeenInStockAt
-          ),
+          formatProductDetails(product, isAvlblToPurchase, index, {
+            lastSeenInStockAt: lastSeen?.lastSeenInStockAt
+          }),
           `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
           autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
         ].join('\n')

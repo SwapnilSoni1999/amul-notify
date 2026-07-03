@@ -60,15 +60,13 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
         )
 
         return [
-          formatProductDetails(
-            product,
-            isAvlblToPurchase,
-            index,
-            lastSeen?.lastSeenInStockAt,
-            ctx.user.settings?.trackingStyle === 'always'
-              ? trackedProduct.remainingNotifyCount
-              : undefined
-          ),
+          formatProductDetails(product, isAvlblToPurchase, index, {
+            lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
+            remainingNotifyCount:
+              ctx.user.settings?.trackingStyle === 'always'
+                ? trackedProduct.remainingNotifyCount
+                : undefined
+          }),
           `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
           autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
         ]

@@ -6,7 +6,7 @@ export const userCommands: readonly BotCommand[] = [
   { command: 'start', description: 'Start the bot' },
   { command: 'setpincode', description: 'Set your pincode' },
   { command: 'pincode', description: 'Get your current pincode' },
-  { command: 'products', description: 'List all protein products' },
+  { command: 'products', description: 'Browse Amul products' },
   { command: 'autoorder', description: 'Toggle auto-ordering of products' },
   { command: 'settings', description: 'View or change your settings' },
   { command: 'tracked', description: 'List all tracked products' },
@@ -54,6 +54,9 @@ export const DEFAULT_AUTO_BOOKING_PAYMENT_PLAN = AUTO_BOOKING_PAYMENT_PLANS[0]
 
 export const ACTIONS = {
   home: 'home',
+  products: {
+    categoryPrefix: 'products:category:'
+  },
   settings: {
     trackingStyle: {
       toggle: 'settings:trackingStyle:toggle',

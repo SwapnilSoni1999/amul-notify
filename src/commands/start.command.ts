@@ -46,11 +46,11 @@ export const startCommand: MiddlewareFn<CommandContext> = async (ctx, next) => {
     ctx.user && ctx.user.pincode?.length && ctx.user.substore?.length
       ? `Your Current Pincode: <b>${ctx.user.pincode} (${ctx.user.substore})</b>`
       : null,
-    `I help you track availability of Amul's protein products, including shakes, lassi, paneer and more.`,
+    `I help you track availability of Amul products by category, including protein products, chocolates, ghee and more.`,
     ``,
     `Here’s what I can do:`,
     `• <b>/setpincode</b> – Set your pincode to get local stock updates`,
-    `• <b>/products</b> – List all protein products to track`,
+    `• <b>/products</b> – Browse products by category`,
     `          OR`,
     `• <b>/products &lt;search_query&gt;</b> – Search for a specific product by name`,
     `<i>Tip: Hold the command from the menu to instantly add the command.</i>`,

@@ -39,6 +39,7 @@ import { homeAction } from './actions/home.action'
 import { freeTrialCommand } from './commands/freeTrial.command'
 import { autoOrderHowItWorksAction } from './actions/autoOrderHowItWorks.action'
 import { expirePaymentCommand } from './commands/expirePayment.command'
+import { selectProductCategoryAction } from './actions/selectProductCategory.action'
 
 const bot = new Telegraf<MyContext>(env.BOT_TOKEN)
 
@@ -114,6 +115,11 @@ bot.action(
 )
 
 bot.action(ACTIONS.home, withCatchAsync(homeAction))
+
+bot.action(
+  new RegExp(`^${ACTIONS.products.categoryPrefix}(.+)$`),
+  withCatchAsync(selectProductCategoryAction)
+)
 
 bot.action(
   ACTIONS.settings.autoOrder.toggleEnabled,

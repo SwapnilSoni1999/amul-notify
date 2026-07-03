@@ -335,9 +335,12 @@ export class AmulApi {
 
   private getAmulProductsUrl(
     substoreId?: string,
-    categories: AmulProductCategory[] = AMUL_PRODUCT_CATEGORIES
+    categories: readonly AmulProductCategory[] = AMUL_PRODUCT_CATEGORIES
   ) {
     const params = new URLSearchParams()
+    const selectedCategories = categories.length
+      ? categories
+      : AMUL_PRODUCT_CATEGORIES
 
     for (const field of productFields) {
       params.append(`fields[${field}]`, '1')
@@ -345,8 +348,8 @@ export class AmulApi {
 
     params.append('filters[0][field]', 'categories')
 
-    for (let index = 0; index < categories.length; index++) {
-      const categoryItem = AMUL_PRODUCT_CATEGORIES[index]
+    for (let index = 0; index < selectedCategories.length; index++) {
+      const categoryItem = selectedCategories[index]
       params.append(`filters[0][value][${index}]`, categoryItem.id)
     }
 
@@ -390,22 +393,50 @@ export class AmulApi {
     bypassCache?: boolean
     search?: string
     retryCount?: number
+    categories?: readonly AmulProductCategory[]
   }): Promise<AmulProduct[]> {
     const ensureVersionPromise = this.ensureStoreVersion()
     const { bypassCache = true, retryCount = 0 } = opts || {}
+    const requestedCategories = opts?.categories
+    const hasCategoryFilter = Boolean(requestedCategories?.length)
+    const categories = requestedCategories?.length
+      ? requestedCategories
+      : AMUL_PRODUCT_CATEGORIES
+    const cacheKeyData = {
+      substore: this.pincodeRecord.substore,
+      categories: hasCategoryFilter
+        ? categories.map((category) => category.id)
+        : undefined
+    }
+    const filterProducts = (products: AmulProduct[]) => {
+      if (!opts?.search?.length) {
+        return products
+      }
 
-    const cachedProducts = await cacheService.products.get({
-      substore: this.pincodeRecord.substore
-    })
+      // const searchRegex = new RegExp(opts.search, 'i')
+      const fuzzySearchRegex = new RegExp(
+        `${opts.search.split('').join('.*?')}`,
+        'i'
+      )
+
+      return products.filter(
+        (product) =>
+          fuzzySearchRegex.test(product.name) ||
+          fuzzySearchRegex.test(product.sku) ||
+          fuzzySearchRegex.test(product.alias)
+      )
+    }
+
+    const cachedProducts = await cacheService.products.get(cacheKeyData)
 
     if (cachedProducts && !bypassCache) {
-      return cachedProducts.data
+      return filterProducts(cachedProducts.data)
     }
 
     const substoreId = this.getSubstoreId()
 
     await ensureVersionPromise
-    const productsUrl = this.getAmulProductsUrl(substoreId)
+    const productsUrl = this.getAmulProductsUrl(substoreId, categories)
     const response = await this.fetchAmulProducts(productsUrl, {
       ...this.getProductListHeaders(),
       cookie: await this.jar.getCookieString(SHOP_URL),
@@ -416,6 +447,11 @@ export class AmulApi {
       console.warn(
         `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}`
       )
+
+      if (hasCategoryFilter) {
+        await cacheService.products.set(cacheKeyData, response)
+        return []
+      }
 
       const maxRetries = 3
       if (retryCount < maxRetries) {
@@ -436,42 +472,22 @@ export class AmulApi {
         return this.getAmulProducts({
           bypassCache: true,
           search: opts?.search,
-          retryCount: retryCount + 1
+          retryCount: retryCount + 1,
+          categories: opts?.categories
         })
       }
 
       logToChannel(
-        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}, after ${maxRetries} attempts: ${this.getAmulProductsUrl(substoreId)}`
+        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}, after ${maxRetries} attempts: ${this.getAmulProductsUrl(substoreId, categories)}`
       )
       return []
     }
 
     // console.log('Response:', response.request)
 
-    await cacheService.products.set(
-      {
-        substore: this.pincodeRecord.substore
-      },
-      response
-    )
+    await cacheService.products.set(cacheKeyData, response)
 
-    if (opts?.search?.length) {
-      // const searchRegex = new RegExp(opts.search, 'i')
-      const fuzzySearchRegex = new RegExp(
-        `${opts.search.split('').join('.*?')}`,
-        'i'
-      )
-      const filteredProducts = response.data.filter(
-        (product) =>
-          fuzzySearchRegex.test(product.name) ||
-          fuzzySearchRegex.test(product.sku) ||
-          fuzzySearchRegex.test(product.alias)
-      )
-
-      return filteredProducts
-    }
-
-    return response.data
+    return filterProducts(response.data)
   }
 
   public close() {
