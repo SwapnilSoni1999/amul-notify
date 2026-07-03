@@ -33,7 +33,7 @@ export const productCountCommand: MiddlewareFn<CommandContext> = async (
     }
   ])
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
 
   const message = results
     .map(

@@ -23,7 +23,7 @@ export const analyticsCommand: MiddlewareFn<CommandContext> = async (
       return [header, 'No active session found for this substore.'].join('')
     }
 
-    const products = await amulApi.getProteinProducts()
+    const products = await amulApi.getAmulProducts()
 
     const skusList = item.skus.map((sku) => {
       const product = products.find((product) => product.sku === sku.sku)

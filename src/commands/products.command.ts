@@ -14,7 +14,7 @@ export const productsCommand: MiddlewareFn<CommandContext> = async (
 
   const waitMsg = await ctx.reply(`Fetching from Amul... Please wait...`)
 
-  const products = await ctx.amul.getProteinProducts({
+  const products = await ctx.amul.getAmulProducts({
     search: query
   })
   //   console.log('Products:', products)

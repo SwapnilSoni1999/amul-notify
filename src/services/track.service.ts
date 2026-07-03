@@ -6,7 +6,7 @@ import { logToChannel } from '@/utils/logger.util'
 import { AnyBulkWriteOperation } from 'mongoose'
 
 export const toggleFavouriteProduct = async (ctx: MyContext, sku: string) => {
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
 
   if (ctx.user.favSkus.includes(sku)) {
     ctx.user.favSkus = ctx.user.favSkus.filter((s) => s !== sku)
@@ -37,7 +37,7 @@ export const untrackProduct = async (ctx: MyContext, sku: string) => {
     trackedBy: ctx.user._id
   })
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
   const product = products.find((p) => p.sku === sku)
 
   if (!existingProduct) {
@@ -61,7 +61,7 @@ export const trackProduct = async (ctx: MyContext, sku: string) => {
     trackedBy: ctx.user._id
   })
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
   const product = products.find((p) => p.sku === sku)!
 
   if (existingProduct) {

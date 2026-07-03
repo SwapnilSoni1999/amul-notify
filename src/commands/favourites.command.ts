@@ -19,7 +19,7 @@ export const favouritesCommand: MiddlewareFn<CommandContext> = async (
     return next()
   }
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
 
   const filteredProducts = products.filter((p) => favSkus.includes(p.sku))
 

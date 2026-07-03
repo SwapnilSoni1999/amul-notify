@@ -14,6 +14,7 @@ import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
+import { AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
 
 // interface AmulSessionKey {
 //   pincode: string
@@ -332,7 +333,10 @@ export class AmulApi {
     }
   }
 
-  private getProteinProductsUrl(substoreId?: string) {
+  private getAmulProductsUrl(
+    substoreId?: string,
+    categories: AmulProductCategory[] = AMUL_PRODUCT_CATEGORIES
+  ) {
     const params = new URLSearchParams()
 
     for (const field of productFields) {
@@ -340,7 +344,12 @@ export class AmulApi {
     }
 
     params.append('filters[0][field]', 'categories')
-    params.append('filters[0][value][0]', 'protein')
+
+    for (let index = 0; index < categories.length; index++) {
+      const categoryItem = AMUL_PRODUCT_CATEGORIES[index]
+      params.append(`filters[0][value][${index}]`, categoryItem.id)
+    }
+
     params.append('filters[0][operator]', 'in')
     params.append('filters[0][original]', '1')
     params.append('facets', 'true')
@@ -362,7 +371,7 @@ export class AmulApi {
     return `https://shop.amul.com/api/1/entity/ms.products?${query}`
   }
 
-  private async fetchProteinProducts(
+  private async fetchAmulProducts(
     url: string,
     headers: Record<string, string>
   ): Promise<AmulProductsResponse> {
@@ -377,7 +386,7 @@ export class AmulApi {
     return response.data
   }
 
-  public async getProteinProducts(opts?: {
+  public async getAmulProducts(opts?: {
     bypassCache?: boolean
     search?: string
     retryCount?: number
@@ -396,8 +405,8 @@ export class AmulApi {
     const substoreId = this.getSubstoreId()
 
     await ensureVersionPromise
-    const productsUrl = this.getProteinProductsUrl(substoreId)
-    const response = await this.fetchProteinProducts(productsUrl, {
+    const productsUrl = this.getAmulProductsUrl(substoreId)
+    const response = await this.fetchAmulProducts(productsUrl, {
       ...this.getProductListHeaders(),
       cookie: await this.jar.getCookieString(SHOP_URL),
       tid: await this.calculateTidHeader()
@@ -421,10 +430,10 @@ export class AmulApi {
         })
 
         console.log(
-          `Retrying getProteinProducts (attempt ${retryCount + 1}/${maxRetries})...`
+          `Retrying getAmulProducts (attempt ${retryCount + 1}/${maxRetries})...`
         )
         await sleep(500)
-        return this.getProteinProducts({
+        return this.getAmulProducts({
           bypassCache: true,
           search: opts?.search,
           retryCount: retryCount + 1
@@ -432,7 +441,7 @@ export class AmulApi {
       }
 
       logToChannel(
-        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}, after ${maxRetries} attempts: ${this.getProteinProductsUrl(substoreId)}`
+        `No products found for substore ${this.getSubstoreId()} with pincode ${this.getPincode()}, after ${maxRetries} attempts: ${this.getAmulProductsUrl(substoreId)}`
       )
       return []
     }

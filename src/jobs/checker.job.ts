@@ -84,7 +84,7 @@ const stockCheckerJob = schedule(
             )
           }
 
-          const freshProducts = await amulApi.getProteinProducts({
+          const freshProducts = await amulApi.getAmulProducts({
             bypassCache: true
           })
 

@@ -26,7 +26,7 @@ export const toggleAutoOrder = async (
     )
   }
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
   const product = products.find((p) => p.sku === sku)
   if (!product) {
     return ctx.reply(`${emojis.crossMark} Product not found: <b>${sku}</b>`, {

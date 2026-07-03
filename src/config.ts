@@ -68,3 +68,28 @@ export const ACTIONS = {
     }
   }
 }
+
+export const AMUL_PRODUCT_CATEGORIES = [
+  {
+    id: 'protein',
+    emoji: '💪',
+    label: 'Protein'
+  },
+  {
+    id: 'chocolates',
+    emoji: '🍫',
+    label: 'Chocolates'
+  },
+  {
+    id: 'organic',
+    emoji: '🌱',
+    label: 'Organic'
+  },
+  {
+    id: 'ghee',
+    emoji: '🧈',
+    label: 'Ghee'
+  }
+]
+
+export type AmulProductCategory = (typeof AMUL_PRODUCT_CATEGORIES)[number]

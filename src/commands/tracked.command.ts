@@ -18,7 +18,7 @@ export const trackedCommand: MiddlewareFn<CommandContext> = async (
     return next()
   }
 
-  const products = await ctx.amul.getProteinProducts()
+  const products = await ctx.amul.getAmulProducts()
 
   const message: string = [
     `<b>Tracked Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
