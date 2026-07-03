@@ -357,7 +357,7 @@ export class AmulApi {
     params.append('filters[0][original]', '1')
     params.append('facets', 'true')
     params.append('facetgroup', 'default_category_facet')
-    params.append('limit', '32')
+    params.append('limit', '100')
     params.append('total', '1')
     params.append('start', '0')
     // params.append('cdc', '1m')
