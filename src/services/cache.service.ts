@@ -62,7 +62,7 @@ const jobData = {
       key,
       JSON.stringify(value),
       'EX',
-      15 * 60 // Cache for 15 minutes
+      5 * 60 // Cache for 5 minutes
     )
   },
   get: async (keyData: SubstoreCacheKeyData): Promise<AmulProduct[] | null> => {
