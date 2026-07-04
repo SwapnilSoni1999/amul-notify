@@ -12,7 +12,11 @@ import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.service'
 import { getDistinctSubstores } from '@/services/user.service'
 import { sleep } from '@/utils'
-import { getInventoryQuantity, isAvailableToPurchase } from '@/utils/amul.util'
+import {
+  getInventoryQuantity,
+  getProductUrl,
+  isAvailableToPurchase
+} from '@/utils/amul.util'
 import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
 import { emojis } from '@/utils/emoji.util'
 import { formatProductDetails } from '@/utils/format.util'
@@ -252,12 +256,19 @@ const stockCheckerJob = schedule(
             const keyboard = inlineKeyboard([
               [
                 {
-                  text: trackingStyle === 'once' ? 'Track Again' : 'Untrack',
+                  text:
+                    trackingStyle === 'once'
+                      ? 'Track Again'
+                      : `${emojis.stopSign} Untrack`,
                   url: await startCommandLink(
                     `${trackingStyle === 'once' ? 'track' : 'untrack'}_${
                       product.sku
                     }`
                   )
+                },
+                {
+                  text: 'Goto Amul',
+                  url: getProductUrl(product)
                 }
               ]
             ])

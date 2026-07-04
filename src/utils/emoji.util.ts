@@ -9,6 +9,7 @@ export const emojis = {
   info: 'ℹ️',
   map: '🗺️',
   trash: '🗑️',
+  stopSign: '🛑',
 
   // Tracking Style
   always: '♾️',
@@ -33,5 +34,11 @@ export const emojis = {
   box: '📦',
   lightning: '⚡',
   cart: '🛒',
-  settings: '⚙️'
+  settings: '⚙️',
+
+  // Amul Categories
+  muscle: '💪',
+  chocolate: '🍫',
+  plant: '🌱',
+  butter: '🧈'
 }

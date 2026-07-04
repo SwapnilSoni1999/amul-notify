@@ -1,4 +1,5 @@
 import { BotCommand } from 'telegraf/typings/core/types/typegram'
+import { emojis } from './utils/emoji.util'
 
 export const LOG_CHANNEL = -4963360663
 
@@ -74,22 +75,22 @@ export const ACTIONS = {
 export const AMUL_PRODUCT_CATEGORIES = [
   {
     id: 'protein',
-    emoji: '💪',
+    emoji: emojis.muscle,
     label: 'Protein'
   },
   {
     id: 'chocolates',
-    emoji: '🍫',
+    emoji: emojis.chocolate,
     label: 'Chocolates'
   },
   {
     id: 'organic',
-    emoji: '🌱',
+    emoji: emojis.plant,
     label: 'Organic'
   },
   {
     id: 'ghee',
-    emoji: '🧈',
+    emoji: emojis.butter,
     label: 'Ghee'
   }
 ]
