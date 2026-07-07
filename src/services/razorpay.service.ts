@@ -8,6 +8,9 @@ const MAX_REFERENCE_ID_LENGTH = 40
 const MAX_DESCRIPTION_LENGTH = 2048
 const MAX_NOTES_COUNT = 15
 const MAX_NOTE_VALUE_LENGTH = 255
+const COMBINING_MARKS_PATTERN = /[\u0300-\u036f]/g
+const NON_ASCII_OR_CONTROL_PATTERN = /[^\x20-\x7e]/g
+const WHITESPACE_PATTERN = /\s+/g
 
 type NoteValue = string | number | boolean
 
@@ -199,18 +202,99 @@ const validatePaymentLinkInput = (input: CreatePaymentLinkInput): void => {
   }
 }
 
+// Razorpay can reject emoji/non-ASCII payment-link text with upstream collation errors.
+const sanitizeRazorpayText = (value: string): string => {
+  return value
+    .normalize('NFKD')
+    .replace(COMBINING_MARKS_PATTERN, '')
+    .replace(NON_ASCII_OR_CONTROL_PATTERN, ' ')
+    .replace(WHITESPACE_PATTERN, ' ')
+    .trim()
+}
+
+const sanitizeOptionalRazorpayText = (
+  value: string | undefined
+): string | undefined => {
+  if (!value) {
+    return undefined
+  }
+
+  const sanitized = sanitizeRazorpayText(value)
+  return sanitized || undefined
+}
+
+const sanitizeRazorpayNoteValue = (value: NoteValue): NoteValue => {
+  return typeof value === 'string' ? sanitizeRazorpayText(value) : value
+}
+
+const sanitizeRazorpayCustomer = (
+  customer: CreatePaymentLinkInput['customer']
+): CreatePaymentLinkInput['customer'] | undefined => {
+  if (!customer) {
+    return undefined
+  }
+
+  const sanitizedCustomer = {
+    name: sanitizeOptionalRazorpayText(customer.name),
+    contact: sanitizeOptionalRazorpayText(customer.contact),
+    email: sanitizeOptionalRazorpayText(customer.email)
+  }
+
+  return Object.values(sanitizedCustomer).some(Boolean)
+    ? sanitizedCustomer
+    : undefined
+}
+
+const sanitizeRazorpayNotes = (
+  notes: CreatePaymentLinkInput['notes']
+): CreatePaymentLinkInput['notes'] | undefined => {
+  if (!notes) {
+    return undefined
+  }
+
+  return Object.fromEntries(
+    Object.entries(notes).map(([key, value]) => [
+      key,
+      sanitizeRazorpayNoteValue(value)
+    ])
+  )
+}
+
+const sanitizeRazorpayOptions = (
+  options: CreatePaymentLinkInput['options']
+): CreatePaymentLinkInput['options'] | undefined => {
+  const checkoutName = sanitizeOptionalRazorpayText(options?.checkout?.name)
+
+  return checkoutName
+    ? {
+        checkout: {
+          name: checkoutName
+        }
+      }
+    : undefined
+}
+
 const buildPaymentLinkPayload = (
   input: CreatePaymentLinkInput
 ): RazorpayPaymentLinkRequest => {
+  const { customer, description, notes, options, ...baseInput } = input
   const callbackMethod = input.callback_url
     ? input.callback_method || 'get'
     : input.callback_method
+  const sanitizedCustomer = sanitizeRazorpayCustomer(customer)
+  const sanitizedDescription = sanitizeOptionalRazorpayText(description)
+  const sanitizedNotes = sanitizeRazorpayNotes(notes)
+  const sanitizedOptions = sanitizeRazorpayOptions(options)
 
   return {
-    ...input,
+    ...baseInput,
     upi_link: true,
     currency: input.currency || 'INR',
     accept_partial: false,
+    ...(sanitizedDescription ? { description: sanitizedDescription } : {}),
+    ...(sanitizedCustomer ? { customer: sanitizedCustomer } : {}),
+    ...(sanitizedNotes ? { notes: sanitizedNotes } : {}),
+    ...(sanitizedOptions ? { options: sanitizedOptions } : {}),
     ...(callbackMethod ? { callback_method: callbackMethod } : {})
   }
 }
