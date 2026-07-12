@@ -4,7 +4,7 @@ import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
 import { AmulApi, getOrCreateAmulApi } from '@/libs/amulApi.lib'
-// import { isLoggedIn } from '@/utils/autoOrder.util'
+import { isLoggedIn } from '@/utils/autoOrder.util'
 
 export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
   if (!ctx.from) {
@@ -57,10 +57,10 @@ export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
       )) ?? ({} as AmulApi) // Note: pincode should be set before this middleware is called (exception for /setpincode)
   })
 
-  // const loggedIn = isLoggedIn(user)
-  // if (loggedIn) {
-  //   ctx.amul.injectCookies(user.cookies)
-  // }
+  const loggedIn = isLoggedIn(user)
+  if (loggedIn) {
+    ctx.amul.injectCookies(user.cookies)
+  }
 
   return next()
 }

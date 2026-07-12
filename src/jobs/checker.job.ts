@@ -1,7 +1,10 @@
 import { TIMEZONE } from '@/config'
 import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
-import { AmulAutoOrder } from '@/libs/autoOrder.lib'
+import {
+  AmulAutoOrder,
+  isAmulSessionAuthenticationError
+} from '@/libs/autoOrder.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
 import ProductStockHistoryModel from '@/models/productStockHistory.model'
 import UserModel, { IUser } from '@/models/user.model'
@@ -385,8 +388,10 @@ const stockCheckerJob = schedule(
                         })
                         return
                       }
-                      amulApi.injectCookies(user.cookies)
-                      const amulOrderApi = new AmulAutoOrder(amulApi)
+                      const amulOrderApi = new AmulAutoOrder(
+                        amulApi,
+                        user.cookies
+                      )
 
                       if (!user.address?.amulId) {
                         console.error(
@@ -402,21 +407,53 @@ const stockCheckerJob = schedule(
                         return
                       }
 
-                      const response = await amulOrderApi
-                        .placeOrder({
+                      let response
+                      try {
+                        response = await amulOrderApi.placeOrder({
                           addressId: user.address.amulId,
                           cartId: user.amulCartId!,
                           sku: product.sku
                         })
-                        .catch((err) => {
-                          console.error(
-                            `Failed to place order for user ${user._id}: ${err.message}`
+                      } catch (err) {
+                        const errorMessage =
+                          err instanceof Error ? err.message : String(err)
+
+                        if (isAmulSessionAuthenticationError(err)) {
+                          await UserModel.findByIdAndUpdate(user._id, {
+                            $set: {
+                              cookies: [],
+                              amulUserId: null,
+                              amulCartId: null,
+                              'orderSettings.enabled': false
+                            }
+                          })
+                          console.warn(
+                            `Amul session expired for user ${user._id}`
                           )
                           logToChannel(
-                            `[E453] ${emojis.crossMark} Failed to place order for user ${user._id}: ${JSON.stringify(err)}`
+                            `[E453] ${emojis.warning} Amul session expired for user ${user._id}; auto-ordering was disabled.`
                           )
+                          await sendMessageQueue({
+                            chatId: user.tgId!,
+                            text: `[E453] ${emojis.warning} Your Amul session has expired, so auto-ordering was disabled. Please log in again using /autoorder.`
+                          })
                           return
-                        })
+                        }
+
+                        console.error(
+                          `Failed to place order for user ${user._id}: ${errorMessage}`
+                        )
+                        logToChannel(
+                          `[E453] ${emojis.crossMark} Failed to place order for user ${user._id}: ${errorMessage}`
+                        )
+                        return
+                      }
+
+                      await UserModel.findByIdAndUpdate(user._id, {
+                        $set: {
+                          cookies: response.cookieExpiry
+                        }
+                      })
 
                       if (!response) {
                         console.error(

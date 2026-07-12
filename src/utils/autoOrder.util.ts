@@ -8,6 +8,7 @@ import { createLink } from './bot.utils'
 import { inlineKeyboard } from 'telegraf/markup'
 import { ACTIONS, TIMEZONE } from '@/config'
 import { Markup } from 'telegraf'
+import { isStoredCookieExpired } from './cookie.util'
 
 const hasValue = (value?: string): boolean => {
   return Boolean(value?.trim())
@@ -106,7 +107,7 @@ export const isLoggedIn = (user: HydratedUser | IUser): boolean => {
       return (
         cookie.key === 'jsessionid' &&
         cookie.value.length > 0 &&
-        !cookie.isExpired
+        !isStoredCookieExpired(cookie)
       )
     }) &&
     !!user.amulUserId &&

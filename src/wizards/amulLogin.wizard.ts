@@ -2,6 +2,7 @@ import { autoOrderCommand } from '@/commands/autoorder.command'
 import { AmulAutoOrder } from '@/libs/autoOrder.lib'
 import { MyContext } from '@/types/context.types'
 import { isAutoOrderConfigured } from '@/utils/autoOrder.util'
+import { replaceUserCookies } from '@/utils/cookie.util'
 import { Markup, Scenes } from 'telegraf'
 import { keyboard } from 'telegraf/markup'
 
@@ -75,7 +76,7 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
     console.dir(response, { depth: null })
 
     ctx.user.phone = phone
-    ctx.user.cookies.push(...response.cookieExpiry)
+    replaceUserCookies(ctx.user, response.cookieExpiry)
     await ctx.user.save()
 
     await ctx.reply('Please enter the OTP sent to your phone.')
@@ -103,7 +104,7 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
 
     const msg = await ctx.reply('Verifying OTP...')
 
-    const amulOrderApi = new AmulAutoOrder(ctx.amul)
+    const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
     const response = await amulOrderApi.verifyOtp(phone, otp).catch((err) => {
       console.error('Error verifying OTP:', err)
       return
@@ -116,9 +117,8 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
 
     console.dir(response, { depth: null })
 
-    // empty cookies array and push new cookies from response
-    ctx.user.cookies.splice(0, ctx.user.cookies.length)
-    ctx.user.cookies.push(...response.cookieExpiry)
+    // Replace the persisted snapshot with the authenticated cookie state.
+    replaceUserCookies(ctx.user, response.cookieExpiry)
     ctx.user.amulCartId = response.cartId
     ctx.user.amulUserId = response.userId
     await ctx.user.save()

@@ -1,8 +1,12 @@
 import { autoOrderCommand } from '@/commands/autoorder.command'
-import { AmulAutoOrder } from '@/libs/autoOrder.lib'
+import {
+  AmulAutoOrder,
+  isAmulSessionAuthenticationError
+} from '@/libs/autoOrder.lib'
 import { MyContext } from '@/types/context.types'
 import { AddressRecord } from '@/types/orderApi.types'
 import { isAutoOrderConfigured, isLoggedIn } from '@/utils/autoOrder.util'
+import { clearUserAmulSession, replaceUserCookies } from '@/utils/cookie.util'
 import { Markup, Scenes } from 'telegraf'
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram'
 
@@ -40,22 +44,27 @@ export const amulAddressSetWizard = new Scenes.WizardScene<MyContext>(
       return ctx.scene.leave()
     }
 
-    ctx.amul.injectCookies(ctx.user.cookies)
-    const amulOrderApi = new AmulAutoOrder(ctx.amul)
+    const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
 
-    const response = await amulOrderApi.fetchAddresses().catch((err) => {
+    let response
+    try {
+      response = await amulOrderApi.fetchAddresses()
+    } catch (err) {
+      if (isAmulSessionAuthenticationError(err)) {
+        clearUserAmulSession(ctx.user)
+        await ctx.user.save()
+        await ctx.reply(
+          'Your Amul session has expired. Please log in again from /autoorder.'
+        )
+        return ctx.scene.leave()
+      }
       console.error('Error fetching addresses:', err)
-      return
-    })
-
-    if (!response) {
       await ctx.reply('Error fetching addresses. Please try again later.')
       return ctx.scene.leave()
     }
 
-    // empty cookies array and push new cookies from response
-    ctx.user.cookies.splice(0, ctx.user.cookies.length)
-    ctx.user.cookies.push(...response.cookieExpiry)
+    // Replace the persisted snapshot with the latest server cookie state.
+    replaceUserCookies(ctx.user, response.cookieExpiry)
     await ctx.user.save()
 
     console.dir(response, { depth: null })
@@ -128,23 +137,26 @@ amulAddressSetWizard.action(/select_address_(\d+)/, async (ctx) => {
   ctx.user.set('address', { ...address, amulId: address._id })
   await ctx.user.save()
 
-  const amulOrderApi = new AmulAutoOrder(ctx.amul)
-  ctx.amul.injectCookies(ctx.user.cookies)
-  const response = await amulOrderApi
-    .setAddress(address._id, ctx.user.amulCartId!)
-    .catch((err) => {
-      console.error('Error setting address:', err)
-      return
-    })
-
-  if (!response) {
+  const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
+  let response
+  try {
+    response = await amulOrderApi.setAddress(address._id, ctx.user.amulCartId!)
+  } catch (err) {
+    if (isAmulSessionAuthenticationError(err)) {
+      clearUserAmulSession(ctx.user)
+      await ctx.user.save()
+      await ctx.reply(
+        'Your Amul session has expired. Please log in again from /autoorder.'
+      )
+      return ctx.scene.leave()
+    }
+    console.error('Error setting address:', err)
     await ctx.reply('Error setting address. Please try again later.')
     return ctx.scene.leave()
   }
 
-  // empty cookies array and push new cookies from response
-  ctx.user.cookies.splice(0, ctx.user.cookies.length)
-  ctx.user.cookies.push(...response.cookieExpiry)
+  // Replace the persisted snapshot with the latest server cookie state.
+  replaceUserCookies(ctx.user, response.cookieExpiry)
   await ctx.user.save()
 
   console.dir(response, { depth: null })
