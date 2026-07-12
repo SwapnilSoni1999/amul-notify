@@ -72,7 +72,7 @@ const productFields = [
 ]
 
 const SHOP_URL = 'https://shop.amul.com'
-const DEFAULT_STORE_VERSION = 5
+const DEFAULT_STORE_VERSION = 6
 
 const normalizeSetCookieHeader = (value: unknown): string[] => {
   if (Array.isArray(value)) {
