@@ -40,7 +40,8 @@ export const renderProductListItem = async (
     formatProductDetails(product, isAvlblToPurchase, opts.index, {
       lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
       remainingNotifyCount: opts.remainingNotifyCount,
-      showProtein: opts.showProtein
+      showProtein:
+        opts.showProtein ?? product.categories?.includes('protein') ?? false
     }),
     `${isTracked ? untrackBtn : trackBtn} | ${favBtn}`,
     autoOrderBtn ? `<b>${autoOrderBtn}</b>` : null
