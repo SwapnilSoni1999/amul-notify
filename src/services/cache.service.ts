@@ -9,6 +9,10 @@ interface ProductsCacheKeyData extends SubstoreCacheKeyData {
   category: string
 }
 
+interface SetCommandsCacheKeyData {
+  tgId: number | string
+}
+
 const getProductsKey = (keyData: ProductsCacheKeyData) => {
   return `amul:products:${keyData.substore}:category:${encodeURIComponent(
     keyData.category
@@ -75,7 +79,28 @@ const jobData = {
   }
 }
 
+const setCommandsData = {
+  set: async (keyData: SetCommandsCacheKeyData, value: boolean) => {
+    const key = `amul:setcommands:${keyData.tgId}`
+    return await redis.set(
+      key,
+      JSON.stringify(value),
+      'EX',
+      24 * 60 * 60 // Cache for 24 hours
+    )
+  },
+  get: async (keyData: SetCommandsCacheKeyData): Promise<boolean> => {
+    const key = `amul:setcommands:${keyData.tgId}`
+    const cachedData = await redis.get(key)
+    return cachedData ? JSON.parse(cachedData) : false
+  },
+  delete: async (keyData: SetCommandsCacheKeyData) => {
+    await redis.del(`amul:setcommands:${keyData.tgId}`)
+  }
+}
+
 export default {
   products,
-  jobData
+  jobData,
+  setCommandsData
 }
