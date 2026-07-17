@@ -12,7 +12,11 @@ import { substoreList } from '@/utils/substores'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
-import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
+import {
+  AMUL_ERROR_CODE,
+  AmulError,
+  isCloudflareChallengeError
+} from './amulError.lib'
 import { sleep } from '@/utils'
 import { AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
 import { isStoredCookieExpired } from '@/utils/cookie.util'
@@ -23,25 +27,77 @@ import { isStoredCookieExpired } from '@/utils/cookie.util'
 // }
 export const substoreSessions: Map<string, AmulApi> = new Map()
 
+const CLOUDFLARE_BACKOFF_MS = 15 * 60 * 1000
+let cloudflareBlockedUntil = 0
+
+export const getAmulCloudflareRetryAt = (): Date | undefined => {
+  if (Date.now() >= cloudflareBlockedUntil) {
+    return undefined
+  }
+
+  return new Date(cloudflareBlockedUntil)
+}
+
+const blockAmulRequestsForCloudflareChallenge = () => {
+  cloudflareBlockedUntil = Date.now() + CLOUDFLARE_BACKOFF_MS
+}
+
+const ensureAmulRequestsAreAllowed = () => {
+  const retryAt = getAmulCloudflareRetryAt()
+  if (!retryAt) {
+    return
+  }
+
+  throw new AmulError(
+    `Amul requests are paused after a Cloudflare challenge until ${retryAt.toISOString()}`,
+    AMUL_ERROR_CODE.CLOUDFLARE_CHALLENGE
+  )
+}
+
 export const defaultHeaders = {
   accept: 'application/json, text/plain, */*',
   'accept-language': 'en-US,en;q=0.9,hi;q=0.8,gu;q=0.7',
   base_url: 'https://shop.amul.com/en/browse/protein',
-  'cache-control': 'no-cache',
   frontend: '1',
-  pragma: 'no-cache',
-  priority: 'u=1, i',
   referer: 'https://shop.amul.com/en/browse/protein',
   'sec-ch-ua':
     '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
   'sec-ch-ua-mobile': '?0',
   'sec-ch-ua-platform': '"Linux"',
-  'sec-fetch-dest': 'empty',
-  'sec-fetch-mode': 'cors',
-  'sec-fetch-site': 'same-origin',
   'sec-gpc': '1',
   'user-agent':
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36'
+}
+
+const browserNavigationHeaders = {
+  accept:
+    'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'accept-language': defaultHeaders['accept-language'],
+  priority: 'u=0, i',
+  'sec-ch-ua': defaultHeaders['sec-ch-ua'],
+  'sec-ch-ua-mobile': defaultHeaders['sec-ch-ua-mobile'],
+  'sec-ch-ua-platform': defaultHeaders['sec-ch-ua-platform'],
+  'sec-fetch-dest': 'document',
+  'sec-fetch-mode': 'navigate',
+  'sec-fetch-site': 'none',
+  'sec-gpc': '1',
+  'upgrade-insecure-requests': '1',
+  'user-agent': defaultHeaders['user-agent']
+}
+
+const browserScriptHeaders = {
+  accept: '*/*',
+  'accept-language': defaultHeaders['accept-language'],
+  priority: 'u=1',
+  referer: defaultHeaders.referer,
+  'sec-ch-ua': defaultHeaders['sec-ch-ua'],
+  'sec-ch-ua-mobile': defaultHeaders['sec-ch-ua-mobile'],
+  'sec-ch-ua-platform': defaultHeaders['sec-ch-ua-platform'],
+  'sec-fetch-dest': 'script',
+  'sec-fetch-mode': 'no-cors',
+  'sec-fetch-site': 'same-origin',
+  'sec-gpc': '1',
+  'user-agent': defaultHeaders['user-agent']
 }
 
 const productFields = [
@@ -130,6 +186,15 @@ export class AmulApi {
     )
 
     this.amulApi = amulApi
+    this.amulApi.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (isCloudflareChallengeError(error)) {
+          blockAmulRequestsForCloudflareChallenge()
+        }
+        return Promise.reject(error)
+      }
+    )
   }
 
   private async ensureStoreVersion() {
@@ -137,7 +202,13 @@ export class AmulApi {
 
     try {
       const response = await this.amulApi.get(
-        'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js'
+        'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js',
+        {
+          headers: {
+            ...browserScriptHeaders,
+            cookie: await this.jar.getCookieString(SHOP_URL)
+          }
+        }
       )
       const versionMatcher = /req\.query\.v\s*=\s*['"]?([^'";\s]+)['"]?/
       const match = response.data.match(versionMatcher)
@@ -152,6 +223,9 @@ export class AmulApi {
         this.storeVersion = DEFAULT_STORE_VERSION
       }
     } catch (error) {
+      if (isCloudflareChallengeError(error)) {
+        throw error
+      }
       console.error('Error fetching store version:', error)
       logToChannel(
         `${new Date().toISOString()} - Error fetching store version: ${error}`
@@ -188,7 +262,10 @@ export class AmulApi {
 
   public async initCookies() {
     const cookieResponse = await this.amulApi.get(
-      'https://shop.amul.com/en/browse/protein'
+      'https://shop.amul.com/en/browse/protein',
+      {
+        headers: browserNavigationHeaders
+      }
     )
 
     const setCookies = cookieResponse.headers['set-cookie']
@@ -221,9 +298,8 @@ export class AmulApi {
       `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
       {
         headers: {
-          ...defaultHeaders,
-          cookie: await this.jar.getCookieString(requestUrl),
-          tid: await this.calculateTidHeader()
+          ...browserScriptHeaders,
+          cookie: await this.jar.getCookieString(requestUrl)
         }
       }
     )
@@ -478,7 +554,6 @@ export class AmulApi {
     retryCount?: number
     categories?: readonly AmulProductCategory[]
   }): Promise<AmulProduct[]> {
-    const ensureVersionPromise = this.ensureStoreVersion()
     const { bypassCache = true, retryCount = 0 } = opts || {}
     const requestedCategories = opts?.categories
     const hasCategoryFilter = Boolean(requestedCategories?.length)
@@ -512,9 +587,10 @@ export class AmulApi {
       return filterProducts(cachedProducts)
     }
 
+    ensureAmulRequestsAreAllowed()
     const substoreId = this.getSubstoreId()
 
-    await ensureVersionPromise
+    await this.ensureStoreVersion()
     const productsUrl = this.getAmulProductsUrl(substoreId, categories)
     const response = await this.fetchAmulProducts(productsUrl, {
       ...this.getProductListHeaders(),
@@ -605,6 +681,7 @@ export const getOrCreateAmulApi = async (substore?: string | null) => {
   if (!substore) {
     return {} as AmulApi
   }
+
   let existingSession: AmulApi | undefined
   for (const [key, session] of substoreSessions.entries()) {
     if (key === substore) {
@@ -618,5 +695,18 @@ export const getOrCreateAmulApi = async (substore?: string | null) => {
     `getOrCreateAmulApi called with substore: ${substore}, existing session: ${!!existingSession}`
   )
 
-  return existingSession || (await createAmulApi(substore))
+  if (existingSession) {
+    return existingSession
+  }
+
+  ensureAmulRequestsAreAllowed()
+
+  try {
+    return await createAmulApi(substore)
+  } catch (error) {
+    if (isCloudflareChallengeError(error)) {
+      blockAmulRequestsForCloudflareChallenge()
+    }
+    throw error
+  }
 }

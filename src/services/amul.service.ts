@@ -3,6 +3,7 @@ import {
   getOrCreateAmulApi,
   substoreSessions
 } from '@/libs/amulApi.lib'
+import { isCloudflareChallengeError } from '@/libs/amulError.lib'
 import { sleep } from '@/utils'
 import { getDistinctPincodes } from './user.service'
 import ProductStockHistoryModel from '@/models/productStockHistory.model'
@@ -16,6 +17,12 @@ export const initiateAmulSessions = async () => {
       console.log(`Initiated session for pincode: ${pincode}`)
       await sleep(5 * 1000) // Sleep for 5 seconds between each session initiation
     } catch (err) {
+      if (isCloudflareChallengeError(err)) {
+        console.warn(
+          'Amul returned a Cloudflare challenge. Stopping session initialization until the backoff expires.'
+        )
+        break
+      }
       console.error(`Failed to initiate session for pincode: ${pincode}`, err)
     }
   }

@@ -1,6 +1,10 @@
 import { TIMEZONE } from '@/config'
 import env from '@/env'
-import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
+import {
+  getAmulCloudflareRetryAt,
+  getOrCreateAmulApi
+} from '@/libs/amulApi.lib'
+import { isCloudflareChallengeError } from '@/libs/amulError.lib'
 import {
   AmulAutoOrder,
   getAmulAutoOrderErrorMessage,
@@ -557,8 +561,26 @@ const stockCheckerJob = schedule(
           }
 
           await sleep(500) // Sleep for 500ms to avoid rate limiting
-        } catch (err: any) {
-          console.error(`Error processing substore ${substore}: ${err.message}`)
+        } catch (err) {
+          if (isCloudflareChallengeError(err)) {
+            const retryAt = getAmulCloudflareRetryAt()
+            const retryMessage = retryAt
+              ? ` Requests are paused until ${retryAt.toISOString()}.`
+              : ''
+            console.error(
+              `Cloudflare blocked Amul requests while processing ${substore}.${retryMessage}`
+            )
+            logToChannel(
+              `${emojis.warning} Cloudflare blocked Amul requests.${retryMessage}`
+            )
+            break
+          }
+
+          console.error(
+            `Error processing substore ${substore}: ${
+              err instanceof Error ? err.message : String(err)
+            }`
+          )
           logToChannel(
             `${emojis.crossMark} Error processing substore ${substore}: ${
               err instanceof Error ? err.message : String(err)
@@ -576,6 +598,7 @@ const stockCheckerJob = schedule(
     }
   },
   {
+    noOverlap: true,
     timezone: TIMEZONE,
     name: 'check-stock-job'
   }

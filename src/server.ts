@@ -24,8 +24,6 @@ mongoose
   .then(async () => {
     console.log('Connected to MongoDB successfully')
 
-    initiateAmulSessions()
-
     if (env.BOT_WEBHOOK_URL && !env.BOT_FORCE_POLLING) {
       const botSecret = `amul_${bot.secretPathComponent()}`
       console.log(`Setting webhook to: ${env.BOT_WEBHOOK_URL}`)
@@ -86,9 +84,12 @@ mongoose
 
     // Start job
     if (env.TRACKER_ENABLED) {
+      console.log('Initializing Amul sessions...')
+      await initiateAmulSessions()
+      console.log('Amul session initialization complete')
       console.log('Starting stock checker job...')
       stockCheckerJob.start()
-      stockCheckerJob.execute()
+      await stockCheckerJob.execute()
       console.log('Stock checker job started')
       console.log('Starting activity notifier job...')
       activityNotifierJob.start()
