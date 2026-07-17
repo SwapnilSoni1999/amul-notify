@@ -15,6 +15,7 @@ import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
 import { AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
+import { isStoredCookieExpired } from '@/utils/cookie.util'
 
 // interface AmulSessionKey {
 //   pincode: string
@@ -160,13 +161,28 @@ export class AmulApi {
   }
 
   public injectCookies(cookies: IUser['cookies']) {
+    const requestUrl = 'https://shop.amul.com'
+
     for (const cookie of cookies) {
-      this.jar.setCookieSync(
-        `${cookie.key}=${cookie.value}; Expires=${new Date(cookie.expiresAt ?? '').toUTCString()}; Path=${cookie.path}; Domain=${cookie.domain}; ${
-          cookie.isSession ? '' : 'HttpOnly; '
-        }`,
-        'https://shop.amul.com'
-      )
+      if (!cookie.key || !cookie.value || isStoredCookieExpired(cookie)) {
+        continue
+      }
+
+      const cookieParts = [`${cookie.key}=${cookie.value}`]
+
+      if (cookie.expiresAt) {
+        cookieParts.push(`Expires=${new Date(cookie.expiresAt).toUTCString()}`)
+      }
+
+      if (cookie.path) {
+        cookieParts.push(`Path=${cookie.path}`)
+      }
+
+      if (cookie.domain) {
+        cookieParts.push(`Domain=${cookie.domain}`)
+      }
+
+      this.jar.setCookieSync(cookieParts.join('; '), requestUrl)
     }
   }
 

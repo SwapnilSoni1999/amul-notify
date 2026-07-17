@@ -3,6 +3,7 @@ import env from '@/env'
 import { getOrCreateAmulApi } from '@/libs/amulApi.lib'
 import {
   AmulAutoOrder,
+  getAmulAutoOrderErrorMessage,
   isAmulSessionAuthenticationError
 } from '@/libs/autoOrder.lib'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
@@ -10,6 +11,7 @@ import ProductStockHistoryModel from '@/models/productStockHistory.model'
 import UserModel, { IUser } from '@/models/user.model'
 import { sendMessageQueue } from '@/queues/broadcast.queue'
 import { getAmulApiFromSubstore } from '@/services/amul.service'
+import { runAutoOrderRequest } from '@/services/autoOrderExecution.service'
 import cacheService from '@/services/cache.service'
 import { hasValidAutoBookingPayment } from '@/services/payment.service'
 import { findAndUpdateProductsWithAlwaysTracking } from '@/services/track.service'
@@ -407,16 +409,20 @@ const stockCheckerJob = schedule(
                         return
                       }
 
+                      const addressId = user.address.amulId
                       let response
                       try {
-                        response = await amulOrderApi.placeOrder({
-                          addressId: user.address.amulId,
-                          cartId: user.amulCartId!,
-                          sku: product.sku
-                        })
+                        response = await runAutoOrderRequest(
+                          user._id.toString(),
+                          () =>
+                            amulOrderApi.placeOrder({
+                              addressId,
+                              cartId: user.amulCartId!,
+                              sku: product.sku
+                            })
+                        )
                       } catch (err) {
-                        const errorMessage =
-                          err instanceof Error ? err.message : String(err)
+                        const errorMessage = getAmulAutoOrderErrorMessage(err)
 
                         if (isAmulSessionAuthenticationError(err)) {
                           await UserModel.findByIdAndUpdate(user._id, {
@@ -446,6 +452,10 @@ const stockCheckerJob = schedule(
                         logToChannel(
                           `[E453] ${emojis.crossMark} Failed to place order for user ${user._id}: ${errorMessage}`
                         )
+                        await sendMessageQueue({
+                          chatId: user.tgId!,
+                          text: `[E453] ${emojis.crossMark} Auto-order could not be confirmed for ${product.name}, so no payment link is available. Amul may have sold out or rejected the checkout. Please check your Amul cart or order history before trying again.`
+                        })
                         return
                       }
 

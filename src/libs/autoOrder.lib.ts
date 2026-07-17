@@ -14,6 +14,30 @@ import { serializeStoredCookies } from '@/utils/cookie.util'
 
 const API_BASE_URL = env.ORDER_SERVER_API_URL
 
+const getResponseErrorMessage = (data: unknown): string | undefined => {
+  if (typeof data === 'string' && data.trim()) {
+    return data.trim()
+  }
+
+  if (!data || typeof data !== 'object') {
+    return undefined
+  }
+
+  if ('error' in data && typeof data.error === 'string' && data.error.trim()) {
+    return data.error.trim()
+  }
+
+  if (
+    'message' in data &&
+    typeof data.message === 'string' &&
+    data.message.trim()
+  ) {
+    return data.message.trim()
+  }
+
+  return undefined
+}
+
 export class AmulAutoOrder {
   private amulApi: AmulApi
   private orderApi: ReturnType<typeof wrapper>
@@ -153,4 +177,23 @@ export const isAmulSessionAuthenticationError = (error: unknown): boolean => {
   return (
     error.response?.status === 401 || code === 'AMUL_SESSION_UNAUTHENTICATED'
   )
+}
+
+export const getAmulAutoOrderErrorMessage = (error: unknown): string => {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error.message : String(error)
+  }
+
+  const status = error.response?.status
+  const responseMessage = getResponseErrorMessage(error.response?.data)
+
+  if (status && responseMessage) {
+    return `HTTP ${status}: ${responseMessage}`
+  }
+
+  if (status) {
+    return `HTTP ${status}: ${error.message}`
+  }
+
+  return error.message
 }
