@@ -3,7 +3,12 @@ import UserModel, { HydratedUser } from '@/models/user.model'
 import { MyContext } from '@/types/context.types'
 import { emojis } from '@/utils/emoji.util'
 import ProductModel, { HydratedProduct } from '@/models/product.model'
-import { AmulApi, getOrCreateAmulApi } from '@/libs/amulApi.lib'
+import {
+  AmulApi,
+  getAmulCloudflareRetryAt,
+  getOrCreateAmulApi
+} from '@/libs/amulApi.lib'
+import { isCloudflareChallengeError } from '@/libs/amulError.lib'
 import { isLoggedIn } from '@/utils/autoOrder.util'
 
 export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
@@ -40,6 +45,41 @@ export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
     return ctx.reply('🚫 You are blocked from using this service.')
   }
 
+  const message = ctx.message
+  const isSetPincodeCommand = Boolean(
+    message &&
+      'text' in message &&
+      /^\/setpincode(?:@\w+)?(?:\s|$)/.test(message.text)
+  )
+
+  let amul = new AmulApi()
+  if (user.pincode) {
+    try {
+      amul = await getOrCreateAmulApi(user.pincode)
+    } catch (err) {
+      console.error(
+        `Unable to initialize Amul session for user ${user._id}:`,
+        err
+      )
+
+      if (!isSetPincodeCommand) {
+        if (isCloudflareChallengeError(err)) {
+          const retryAt = getAmulCloudflareRetryAt()
+          const retryMessage = retryAt
+            ? ` Please try again after ${retryAt.toISOString()}.`
+            : ' Please try again shortly.'
+          return ctx.reply(
+            `${emojis.warning} Amul is temporarily blocking requests from the bot.${retryMessage}`
+          )
+        }
+
+        return ctx.reply(
+          `${emojis.warning} Unable to connect to Amul right now. Please try again shortly.`
+        )
+      }
+    }
+  }
+
   // ctx.user = user
   Object.assign<
     typeof ctx,
@@ -51,10 +91,7 @@ export const sessionMiddleware: MiddlewareFn<MyContext> = async (ctx, next) => {
     }).sort({
       createdAt: -1
     }),
-    amul:
-      (await getOrCreateAmulApi(user.pincode).catch((err) =>
-        console.log(err)
-      )) ?? ({} as AmulApi) // Note: pincode should be set before this middleware is called (exception for /setpincode)
+    amul
   })
 
   const loggedIn = isLoggedIn(user)

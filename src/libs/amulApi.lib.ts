@@ -1,3 +1,4 @@
+import env from '@/env'
 import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import {
@@ -11,6 +12,10 @@ import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
 import axios, { CreateAxiosDefaults } from 'axios'
 import { wrapper } from 'axios-cookiejar-support'
+import { execFile } from 'node:child_process'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import {
   AMUL_ERROR_CODE,
@@ -130,17 +135,19 @@ const productFields = [
 
 const SHOP_URL = 'https://shop.amul.com'
 const DEFAULT_STORE_VERSION = 6
+const AMUL_REQUEST_TIMEOUT_MS = 30_000
 
-const normalizeSetCookieHeader = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string')
-  }
+type CurlRequest = {
+  url: string
+  method?: 'GET' | 'PUT'
+  headers: Record<string, string>
+  cookieString?: string
+  body?: unknown
+}
 
-  if (typeof value === 'string' && value.trim()) {
-    return [value]
-  }
-
-  return []
+type CurlResponse = {
+  text: string
+  setCookies: string[]
 }
 
 const applySetCookies = async (
@@ -156,6 +163,117 @@ const applySetCookies = async (
 
     cookie.domain = requestHost
     await jar.setCookie(cookie.toString(), requestUrl)
+  }
+}
+
+const extractSetCookies = (rawHeaders: string): string[] => {
+  return rawHeaders
+    .split(/\r?\n/)
+    .flatMap((line) =>
+      line.toLowerCase().startsWith('set-cookie:')
+        ? [line.slice(line.indexOf(':') + 1).trim()]
+        : []
+    )
+}
+
+const extractLastStatusCode = (rawHeaders: string): number | undefined => {
+  const statuses = [...rawHeaders.matchAll(/^HTTP\/\S+\s+(\d{3})\b/gim)]
+    .map((match) => Number(match[1]))
+    .filter((status) => Number.isFinite(status))
+
+  return statuses.at(-1)
+}
+
+const runAmulCurlRequest = async ({
+  url,
+  method = 'GET',
+  headers,
+  cookieString,
+  body
+}: CurlRequest): Promise<CurlResponse> => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'amul-curl-'))
+  const headersPath = join(tempDir, 'headers.txt')
+  const bodyPath = join(tempDir, 'body.txt')
+  const args = [url, '-X', method]
+
+  for (const [key, value] of Object.entries(headers)) {
+    args.push('-H', `${key}: ${value}`)
+  }
+  if (cookieString) {
+    args.push('-b', cookieString)
+  }
+  if (body !== undefined) {
+    args.push('--data-raw', JSON.stringify(body))
+  }
+
+  args.push(
+    '--globoff',
+    '-D',
+    headersPath,
+    '-o',
+    bodyPath,
+    '--http2',
+    '--compressed',
+    '--location',
+    '--no-progress-meter',
+    '--silent',
+    '--show-error'
+  )
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      execFile(
+        env.CURL_BIN,
+        args,
+        {
+          timeout: AMUL_REQUEST_TIMEOUT_MS,
+          maxBuffer: 1024 * 1024
+        },
+        (error, _stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr || `${env.CURL_BIN}: ${error.message}`))
+            return
+          }
+          resolve()
+        }
+      )
+    })
+
+    const rawHeaders = await readFile(headersPath, 'utf8').catch(() => '')
+    const text = await readFile(bodyPath, 'utf8').catch(() => '')
+    const statusCode = extractLastStatusCode(rawHeaders)
+    const isCloudflareChallenge =
+      /cf-mitigated:\s*challenge/i.test(rawHeaders) ||
+      /<title>Just a moment\.\.\.<\/title>|cf-error-details/i.test(text)
+
+    if (isCloudflareChallenge) {
+      blockAmulRequestsForCloudflareChallenge()
+      throw new AmulError(
+        'Cloudflare challenged the Amul request',
+        AMUL_ERROR_CODE.CLOUDFLARE_CHALLENGE
+      )
+    }
+
+    if (!statusCode || statusCode >= 400) {
+      throw new Error(
+        `Amul request failed with HTTP ${statusCode ?? 'unknown'}`
+      )
+    }
+
+    return {
+      text,
+      setCookies: extractSetCookies(rawHeaders)
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+}
+
+const parseAmulJson = <T>(text: string, requestName: string): T => {
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    throw new Error(`${requestName} response was not valid JSON`)
   }
 }
 
@@ -201,19 +319,17 @@ export class AmulApi {
     if (this.storeVersion) return
 
     try {
-      const response = await this.amulApi.get(
-        'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js',
-        {
-          headers: {
-            ...browserScriptHeaders,
-            cookie: await this.jar.getCookieString(SHOP_URL)
-          }
-        }
-      )
+      const response = await runAmulCurlRequest({
+        url: 'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js',
+        headers: browserScriptHeaders,
+        cookieString: await this.jar.getCookieString(SHOP_URL)
+      })
+      await applySetCookies(this.jar, response.setCookies, SHOP_URL)
       const versionMatcher = /req\.query\.v\s*=\s*['"]?([^'";\s]+)['"]?/
-      const match = response.data.match(versionMatcher)
-      if (match && match[1]) {
-        this.storeVersion = match[1]
+      const match = response.text.match(versionMatcher)
+      const storeVersion = Number(match?.[1])
+      if (Number.isFinite(storeVersion) && storeVersion > 0) {
+        this.storeVersion = storeVersion
         console.log(`Fetched store version: ${this.storeVersion}`)
       } else {
         console.warn('Store version not found in response, defaulting to 5')
@@ -261,51 +377,28 @@ export class AmulApi {
   }
 
   public async initCookies() {
-    const cookieResponse = await this.amulApi.get(
-      'https://shop.amul.com/en/browse/protein',
-      {
-        headers: browserNavigationHeaders
-      }
-    )
+    const cookieResponse = await runAmulCurlRequest({
+      url: 'https://shop.amul.com/en/browse/protein',
+      headers: browserNavigationHeaders
+    })
 
-    const setCookies = cookieResponse.headers['set-cookie']
-    if (!setCookies) {
+    if (!cookieResponse.setCookies.length) {
       throw new Error('No cookies received from Amul API')
     }
 
     const requestUrl = 'https://shop.amul.com'
-    const requestHost = new URL(requestUrl).hostname
-
-    const parsedCookies = setCookies.map((cookieStr) =>
-      parseCookie(cookieStr, { loose: true })
-    )
-
-    for (const cookie of parsedCookies) {
-      if (!cookie || !cookie.key) continue
-
-      // ---- FIX: overwrite cookie domain ----
-      // StoreHippo incorrectly sends Domain=storehippo.com.
-      // We rewrite it so tough-cookie accepts it.
-      cookie.domain = requestHost
-      // Or: delete cookie.domain;  // also works, makes it host-only
-
-      // Now tough-cookie will accept it
-      await this.jar.setCookie(cookie.toString(), requestUrl)
-    }
+    await applySetCookies(this.jar, cookieResponse.setCookies, requestUrl)
 
     // Now cookies are valid, fetch user/session info
-    const infoResponse = await this.amulApi.get<string>(
-      `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
-      {
-        headers: {
-          ...browserScriptHeaders,
-          cookie: await this.jar.getCookieString(requestUrl)
-        }
-      }
-    )
+    const infoResponse = await runAmulCurlRequest({
+      url: `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
+      headers: browserScriptHeaders,
+      cookieString: await this.jar.getCookieString(requestUrl)
+    })
+    await applySetCookies(this.jar, infoResponse.setCookies, requestUrl)
 
     const sessionObj = JSON.parse(
-      infoResponse.data.replace('session = ', '')
+      infoResponse.text.replace('session = ', '')
     ) as AmulSessionInfo
 
     this.tid = sessionObj.tid
@@ -327,29 +420,25 @@ export class AmulApi {
     const tid = await this.calculateTidHeader()
     const cookieStr = await this.jar.getCookieString('https://shop.amul.com')
 
-    const response = await this.amulApi.put(
-      'https://shop.amul.com/entity/ms.settings/_/setPreferences',
-      {
+    const response = await runAmulCurlRequest({
+      url: 'https://shop.amul.com/entity/ms.settings/_/setPreferences',
+      method: 'PUT',
+      headers: {
+        ...defaultHeaders,
+        'content-type': 'application/json',
+        tid
+      },
+      cookieString: cookieStr,
+      body: {
         data: {
           store: record.substore
         }
-      },
-      {
-        headers: {
-          ...defaultHeaders,
-          tid: tid,
-          cookie: cookieStr // Use the cookie string from the job data
-        }
       }
-    )
+    })
 
-    await applySetCookies(
-      this.jar,
-      normalizeSetCookieHeader(response.headers['set-cookie']),
-      SHOP_URL
-    )
+    await applySetCookies(this.jar, response.setCookies, SHOP_URL)
 
-    return response.data
+    return parseAmulJson<unknown>(response.text, 'Set store preference')
   }
 
   public async setPincode(record: PincodeRecord) {
@@ -377,18 +466,18 @@ export class AmulApi {
   }
 
   public async searchPincode(pincode: string) {
-    const response = await this.amulApi.get<AmulPincodeResponse>(
-      `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
-      {
-        headers: {
-          ...defaultHeaders,
-          tid: await this.calculateTidHeader(),
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
-        }
-      }
-    )
+    const response = await runAmulCurlRequest({
+      url: `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
+      headers: {
+        ...defaultHeaders,
+        tid: await this.calculateTidHeader()
+      },
+      cookieString: await this.jar.getCookieString(SHOP_URL)
+    })
+    await applySetCookies(this.jar, response.setCookies, SHOP_URL)
 
-    return response.data.records
+    return parseAmulJson<AmulPincodeResponse>(response.text, 'Pincode search')
+      .records
   }
 
   public getSubstore(): string | undefined {
@@ -470,15 +559,14 @@ export class AmulApi {
     url: string,
     headers: Record<string, string>
   ): Promise<AmulProductsResponse> {
-    const response = await this.amulApi.get<AmulProductsResponse>(url, {
-      headers
+    const { cookie, ...curlHeaders } = headers
+    const response = await runAmulCurlRequest({
+      url,
+      headers: curlHeaders,
+      cookieString: cookie
     })
-    await applySetCookies(
-      this.jar,
-      normalizeSetCookieHeader(response.headers['set-cookie']),
-      url
-    )
-    return response.data
+    await applySetCookies(this.jar, response.setCookies, url)
+    return parseAmulJson<AmulProductsResponse>(response.text, 'Product fetch')
   }
 
   private async getCachedProductsByCategory(
