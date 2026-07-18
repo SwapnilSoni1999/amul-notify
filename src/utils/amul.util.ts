@@ -47,5 +47,6 @@ export const getInventoryQuantity = (product: AmulProduct): number => {
 }
 
 export const getProductUrl = (product: AmulProduct): string => {
-  return `https://shop.amul.com/en/product/${product.alias}`
+  // replace spaces in alias with empty string to form the correct URL
+  return `https://shop.amul.com/en/product/${product.alias.replace(/ /g, '')}`
 }
