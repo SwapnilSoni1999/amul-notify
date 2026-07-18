@@ -73,7 +73,7 @@ export const formatProductDetails = (
       product
     )}</b>`,
     pincode ? `${emptySpace(5)}Pincode: <b>${pincode}</b>` : null,
-    substore ? `${emptySpace(5)}Substore: <b>${pincode}</b>` : null
+    substore ? `${emptySpace(5)}Substore: <b>${substore}</b>` : null
   ]
     .filter(Boolean)
     .join('\n')
