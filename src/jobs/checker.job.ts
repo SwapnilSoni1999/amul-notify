@@ -86,7 +86,7 @@ const stockCheckerJob = schedule(
               continue
             }
 
-            amulApi = await getOrCreateAmulApi(user.pincode)
+            amulApi = await getOrCreateAmulApi(user.pincode, substore)
             // Inform
             logToChannel(
               `${emojis.info} Initialized Amul API for substore ${substore} with pincode ${user.pincode}.`

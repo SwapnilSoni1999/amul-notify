@@ -30,6 +30,12 @@ export const getAmulApiFromSubstore = async (substore: string) => {
     }
   }
   if (existingApi) {
+    if (!(await existingApi.hasUsableSession())) {
+      console.warn(`Cached Amul session for ${substore} has expired.`)
+      existingApi.close()
+      return
+    }
+
     return existingApi
   }
 }

@@ -1,4 +1,3 @@
-import { IUser } from '@/models/user.model'
 import cacheService from '@/services/cache.service'
 import {
   AmulPincodeResponse,
@@ -9,13 +8,11 @@ import {
 } from '@/types/amul.types'
 import { logToChannel } from '@/utils/logger.util'
 import { substoreList } from '@/utils/substores'
-import axios, { CreateAxiosDefaults } from 'axios'
-import { wrapper } from 'axios-cookiejar-support'
 import { CookieJar, parse as parseCookie } from 'tough-cookie'
 import { AMUL_ERROR_CODE, AmulError } from './amulError.lib'
 import { sleep } from '@/utils'
 import { AMUL_PRODUCT_CATEGORIES, AmulProductCategory } from '@/config'
-import { isStoredCookieExpired } from '@/utils/cookie.util'
+import { curlRequest, CurlHttpError, CurlRequestOptions } from './curl.lib'
 
 // interface AmulSessionKey {
 //   pincode: string
@@ -75,18 +72,6 @@ const productFields = [
 const SHOP_URL = 'https://shop.amul.com'
 const DEFAULT_STORE_VERSION = 6
 
-const normalizeSetCookieHeader = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string')
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    return [value]
-  }
-
-  return []
-}
-
 const applySetCookies = async (
   jar: CookieJar,
   setCookies: string[],
@@ -103,51 +88,59 @@ const applySetCookies = async (
   }
 }
 
+const parseAmulJson = <T>(body: string, responseName: string): T => {
+  try {
+    return JSON.parse(body) as T
+  } catch {
+    throw new Error(`${responseName} returned invalid JSON`)
+  }
+}
+
 export class AmulApi {
   private pincodeRecord!: PincodeRecord
-  public amulApi: ReturnType<typeof wrapper>
   private tid: string | undefined
   private jar: CookieJar
   public instanceInitializedAt: Date = new Date()
   private storeVersion = 0
 
   constructor() {
-    const jar = new CookieJar()
+    this.jar = new CookieJar()
+  }
 
-    this.jar = jar
+  private async request(options: CurlRequestOptions) {
+    const cookie = await this.jar.getCookieString(SHOP_URL)
+    const response = await curlRequest({
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+        ...(cookie ? { cookie } : {})
+      }
+    })
 
-    const axiosDefaults = axios.defaults as typeof axios.defaults & {
-      jar: CookieJar
-    }
-    axiosDefaults.jar = jar
-
-    const amulApi = wrapper(
-      axios.create({
-        jar, // tough‐cookie jar
-        withCredentials: true,
-        headers: defaultHeaders
-      } as CreateAxiosDefaults) as ReturnType<typeof wrapper>
-    )
-
-    this.amulApi = amulApi
+    await applySetCookies(this.jar, response.setCookies, options.url)
+    return response
   }
 
   private async ensureStoreVersion() {
     if (this.storeVersion) return
 
     try {
-      const response = await this.amulApi.get(
-        'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js'
-      )
+      const response = await this.request({
+        url: 'https://shop.amul.com/ms/store/amul/auto/EN/storeinfo.js'
+      })
       const versionMatcher = /req\.query\.v\s*=\s*['"]?([^'";\s]+)['"]?/
-      const match = response.data.match(versionMatcher)
-      if (match && match[1]) {
-        this.storeVersion = match[1]
+      const match = response.body.match(versionMatcher)
+      const storeVersion = Number(match?.[1])
+      if (Number.isFinite(storeVersion) && storeVersion > 0) {
+        this.storeVersion = storeVersion
         console.log(`Fetched store version: ${this.storeVersion}`)
       } else {
-        console.warn('Store version not found in response, defaulting to 5')
+        console.warn(
+          `Store version not found in response, defaulting to ${DEFAULT_STORE_VERSION}`
+        )
         logToChannel(
-          `${new Date().toISOString()} - Store version not found in response, defaulting to 5`
+          `${new Date().toISOString()} - Store version not found in response, defaulting to ${DEFAULT_STORE_VERSION}`
         )
         this.storeVersion = DEFAULT_STORE_VERSION
       }
@@ -160,77 +153,25 @@ export class AmulApi {
     }
   }
 
-  public injectCookies(cookies: IUser['cookies']) {
-    const requestUrl = 'https://shop.amul.com'
-
-    for (const cookie of cookies) {
-      if (!cookie.key || !cookie.value || isStoredCookieExpired(cookie)) {
-        continue
-      }
-
-      const cookieParts = [`${cookie.key}=${cookie.value}`]
-
-      if (cookie.expiresAt) {
-        cookieParts.push(`Expires=${new Date(cookie.expiresAt).toUTCString()}`)
-      }
-
-      if (cookie.path) {
-        cookieParts.push(`Path=${cookie.path}`)
-      }
-
-      if (cookie.domain) {
-        cookieParts.push(`Domain=${cookie.domain}`)
-      }
-
-      this.jar.setCookieSync(cookieParts.join('; '), requestUrl)
-    }
-  }
-
   public async initCookies() {
-    const cookieResponse = await this.amulApi.get(
-      'https://shop.amul.com/en/browse/protein'
-    )
-
-    const setCookies = cookieResponse.headers['set-cookie']
-    if (!setCookies) {
+    const cookieResponse = await this.request({
+      url: 'https://shop.amul.com/en/browse/protein'
+    })
+    if (!cookieResponse.setCookies.length) {
       throw new Error('No cookies received from Amul API')
     }
 
-    const requestUrl = 'https://shop.amul.com'
-    const requestHost = new URL(requestUrl).hostname
-
-    const parsedCookies = setCookies.map((cookieStr) =>
-      parseCookie(cookieStr, { loose: true })
-    )
-
-    for (const cookie of parsedCookies) {
-      if (!cookie || !cookie.key) continue
-
-      // ---- FIX: overwrite cookie domain ----
-      // StoreHippo incorrectly sends Domain=storehippo.com.
-      // We rewrite it so tough-cookie accepts it.
-      cookie.domain = requestHost
-      // Or: delete cookie.domain;  // also works, makes it host-only
-
-      // Now tough-cookie will accept it
-      await this.jar.setCookie(cookie.toString(), requestUrl)
-    }
-
     // Now cookies are valid, fetch user/session info
-    const infoResponse = await this.amulApi.get<string>(
-      `https://shop.amul.com/user/info.js?_v=${Date.now()}`,
-      {
-        headers: {
-          ...defaultHeaders,
-          cookie: await this.jar.getCookieString(requestUrl),
-          tid: await this.calculateTidHeader()
-        }
-      }
-    )
+    const infoResponse = await this.request({
+      url: `https://shop.amul.com/user/info.js?_v=${Date.now()}`
+    })
 
     const sessionObj = JSON.parse(
-      infoResponse.data.replace('session = ', '')
+      infoResponse.body.replace('session = ', '')
     ) as AmulSessionInfo
+    if (!sessionObj.tid) {
+      throw new Error('No TID received from Amul session info')
+    }
 
     this.tid = sessionObj.tid
     // console.log('TID:', this.tid)
@@ -243,47 +184,42 @@ export class AmulApi {
     return this.jar.getCookieString('https://shop.amul.com')
   }
 
+  public async hasUsableSession(): Promise<boolean> {
+    if (!this.tid) {
+      return false
+    }
+
+    const cookies = await this.jar.getCookies(SHOP_URL)
+    const requiredCookies = ['jsessionid', '__cf_bm', '_cfuvid']
+    return requiredCookies.every((key) =>
+      cookies.some((cookie) => cookie.key === key)
+    )
+  }
+
   get pincode_record() {
     return this.pincodeRecord
   }
 
   private async setStorePreference(record: PincodeRecord) {
     const tid = await this.calculateTidHeader()
-    const cookieStr = await this.jar.getCookieString('https://shop.amul.com')
-
-    const response = await this.amulApi.put(
-      'https://shop.amul.com/entity/ms.settings/_/setPreferences',
-      {
+    const response = await this.request({
+      url: 'https://shop.amul.com/entity/ms.settings/_/setPreferences',
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        tid
+      },
+      body: {
         data: {
           store: record.substore
         }
-      },
-      {
-        headers: {
-          ...defaultHeaders,
-          tid: tid,
-          cookie: cookieStr // Use the cookie string from the job data
-        }
       }
-    )
+    })
 
-    await applySetCookies(
-      this.jar,
-      normalizeSetCookieHeader(response.headers['set-cookie']),
-      SHOP_URL
-    )
-
-    return response.data
+    return response.body
   }
 
   public async setPincode(record: PincodeRecord) {
-    // await setPincodeQueue({
-    //   tid: await this.calculateTidHeader(),
-    //   cookieStr: await this.jar.getCookieString('https://shop.amul.com'),
-    //   record,
-    //   amulApi: this.amulApi
-    // })
-
     const response = await this.setStorePreference(record)
     console.log('Set Pincode Response:', response)
     this.pincodeRecord = record
@@ -301,18 +237,15 @@ export class AmulApi {
   }
 
   public async searchPincode(pincode: string) {
-    const response = await this.amulApi.get<AmulPincodeResponse>(
-      `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
-      {
-        headers: {
-          ...defaultHeaders,
-          tid: await this.calculateTidHeader(),
-          cookie: await this.jar.getCookieString('https://shop.amul.com')
-        }
+    const response = await this.request({
+      url: `https://shop.amul.com/entity/pincode?limit=50&filters[0][field]=pincode&filters[0][value]=${pincode}&filters[0][operator]=regex&cf_cache=1h`,
+      headers: {
+        tid: await this.calculateTidHeader()
       }
-    )
+    })
 
-    return response.data.records
+    return parseAmulJson<AmulPincodeResponse>(response.body, 'Pincode search')
+      .records
   }
 
   public getSubstore(): string | undefined {
@@ -332,7 +265,10 @@ export class AmulApi {
     const timestamp = Date.now().toString()
     const encoder = new TextEncoder()
     const rand = parseInt((1000 * Math.random()).toString(), 10)
-    const sessionID = this.tid!
+    const sessionID = this.tid
+    if (!sessionID) {
+      throw new Error('Amul session TID is not initialized')
+    }
     const c = encoder.encode(`${storeID}:${timestamp}:${rand}:${sessionID}`)
     const data = await crypto.subtle.digest('SHA-256', c)
     const hash = Array.from(new Uint8Array(data))
@@ -394,15 +330,26 @@ export class AmulApi {
     url: string,
     headers: Record<string, string>
   ): Promise<AmulProductsResponse> {
-    const response = await this.amulApi.get<AmulProductsResponse>(url, {
-      headers
-    })
-    await applySetCookies(
-      this.jar,
-      normalizeSetCookieHeader(response.headers['set-cookie']),
-      url
+    const response = await this.request({ url, headers }).catch(
+      (error: unknown) => {
+        if (
+          error instanceof CurlHttpError &&
+          (error.status === 401 || error.status === 403)
+        ) {
+          this.close()
+        }
+        throw error
+      }
     )
-    return response.data
+
+    const products = parseAmulJson<AmulProductsResponse>(
+      response.body,
+      'Product fetch'
+    )
+    if (!Array.isArray(products.data)) {
+      throw new Error('Product fetch response did not contain a data array')
+    }
+    return products
   }
 
   private async getCachedProductsByCategory(
@@ -478,7 +425,6 @@ export class AmulApi {
     retryCount?: number
     categories?: readonly AmulProductCategory[]
   }): Promise<AmulProduct[]> {
-    const ensureVersionPromise = this.ensureStoreVersion()
     const { bypassCache = true, retryCount = 0 } = opts || {}
     const requestedCategories = opts?.categories
     const hasCategoryFilter = Boolean(requestedCategories?.length)
@@ -512,9 +458,14 @@ export class AmulApi {
       return filterProducts(cachedProducts)
     }
 
+    if (!(await this.hasUsableSession())) {
+      this.close()
+      throw new Error('Amul session cookies or TID have expired')
+    }
+
     const substoreId = this.getSubstoreId()
 
-    await ensureVersionPromise
+    await this.ensureStoreVersion()
     const productsUrl = this.getAmulProductsUrl(substoreId, categories)
     const response = await this.fetchAmulProducts(productsUrl, {
       ...this.getProductListHeaders(),
@@ -570,7 +521,10 @@ export class AmulApi {
   }
 
   public close() {
-    substoreSessions.delete(this.pincodeRecord.substore)
+    const substore = this.pincodeRecord?.substore
+    if (substore) {
+      substoreSessions.delete(substore)
+    }
   }
 }
 
@@ -594,6 +548,15 @@ const createAmulApi = async (pincode: string) => {
   // console.log(
   //   `Setting pincode: ${record.pincode}, substore: ${record.substore}`
   // )
+  const existingSubstore = substoreSessions.get(record.substore.toString())
+  if (existingSubstore) {
+    if (await existingSubstore.hasUsableSession()) {
+      return existingSubstore
+    }
+
+    existingSubstore.close()
+  }
+
   await amulApi.setPincode(record)
   // console.log(
   //   `Pincode set successfully for AmulApi instance: ${record.pincode}, substore: ${record.substore}`
@@ -601,13 +564,16 @@ const createAmulApi = async (pincode: string) => {
   return amulApi
 }
 
-export const getOrCreateAmulApi = async (substore?: string | null) => {
-  if (!substore) {
+export const getOrCreateAmulApi = async (
+  pincode?: string | null,
+  knownSubstore?: string | null
+) => {
+  if (!pincode) {
     return {} as AmulApi
   }
   let existingSession: AmulApi | undefined
   for (const [key, session] of substoreSessions.entries()) {
-    if (key === substore) {
+    if (key === knownSubstore || session.pincode_record?.pincode === pincode) {
       existingSession = session
       console.log(`Found existing session for substore ${key}, using it.`)
       break
@@ -615,8 +581,19 @@ export const getOrCreateAmulApi = async (substore?: string | null) => {
   }
 
   console.log(
-    `getOrCreateAmulApi called with substore: ${substore}, existing session: ${!!existingSession}`
+    `getOrCreateAmulApi called with pincode: ${pincode}, substore: ${knownSubstore ?? 'unknown'}, existing session: ${!!existingSession}`
   )
 
-  return existingSession || (await createAmulApi(substore))
+  if (existingSession) {
+    if (await existingSession.hasUsableSession()) {
+      return existingSession
+    }
+
+    console.warn(
+      `Cached Amul session for ${knownSubstore ?? pincode} has expired. Reinitializing.`
+    )
+    existingSession.close()
+  }
+
+  return createAmulApi(pincode)
 }
