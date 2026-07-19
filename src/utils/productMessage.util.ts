@@ -1,4 +1,4 @@
-import { getLastInStockAt } from '@/services/amul.service'
+import { getProductHistory } from '@/services/amul.service'
 import { MyContext } from '@/types/context.types'
 import { AmulProduct } from '@/types/amul.types'
 import { isAvailableToPurchase } from './amul.util'
@@ -21,13 +21,13 @@ export const renderProductListItem = async (
   const isTracked = ctx.trackedProducts.some((p) => p.sku === product.sku)
   const isFav = ctx.user.favSkus.includes(product.sku)
 
-  const [trackUrl, untrackUrl, favUrl, autoOrderBtn, lastSeen] =
+  const [trackUrl, untrackUrl, favUrl, autoOrderBtn, productHistory] =
     await Promise.all([
       startCommandLink(`track_${product.sku}`),
       startCommandLink(`untrack_${product.sku}`),
       startCommandLink(`fav_${product.sku}`),
       getAutoOrderButton(ctx.user, product.sku),
-      getLastInStockAt(product.sku, ctx.amul.getSubstore()!)
+      getProductHistory(product.sku, ctx.amul.getSubstore()!)
     ])
 
   const trackBtn = `<b><a href="${trackUrl}">[Track]</a></b>`
@@ -38,7 +38,9 @@ export const renderProductListItem = async (
 
   return [
     formatProductDetails(product, isAvlblToPurchase, opts.index, {
-      lastSeenInStockAt: lastSeen?.lastSeenInStockAt,
+      lastSeenInStockAt: productHistory?.lastSeenInStockAt,
+      firstSeenInStockAt: productHistory?.firstSeenInStockAt,
+      lastSeenOutOfStockAt: productHistory?.lastSeenOutOfStockAt,
       remainingNotifyCount: opts.remainingNotifyCount,
       showProtein:
         opts.showProtein ?? product.categories?.includes('protein') ?? false

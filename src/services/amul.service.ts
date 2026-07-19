@@ -40,7 +40,7 @@ export const getAmulApiFromSubstore = async (substore: string) => {
   }
 }
 
-export const getLastInStockAt = async (sku: string, substore: string) => {
+export const getProductHistory = async (sku: string, substore: string) => {
   return await ProductStockHistoryModel.findOne({
     sku,
     substore

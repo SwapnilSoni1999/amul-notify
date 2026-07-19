@@ -7,9 +7,9 @@ import { TIMEZONE } from '@/config'
 type Nullish<T> = T | undefined | null
 
 interface ProductDetailsFormatOptions {
-  firstSeenInStockAt?: Date
-  lastSeenInStockAt?: Date
-  lastSeenOutOfStockAt?: Date
+  firstSeenInStockAt?: Date | NativeDate | Nullish<string>
+  lastSeenInStockAt?: Date | NativeDate | Nullish<string>
+  lastSeenOutOfStockAt?: Date | NativeDate | Nullish<string>
   remainingNotifyCount?: number
   pincode?: Nullish<string>
   substore?: Nullish<string>
