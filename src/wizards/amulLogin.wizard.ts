@@ -63,7 +63,10 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
       return ctx.wizard.selectStep(0) // Go back to the first step
     }
 
-    const amulOrderApi = new AmulAutoOrder(ctx.amul)
+    const amulOrderApi = new AmulAutoOrder(ctx.amul, {
+      pincode: ctx.user.pincode,
+      substore: ctx.user.substore
+    })
     const response = await amulOrderApi.sendOtp(phone).catch((err) => {
       console.error('Error sending OTP:', err)
       return
@@ -104,7 +107,14 @@ export const amulLoginWizard = new Scenes.WizardScene<MyContext>(
 
     const msg = await ctx.reply('Verifying OTP...')
 
-    const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
+    const amulOrderApi = new AmulAutoOrder(
+      ctx.amul,
+      {
+        pincode: ctx.user.pincode,
+        substore: ctx.user.substore
+      },
+      ctx.user.cookies
+    )
     const response = await amulOrderApi.verifyOtp(phone, otp).catch((err) => {
       console.error('Error verifying OTP:', err)
       return

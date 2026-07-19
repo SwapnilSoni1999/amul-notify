@@ -14,6 +14,11 @@ import { serializeStoredCookies } from '@/utils/cookie.util'
 
 const API_BASE_URL = env.ORDER_SERVER_API_URL
 
+interface AmulAutoOrderLocation {
+  pincode?: string | null
+  substore?: string | null
+}
+
 const getResponseErrorMessage = (data: unknown): string | undefined => {
   if (typeof data === 'string' && data.trim()) {
     return data.trim()
@@ -42,8 +47,13 @@ export class AmulAutoOrder {
   private amulApi: AmulApi
   private orderApi: ReturnType<typeof wrapper>
   private cookieString: string | undefined
+  private location: AmulAutoOrderLocation
 
-  constructor(amulApi: AmulApi, cookies?: IUser['cookies']) {
+  constructor(
+    amulApi: AmulApi,
+    location: AmulAutoOrderLocation,
+    cookies?: IUser['cookies']
+  ) {
     if (
       !env.ORDER_SERVER_API_URL?.trim() ||
       !env.ORDER_SERVER_API_KEY?.trim()
@@ -54,6 +64,7 @@ export class AmulAutoOrder {
     }
 
     this.amulApi = amulApi
+    this.location = location
     this.cookieString = cookies ? serializeStoredCookies(cookies) : undefined
     this.orderApi = wrapper(
       axios.create({
@@ -70,15 +81,28 @@ export class AmulAutoOrder {
     return this.cookieString ?? this.amulApi.session_cookie
   }
 
+  private getLocation(): { pincode: string; substore: string } {
+    const pincode = this.location.pincode?.trim()
+    const substore = this.location.substore?.trim()
+
+    if (!pincode || !substore) {
+      throw new Error(
+        'User pincode and substore are required for auto-ordering'
+      )
+    }
+
+    return { pincode, substore }
+  }
+
   async sendOtp(phone: string): Promise<SendOtpResponse> {
     const cookieString = await this.getCookieString()
-    const pincodeRecord = this.amulApi.pincode_record
+    const { pincode, substore } = this.getLocation()
 
     const response = await this.orderApi.post('/send-otp', {
       phone,
       cookieString,
-      substore: pincodeRecord.substore,
-      pincode: pincodeRecord.pincode
+      substore,
+      pincode
     })
 
     this.cookieString = response.data.cookieString
@@ -87,15 +111,15 @@ export class AmulAutoOrder {
 
   async verifyOtp(phone: string, otp: string): Promise<VerifyOtpResponse> {
     const cookieString = await this.getCookieString()
-    const pincodeRecord = this.amulApi.pincode_record
+    const { pincode, substore } = this.getLocation()
 
     const response = await this.orderApi.post<VerifyOtpResponse>(
       '/verify-otp',
       {
         phone,
         cookieString,
-        substore: pincodeRecord.substore,
-        pincode: pincodeRecord.pincode,
+        substore,
+        pincode,
         otp
       }
     )
@@ -123,7 +147,7 @@ export class AmulAutoOrder {
     cartId: string
   ): Promise<SetAddressResponse> {
     const cookieString = await this.getCookieString()
-    const substore = await this.amulApi.getSubstore()
+    const { substore } = this.getLocation()
 
     const response = await this.orderApi.post<SetAddressResponse>(
       '/set-address',
@@ -145,7 +169,7 @@ export class AmulAutoOrder {
     sku: string
   }): Promise<PlaceOrderResponse> {
     const cookieString = await this.getCookieString()
-    const substore = await this.amulApi.getSubstore()
+    const { substore } = this.getLocation()
     const quantity = 1 // Hardcoded to 1 for now, can be made dynamic in future
 
     const response = await this.orderApi.post<PlaceOrderResponse>(

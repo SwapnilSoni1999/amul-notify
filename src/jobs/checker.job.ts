@@ -451,6 +451,10 @@ const stockCheckerJob = schedule(
                       }
                       const amulOrderApi = new AmulAutoOrder(
                         amulApi,
+                        {
+                          pincode: user.pincode,
+                          substore: user.substore
+                        },
                         user.cookies
                       )
 

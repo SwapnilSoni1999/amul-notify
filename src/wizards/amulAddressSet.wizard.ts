@@ -44,7 +44,14 @@ export const amulAddressSetWizard = new Scenes.WizardScene<MyContext>(
       return ctx.scene.leave()
     }
 
-    const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
+    const amulOrderApi = new AmulAutoOrder(
+      ctx.amul,
+      {
+        pincode: ctx.user.pincode,
+        substore: ctx.user.substore
+      },
+      ctx.user.cookies
+    )
 
     let response
     try {
@@ -137,7 +144,14 @@ amulAddressSetWizard.action(/select_address_(\d+)/, async (ctx) => {
   ctx.user.set('address', { ...address, amulId: address._id })
   await ctx.user.save()
 
-  const amulOrderApi = new AmulAutoOrder(ctx.amul, ctx.user.cookies)
+  const amulOrderApi = new AmulAutoOrder(
+    ctx.amul,
+    {
+      pincode: ctx.user.pincode,
+      substore: ctx.user.substore
+    },
+    ctx.user.cookies
+  )
   let response
   try {
     response = await amulOrderApi.setAddress(address._id, ctx.user.amulCartId!)

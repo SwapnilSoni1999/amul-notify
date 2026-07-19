@@ -20,7 +20,7 @@ export const favouritesCommand: MiddlewareFn<CommandContext> = async (
   const filteredProducts = products.filter((p) => favSkus.includes(p.sku))
 
   const message: string = [
-    `<b>Tracked Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
+    `<b>Tracked Products</b> (${ctx.user.pincode} - ${ctx.user.substore})`,
     ...(await Promise.all(
       filteredProducts.map((product, index) =>
         renderProductListItem(ctx, product, { index })

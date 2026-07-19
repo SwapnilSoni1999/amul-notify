@@ -39,7 +39,7 @@ export const replyWithProductCategoryMenu = async (
 
   const menuMessage = await ctx.reply(
     [
-      `<b>Amul Products</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`,
+      `<b>Amul Products</b> (${ctx.user.pincode} - ${ctx.user.substore})`,
       ``,
       opts?.search
         ? `Select a category to search for <b>${escapeHtml(opts.search)}</b>.`
@@ -77,7 +77,7 @@ export const replyWithAmulProducts = async (
     category
       ? `Amul ${category.emoji} ${category.label} Products`
       : 'Amul Products'
-  }</b> (${ctx.amul.getPincode()} - ${ctx.amul.getSubstore()})`
+  }</b> (${ctx.user.pincode} - ${ctx.user.substore})`
 
   const productMessageBlocks = await Promise.all(
     products.map((product, index) =>
