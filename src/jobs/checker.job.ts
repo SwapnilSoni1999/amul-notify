@@ -513,16 +513,10 @@ const stockCheckerJob = schedule(
                         )
                         await sendMessageQueue({
                           chatId: user.tgId!,
-                          text: `[E453] ${emojis.crossMark} Auto-order could not be confirmed for ${product.name}, so no payment link is available. Amul may have sold out or rejected the checkout. Please check your Amul cart or order history before trying again.`
+                          text: `[E453] ${emojis.crossMark} Auto-order checkout failed for ${product.name} before the bot received a payment link. The technical error has been logged. Please try again later.`
                         })
                         return
                       }
-
-                      await UserModel.findByIdAndUpdate(user._id, {
-                        $set: {
-                          cookies: response.cookieExpiry
-                        }
-                      })
 
                       if (!response) {
                         console.error(
@@ -539,9 +533,14 @@ const stockCheckerJob = schedule(
                         return
                       }
 
-                      const paymentUrl =
-                        response.paymentUrl ||
-                        response.result.data?.gatewayInfo?.url
+                      await UserModel.findByIdAndUpdate(user._id, {
+                        $set: {
+                          cookies: response.cookieExpiry,
+                          amulCartId: response.cartId
+                        }
+                      })
+
+                      const paymentUrl = response.paymentUrl
 
                       if (!paymentUrl) {
                         console.error(

@@ -55,12 +55,7 @@ export interface PlaceOrderResponse extends CookieResponseBase {
   userId: string
   cartId: string
   substore: string
-  paymentUrl?: string
-  result: {
-    data?: {
-      gatewayInfo?: {
-        url?: string
-      }
-    }
-  }
+  removedCartItemIds: string[]
+  paymentUrl: string | null
+  result: unknown
 }
