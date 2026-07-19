@@ -7,7 +7,9 @@ import { TIMEZONE } from '@/config'
 type Nullish<T> = T | undefined | null
 
 interface ProductDetailsFormatOptions {
+  firstSeenInStockAt?: Date
   lastSeenInStockAt?: Date
+  lastSeenOutOfStockAt?: Date
   remainingNotifyCount?: number
   pincode?: Nullish<string>
   substore?: Nullish<string>
@@ -25,7 +27,9 @@ export const formatProductDetails = (
   options: ProductDetailsFormatOptions = {}
 ) => {
   const {
+    firstSeenInStockAt,
     lastSeenInStockAt,
+    lastSeenOutOfStockAt,
     remainingNotifyCount,
     pincode,
     substore,
@@ -48,6 +52,11 @@ export const formatProductDetails = (
     }
   }
 
+  // how long the product lasted in stock duration (dynamic unit: days, hours, minutes)
+  const inStockDuration = firstSeenInStockAt
+    ? dayjs(firstSeenInStockAt).from(lastSeenInStockAt, true)
+    : null
+
   return [
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${
       product.name
@@ -63,6 +72,16 @@ export const formatProductDetails = (
           .fromNow()} | ${dayjs(lastSeenInStockAt)
           .tz(TIMEZONE)
           .format('DD-MM-YYYY, hh:mm A')}</b>`
+      : null,
+    lastSeenOutOfStockAt
+      ? `${emptySpace(5)}Last Out of Stock: <b>${dayjs(lastSeenOutOfStockAt)
+          .tz(TIMEZONE)
+          .fromNow()} | ${dayjs(lastSeenOutOfStockAt)
+          .tz(TIMEZONE)
+          .format('DD-MM-YYYY, hh:mm A')}</b>`
+      : null,
+    inStockDuration !== null
+      ? `${emptySpace(5)}In Stock Duration: <b>${inStockDuration}</b>`
       : null,
     remainingNotifyCount || remainingNotifyCount === 0
       ? `${emptySpace(

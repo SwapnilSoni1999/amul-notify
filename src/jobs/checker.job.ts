@@ -135,6 +135,8 @@ const stockCheckerJob = schedule(
             const wasUnavailableForPurchase =
               !isAvailableToPurchase(cachedProduct)
 
+            const wasAvailableForPurchase = isAvailableToPurchase(cachedProduct)
+
             const isAvailablForPurchase = isAvailableToPurchase(freshProduct)
             if (isAvailablForPurchase) {
               ProductStockHistoryModel.updateOne(
@@ -174,6 +176,63 @@ const stockCheckerJob = schedule(
               promises.push(
                 findAndUpdateProductsWithAlwaysTracking(freshProduct.sku)
               )
+
+              // if the product is now available, we can set the firstSeenInStockAt field if it doesn't exist
+              ProductStockHistoryModel.updateOne(
+                {
+                  sku: freshProduct.sku,
+                  substore: substore
+                },
+                {
+                  $setOnInsert: {
+                    firstSeenInStockAt: new Date()
+                  }
+                },
+                {
+                  upsert: true
+                }
+              )
+                .then(() => {
+                  // do nothing
+                })
+                .catch((err) => {
+                  console.error(
+                    `Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                  logToChannel(
+                    `${emojis.crossMark} Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                })
+            }
+
+            if (wasAvailableForPurchase && !isAvailablForPurchase) {
+              // If the product was previously available and is now unavailable, we consider it changed
+              // store the last seen in stock time for this product in the ProductStockHistoryModel
+              ProductStockHistoryModel.updateOne(
+                {
+                  sku: freshProduct.sku,
+                  substore: substore
+                },
+                {
+                  $currentDate: {
+                    lastSeenInStockAt: true
+                  }
+                },
+                {
+                  upsert: true
+                }
+              )
+                .then(() => {
+                  // do nothing
+                })
+                .catch((err) => {
+                  console.error(
+                    `Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                  logToChannel(
+                    `${emojis.crossMark} Failed to update stock history for product ${freshProduct.sku}: ${err.message}`
+                  )
+                })
             }
 
             return (

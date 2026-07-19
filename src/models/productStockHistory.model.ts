@@ -20,6 +20,12 @@ const ProductStockHistorySchema = new Schema(
     lastSeenInStockAt: {
       type: Date,
       required: true
+    },
+    firstSeenInStockAt: {
+      type: Date
+    },
+    lastSeenOutOfStockAt: {
+      type: Date
     }
   },
   {
