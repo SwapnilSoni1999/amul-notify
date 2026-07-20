@@ -185,6 +185,8 @@ const stockCheckerJob = schedule(
                 },
                 {
                   $setOnInsert: {
+                    sku: freshProduct.sku,
+                    substore: substore,
                     firstSeenInStockAt: new Date()
                   }
                 },
