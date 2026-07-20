@@ -53,9 +53,10 @@ export const formatProductDetails = (
   }
 
   // how long the product lasted in stock duration (dynamic unit: days, hours, minutes)
-  const inStockDuration = firstSeenInStockAt
-    ? dayjs(firstSeenInStockAt).from(lastSeenInStockAt, true)
-    : null
+  const inStockDuration =
+    firstSeenInStockAt && lastSeenOutOfStockAt
+      ? dayjs(firstSeenInStockAt).from(lastSeenOutOfStockAt, true)
+      : null
 
   return [
     `${+index + 1}. <b><a href="${getProductUrl(product)}">${

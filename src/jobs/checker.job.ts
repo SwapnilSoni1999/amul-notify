@@ -217,7 +217,8 @@ const stockCheckerJob = schedule(
                 },
                 {
                   $currentDate: {
-                    lastSeenInStockAt: true
+                    lastSeenInStockAt: true,
+                    lastSeenOutOfStockAt: true
                   }
                 },
                 {
