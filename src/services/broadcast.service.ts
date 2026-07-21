@@ -1,4 +1,5 @@
 import UserModel from '@/models/user.model'
+import { createSendMessageOperationId } from '@/queues/broadcastJobId.util'
 import { sendMessageQueue } from '@/queues/broadcast.queue'
 import { ExtraReplyMessage } from 'telegraf/typings/telegram-types'
 
@@ -7,6 +8,7 @@ export const broadcastMessage = async (
   onProgress: (completed: number, total: number, failed: number) => void,
   extra?: ExtraReplyMessage
 ) => {
+  const operationId = createSendMessageOperationId()
   const pageSize = 100
 
   const totalUsers = await UserModel.countDocuments({
@@ -33,6 +35,7 @@ export const broadcastMessage = async (
             chatId: user.tgId,
             text,
             extra,
+            operationId,
             onComplete: async (err) => {
               if (err) {
                 console.error(
