@@ -209,7 +209,8 @@ const stockCheckerJob = schedule(
 
             if (wasAvailableForPurchase && !isAvailablForPurchase) {
               // If the product was previously available and is now unavailable, we consider it changed
-              // store the last seen in stock time for this product in the ProductStockHistoryModel
+              // Preserve the last successful in-stock observation and record
+              // when the product was first observed out of stock.
               ProductStockHistoryModel.updateOne(
                 {
                   sku: freshProduct.sku,
@@ -217,7 +218,6 @@ const stockCheckerJob = schedule(
                 },
                 {
                   $currentDate: {
-                    lastSeenInStockAt: true,
                     lastSeenOutOfStockAt: true
                   }
                 },
